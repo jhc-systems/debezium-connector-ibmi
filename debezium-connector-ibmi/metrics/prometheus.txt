@@ -1,0 +1,578 @@
+# HELP jmx_config_reload_failure_total Number of times configuration have failed to be reloaded.
+# TYPE jmx_config_reload_failure_total counter
+jmx_config_reload_failure_total 0.0
+# HELP jmx_exporter_build_info A metric with a constant '1' value labeled with the version of the JMX exporter.
+# TYPE jmx_exporter_build_info gauge
+jmx_exporter_build_info{version="0.16.1",name="jmx_prometheus_javaagent",} 1.0
+# HELP jvm_buffer_pool_used_bytes Used bytes of a given JVM buffer pool.
+# TYPE jvm_buffer_pool_used_bytes gauge
+jvm_buffer_pool_used_bytes{pool="mapped",} 0.0
+jvm_buffer_pool_used_bytes{pool="direct",} 369219.0
+jvm_buffer_pool_used_bytes{pool="mapped - 'non-volatile memory'",} 0.0
+# HELP jvm_buffer_pool_capacity_bytes Bytes capacity of a given JVM buffer pool.
+# TYPE jvm_buffer_pool_capacity_bytes gauge
+jvm_buffer_pool_capacity_bytes{pool="mapped",} 0.0
+jvm_buffer_pool_capacity_bytes{pool="direct",} 369219.0
+jvm_buffer_pool_capacity_bytes{pool="mapped - 'non-volatile memory'",} 0.0
+# HELP jvm_buffer_pool_used_buffers Used buffers of a given JVM buffer pool.
+# TYPE jvm_buffer_pool_used_buffers gauge
+jvm_buffer_pool_used_buffers{pool="mapped",} 0.0
+jvm_buffer_pool_used_buffers{pool="direct",} 26.0
+jvm_buffer_pool_used_buffers{pool="mapped - 'non-volatile memory'",} 0.0
+# HELP kafka_connect_metrics_io_wait_time_ns_total The total time the I/O thread spent waiting (kafka.connect<type=connect-metrics, client-id=connect-1><>io-wait-time-ns-total)
+# TYPE kafka_connect_metrics_io_wait_time_ns_total untyped
+kafka_connect_metrics_io_wait_time_ns_total{client="connect-1",} 3.17563725E11
+# HELP kafka_connect_metrics_reauthentication_latency_avg The average latency observed due to re-authentication (kafka.connect<type=connect-metrics, client-id=connect-1><>reauthentication-latency-avg)
+# TYPE kafka_connect_metrics_reauthentication_latency_avg untyped
+kafka_connect_metrics_reauthentication_latency_avg{client="connect-1",} NaN
+# HELP kafka_producer_record_send_rate The average number of records sent per second. (kafka.producer<type=producer-metrics, client-id=producer-1><>record-send-rate)
+# TYPE kafka_producer_record_send_rate untyped
+kafka_producer_record_send_rate{client="producer-1",} 0.0
+kafka_producer_record_send_rate{client="producer-2",} 0.0
+kafka_producer_record_send_rate{client="producer-3",} 0.0
+kafka_producer_record_send_rate{client="connector-producer-msdevt-source7-0",} 0.0
+# HELP kafka_consumer_last_poll_seconds_ago The number of seconds since the last poll() invocation. (kafka.consumer<type=consumer-metrics, client-id=consumer-1-2><>last-poll-seconds-ago)
+# TYPE kafka_consumer_last_poll_seconds_ago untyped
+kafka_consumer_last_poll_seconds_ago{client="consumer-1-2",} 316.0
+kafka_consumer_last_poll_seconds_ago{client="consumer-1-1",} 317.0
+kafka_consumer_last_poll_seconds_ago{client="consumer-1-3",} 318.0
+# HELP kafka_connect_worker_metrics_connector_startup_failure_total The total number of connector starts that failed. (kafka.connect<type=connect-worker-metrics><>connector-startup-failure-total)
+# TYPE kafka_connect_worker_metrics_connector_startup_failure_total untyped
+kafka_connect_worker_metrics_connector_startup_failure_total 0.0
+# HELP debezium_metrics_TotalNumberOfUpdateEventsSeen TotalNumberOfUpdateEventsSeen (debezium.db2as400_server<type=connector-metrics, context=snapshot, server=tracey.servers.jhc.co.uk><>TotalNumberOfUpdateEventsSeen)
+# TYPE debezium_metrics_TotalNumberOfUpdateEventsSeen untyped
+debezium_metrics_TotalNumberOfUpdateEventsSeen{connector="db2as400_server",context="snapshot",server="tracey.servers.jhc.co.uk",} 0.0
+debezium_metrics_TotalNumberOfUpdateEventsSeen{connector="db2as400_server",context="streaming",server="tracey.servers.jhc.co.uk",} 0.0
+# HELP kafka_connect_worker_metrics_connector_startup_attempts_total The total number of connector startups that this worker has attempted. (kafka.connect<type=connect-worker-metrics><>connector-startup-attempts-total)
+# TYPE kafka_connect_worker_metrics_connector_startup_attempts_total untyped
+kafka_connect_worker_metrics_connector_startup_attempts_total 1.0
+# HELP debezium_metrics_NumberOfCommittedTransactions NumberOfCommittedTransactions (debezium.db2as400_server<type=connector-metrics, context=streaming, server=tracey.servers.jhc.co.uk><>NumberOfCommittedTransactions)
+# TYPE debezium_metrics_NumberOfCommittedTransactions untyped
+debezium_metrics_NumberOfCommittedTransactions{connector="db2as400_server",context="streaming",server="tracey.servers.jhc.co.uk",} 0.0
+# HELP debezium_metrics_QueueTotalCapacity QueueTotalCapacity (debezium.db2as400_server<type=connector-metrics, context=snapshot, server=tracey.servers.jhc.co.uk><>QueueTotalCapacity)
+# TYPE debezium_metrics_QueueTotalCapacity untyped
+debezium_metrics_QueueTotalCapacity{connector="db2as400_server",context="snapshot",server="tracey.servers.jhc.co.uk",} 8192.0
+debezium_metrics_QueueTotalCapacity{connector="db2as400_server",context="streaming",server="tracey.servers.jhc.co.uk",} 8192.0
+# HELP kafka_connect_metrics_network_io_total The total number of network operations (reads or writes) on all connections (kafka.connect<type=connect-metrics, client-id=connect-1><>network-io-total)
+# TYPE kafka_connect_metrics_network_io_total untyped
+kafka_connect_metrics_network_io_total{client="connect-1",} 235.0
+# HELP kafka_consumer_request_rate The number of requests sent per second (kafka.consumer<type=consumer-metrics, client-id=consumer-1-2><>request-rate)
+# TYPE kafka_consumer_request_rate untyped
+kafka_consumer_request_rate{client="consumer-1-2",} 2.016875900391027
+kafka_consumer_request_rate{client="consumer-1-1",} 2.0155899714115297
+kafka_consumer_request_rate{client="consumer-1-3",} 2.014328730142249
+# HELP debezium_metrics_Connected Connected (debezium.db2as400_server<type=connector-metrics, context=streaming, server=tracey.servers.jhc.co.uk><>Connected)
+# TYPE debezium_metrics_Connected untyped
+debezium_metrics_Connected{connector="db2as400_server",context="streaming",server="tracey.servers.jhc.co.uk",} 1.0
+# HELP kafka_connect_metrics_select_rate The number of times the I/O layer checked for new I/O to perform per second (kafka.connect<type=connect-metrics, client-id=connect-1><>select-rate)
+# TYPE kafka_connect_metrics_select_rate untyped
+kafka_connect_metrics_select_rate{client="connect-1",} 22.202468736742155
+# HELP kafka_producer_produce_throttle_time_avg The average time in ms a request was throttled by a broker (kafka.producer<type=producer-metrics, client-id=producer-1><>produce-throttle-time-avg)
+# TYPE kafka_producer_produce_throttle_time_avg untyped
+kafka_producer_produce_throttle_time_avg{client="producer-1",} 0.0
+kafka_producer_produce_throttle_time_avg{client="producer-2",} 0.0
+kafka_producer_produce_throttle_time_avg{client="producer-3",} 0.0
+kafka_producer_produce_throttle_time_avg{client="connector-producer-msdevt-source7-0",} 0.0
+# HELP kafka_producer_record_queue_time_avg The average time in ms record batches spent in the send buffer. (kafka.producer<type=producer-metrics, client-id=producer-1><>record-queue-time-avg)
+# TYPE kafka_producer_record_queue_time_avg untyped
+kafka_producer_record_queue_time_avg{client="producer-1",} NaN
+kafka_producer_record_queue_time_avg{client="producer-2",} NaN
+kafka_producer_record_queue_time_avg{client="producer-3",} NaN
+kafka_producer_record_queue_time_avg{client="connector-producer-msdevt-source7-0",} NaN
+# HELP kafka_consumer_poll_idle_ratio_avg The average fraction of time the consumer's poll() is idle as opposed to waiting for the user code to process records. (kafka.consumer<type=consumer-metrics, client-id=consumer-1-2><>poll-idle-ratio-avg)
+# TYPE kafka_consumer_poll_idle_ratio_avg untyped
+kafka_consumer_poll_idle_ratio_avg{client="consumer-1-2",} NaN
+kafka_consumer_poll_idle_ratio_avg{client="consumer-1-1",} NaN
+kafka_consumer_poll_idle_ratio_avg{client="consumer-1-3",} NaN
+# HELP kafka_connect_worker_metrics_connector_startup_success_total The total number of connector starts that succeeded. (kafka.connect<type=connect-worker-metrics><>connector-startup-success-total)
+# TYPE kafka_connect_worker_metrics_connector_startup_success_total untyped
+kafka_connect_worker_metrics_connector_startup_success_total 1.0
+# HELP kafka_connect_metrics_response_rate The number of responses received per second (kafka.connect<type=connect-metrics, client-id=connect-1><>response-rate)
+# TYPE kafka_connect_metrics_response_rate untyped
+kafka_connect_metrics_response_rate{client="connect-1",} 0.3924403593927502
+# HELP kafka_connect_metrics_io_time_ns_avg The average length of time for I/O per select call in nanoseconds. (kafka.connect<type=connect-metrics, client-id=connect-1><>io-time-ns-avg)
+# TYPE kafka_connect_metrics_io_time_ns_avg untyped
+kafka_connect_metrics_io_time_ns_avg{client="connect-1",} 10410.191082802548
+# HELP kafka_connect_metrics_response_total The total number of responses received (kafka.connect<type=connect-metrics, client-id=connect-1><>response-total)
+# TYPE kafka_connect_metrics_response_total untyped
+kafka_connect_metrics_response_total{client="connect-1",} 115.0
+# HELP debezium_metrics_CurrentQueueSizeInBytes CurrentQueueSizeInBytes (debezium.db2as400_server<type=connector-metrics, context=snapshot, server=tracey.servers.jhc.co.uk><>CurrentQueueSizeInBytes)
+# TYPE debezium_metrics_CurrentQueueSizeInBytes untyped
+debezium_metrics_CurrentQueueSizeInBytes{connector="db2as400_server",context="snapshot",server="tracey.servers.jhc.co.uk",} 0.0
+debezium_metrics_CurrentQueueSizeInBytes{connector="db2as400_server",context="streaming",server="tracey.servers.jhc.co.uk",} 0.0
+# HELP kafka_connect_worker_metrics_connector_startup_success_percentage The average percentage of this worker's connectors starts that succeeded. (kafka.connect<type=connect-worker-metrics><>connector-startup-success-percentage)
+# TYPE kafka_connect_worker_metrics_connector_startup_success_percentage untyped
+kafka_connect_worker_metrics_connector_startup_success_percentage 0.0
+# HELP kafka_producer_request_latency_avg The average request latency in ms (kafka.producer<type=producer-metrics, client-id=producer-1><>request-latency-avg)
+# TYPE kafka_producer_request_latency_avg untyped
+kafka_producer_request_latency_avg{client="producer-1",} NaN
+kafka_producer_request_latency_avg{client="producer-2",} NaN
+kafka_producer_request_latency_avg{client="producer-3",} NaN
+kafka_producer_request_latency_avg{client="connector-producer-msdevt-source7-0",} NaN
+# HELP kafka_consumer_connection_creation_rate The number of new connections established per second (kafka.consumer<type=consumer-metrics, client-id=consumer-1-2><>connection-creation-rate)
+# TYPE kafka_consumer_connection_creation_rate untyped
+kafka_consumer_connection_creation_rate{client="consumer-1-2",} 0.0
+kafka_consumer_connection_creation_rate{client="consumer-1-1",} 0.0
+kafka_consumer_connection_creation_rate{client="consumer-1-3",} 0.0
+# HELP kafka_connect_metrics_successful_reauthentication_total The total number of successful re-authentication of connections (kafka.connect<type=connect-metrics, client-id=connect-1><>successful-reauthentication-total)
+# TYPE kafka_connect_metrics_successful_reauthentication_total untyped
+kafka_connect_metrics_successful_reauthentication_total{client="connect-1",} 0.0
+# HELP kafka_connect_worker_metrics_task_startup_success_total The total number of task starts that succeeded. (kafka.connect<type=connect-worker-metrics><>task-startup-success-total)
+# TYPE kafka_connect_worker_metrics_task_startup_success_total untyped
+kafka_connect_worker_metrics_task_startup_success_total 1.0
+# HELP kafka_connect_metrics_select_total The total number of times the I/O layer checked for new I/O to perform (kafka.connect<type=connect-metrics, client-id=connect-1><>select-total)
+# TYPE kafka_connect_metrics_select_total untyped
+kafka_connect_metrics_select_total{client="connect-1",} 7002.0
+# HELP kafka_connect_worker_metrics_connector_count The number of connectors run in this worker. (kafka.connect<type=connect-worker-metrics><>connector-count)
+# TYPE kafka_connect_worker_metrics_connector_count untyped
+kafka_connect_worker_metrics_connector_count 1.0
+# HELP kafka_producer_metadata_age The age in seconds of the current producer metadata being used. (kafka.producer<type=producer-metrics, client-id=producer-1><>metadata-age)
+# TYPE kafka_producer_metadata_age untyped
+kafka_producer_metadata_age{client="producer-1",} 20.421
+kafka_producer_metadata_age{client="producer-2",} 20.069
+kafka_producer_metadata_age{client="producer-3",} 19.782
+kafka_producer_metadata_age{client="connector-producer-msdevt-source7-0",} 18.17
+# HELP kafka_connect_metrics_outgoing_byte_rate The number of outgoing bytes sent to all servers per second (kafka.connect<type=connect-metrics, client-id=connect-1><>outgoing-byte-rate)
+# TYPE kafka_connect_metrics_outgoing_byte_rate untyped
+kafka_connect_metrics_outgoing_byte_rate{client="connect-1",} 29.327330180301125
+# HELP kafka_producer_record_error_rate The average per-second number of record sends that resulted in errors (kafka.producer<type=producer-metrics, client-id=producer-1><>record-error-rate)
+# TYPE kafka_producer_record_error_rate untyped
+kafka_producer_record_error_rate{client="producer-1",} 0.0
+kafka_producer_record_error_rate{client="producer-2",} 0.0
+kafka_producer_record_error_rate{client="producer-3",} 0.0
+kafka_producer_record_error_rate{client="connector-producer-msdevt-source7-0",} 0.0
+# HELP kafka_connect_metrics_outgoing_byte_total The total number of outgoing bytes sent to all servers (kafka.connect<type=connect-metrics, client-id=connect-1><>outgoing-byte-total)
+# TYPE kafka_connect_metrics_outgoing_byte_total untyped
+kafka_connect_metrics_outgoing_byte_total{client="connect-1",} 9319.0
+# HELP kafka_connect_worker_metrics_task_startup_failure_total The total number of task starts that failed. (kafka.connect<type=connect-worker-metrics><>task-startup-failure-total)
+# TYPE kafka_connect_worker_metrics_task_startup_failure_total untyped
+kafka_connect_worker_metrics_task_startup_failure_total 0.0
+# HELP kafka_connect_metrics_failed_authentication_rate The number of connections with failed authentication per second (kafka.connect<type=connect-metrics, client-id=connect-1><>failed-authentication-rate)
+# TYPE kafka_connect_metrics_failed_authentication_rate untyped
+kafka_connect_metrics_failed_authentication_rate{client="connect-1",} 0.0
+# HELP kafka_producer_connection_count The current number of active connections. (kafka.producer<type=producer-metrics, client-id=producer-1><>connection-count)
+# TYPE kafka_producer_connection_count untyped
+kafka_producer_connection_count{client="producer-1",} 2.0
+kafka_producer_connection_count{client="producer-2",} 2.0
+kafka_producer_connection_count{client="producer-3",} 2.0
+kafka_producer_connection_count{client="connector-producer-msdevt-source7-0",} 2.0
+# HELP kafka_connect_metrics_successful_authentication_rate The number of connections with successful authentication per second (kafka.connect<type=connect-metrics, client-id=connect-1><>successful-authentication-rate)
+# TYPE kafka_connect_metrics_successful_authentication_rate untyped
+kafka_connect_metrics_successful_authentication_rate{client="connect-1",} 0.0
+# HELP kafka_consumer_incoming_byte_rate The number of bytes read off all sockets per second (kafka.consumer<type=consumer-metrics, client-id=consumer-1-2><>incoming-byte-rate)
+# TYPE kafka_consumer_incoming_byte_rate untyped
+kafka_consumer_incoming_byte_rate{client="consumer-1-2",} 46.840913768265075
+kafka_consumer_incoming_byte_rate{client="consumer-1-1",} 57.484266381473404
+kafka_consumer_incoming_byte_rate{client="consumer-1-3",} 44.6474924722251
+# HELP kafka_producer_outgoing_byte_rate The number of outgoing bytes sent to all servers per second (kafka.producer<type=producer-metrics, client-id=producer-1><>outgoing-byte-rate)
+# TYPE kafka_producer_outgoing_byte_rate untyped
+kafka_producer_outgoing_byte_rate{client="producer-1",} 1.566652123904335
+kafka_producer_outgoing_byte_rate{client="producer-2",} 1.3780431786862655
+kafka_producer_outgoing_byte_rate{client="producer-3",} 1.3659006909850555
+kafka_producer_outgoing_byte_rate{client="connector-producer-msdevt-source7-0",} 2.6777374156720293
+# HELP debezium_metrics_SnapshotRunning SnapshotRunning (debezium.db2as400_server<type=connector-metrics, context=snapshot, server=tracey.servers.jhc.co.uk><>SnapshotRunning)
+# TYPE debezium_metrics_SnapshotRunning untyped
+debezium_metrics_SnapshotRunning{connector="db2as400_server",context="snapshot",server="tracey.servers.jhc.co.uk",} 0.0
+# HELP kafka_connect_metrics_io_wait_time_ns_avg The average length of time the I/O thread spent waiting for a socket ready for reads or writes in nanoseconds. (kafka.connect<type=connect-metrics, client-id=connect-1><>io-wait-time-ns-avg)
+# TYPE kafka_connect_metrics_io_wait_time_ns_avg untyped
+kafka_connect_metrics_io_wait_time_ns_avg{client="connect-1",} 4.497819035486806E7
+# HELP debezium_metrics_NumberOfEventsFiltered NumberOfEventsFiltered (debezium.db2as400_server<type=connector-metrics, context=snapshot, server=tracey.servers.jhc.co.uk><>NumberOfEventsFiltered)
+# TYPE debezium_metrics_NumberOfEventsFiltered untyped
+debezium_metrics_NumberOfEventsFiltered{connector="db2as400_server",context="snapshot",server="tracey.servers.jhc.co.uk",} 0.0
+debezium_metrics_NumberOfEventsFiltered{connector="db2as400_server",context="streaming",server="tracey.servers.jhc.co.uk",} 0.0
+# HELP kafka_connect_metrics_io_ratio *Deprecated* The fraction of time the I/O thread spent doing I/O (kafka.connect<type=connect-metrics, client-id=connect-1><>io-ratio)
+# TYPE kafka_connect_metrics_io_ratio untyped
+kafka_connect_metrics_io_ratio{client="connect-1",} 2.3113194205943554E-4
+# HELP kafka_connect_metrics_request_rate The number of requests sent per second (kafka.connect<type=connect-metrics, client-id=connect-1><>request-rate)
+# TYPE kafka_connect_metrics_request_rate untyped
+kafka_connect_metrics_request_rate{client="connect-1",} 0.3924079390321981
+# HELP kafka_connect_metrics_connection_close_total The total number of connections closed (kafka.connect<type=connect-metrics, client-id=connect-1><>connection-close-total)
+# TYPE kafka_connect_metrics_connection_close_total untyped
+kafka_connect_metrics_connection_close_total{client="connect-1",} 0.0
+# HELP debezium_metrics_MilliSecondsSinceLastEvent MilliSecondsSinceLastEvent (debezium.db2as400_server<type=connector-metrics, context=snapshot, server=tracey.servers.jhc.co.uk><>MilliSecondsSinceLastEvent)
+# TYPE debezium_metrics_MilliSecondsSinceLastEvent untyped
+debezium_metrics_MilliSecondsSinceLastEvent{connector="db2as400_server",context="snapshot",server="tracey.servers.jhc.co.uk",} -1.0
+debezium_metrics_MilliSecondsSinceLastEvent{connector="db2as400_server",context="streaming",server="tracey.servers.jhc.co.uk",} -1.0
+# HELP kafka_connect_metrics_connection_count The current number of active connections. (kafka.connect<type=connect-metrics, client-id=connect-1><>connection-count)
+# TYPE kafka_connect_metrics_connection_count untyped
+kafka_connect_metrics_connection_count{client="connect-1",} 3.0
+# HELP kafka_connect_worker_metrics_task_startup_attempts_total The total number of task startups that this worker has attempted. (kafka.connect<type=connect-worker-metrics><>task-startup-attempts-total)
+# TYPE kafka_connect_worker_metrics_task_startup_attempts_total untyped
+kafka_connect_worker_metrics_task_startup_attempts_total 1.0
+# HELP kafka_connect_metrics_successful_authentication_no_reauth_total The total number of connections with successful authentication where the client does not support re-authentication (kafka.connect<type=connect-metrics, client-id=connect-1><>successful-authentication-no-reauth-total)
+# TYPE kafka_connect_metrics_successful_authentication_no_reauth_total untyped
+kafka_connect_metrics_successful_authentication_no_reauth_total{client="connect-1",} 0.0
+# HELP debezium_metrics_MaxQueueSizeInBytes MaxQueueSizeInBytes (debezium.db2as400_server<type=connector-metrics, context=snapshot, server=tracey.servers.jhc.co.uk><>MaxQueueSizeInBytes)
+# TYPE debezium_metrics_MaxQueueSizeInBytes untyped
+debezium_metrics_MaxQueueSizeInBytes{connector="db2as400_server",context="snapshot",server="tracey.servers.jhc.co.uk",} 0.0
+debezium_metrics_MaxQueueSizeInBytes{connector="db2as400_server",context="streaming",server="tracey.servers.jhc.co.uk",} 0.0
+# HELP debezium_metrics_QueueRemainingCapacity QueueRemainingCapacity (debezium.db2as400_server<type=connector-metrics, context=snapshot, server=tracey.servers.jhc.co.uk><>QueueRemainingCapacity)
+# TYPE debezium_metrics_QueueRemainingCapacity untyped
+debezium_metrics_QueueRemainingCapacity{connector="db2as400_server",context="snapshot",server="tracey.servers.jhc.co.uk",} 8192.0
+debezium_metrics_QueueRemainingCapacity{connector="db2as400_server",context="streaming",server="tracey.servers.jhc.co.uk",} 8192.0
+# HELP kafka_connect_metrics_successful_authentication_total The total number of connections with successful authentication (kafka.connect<type=connect-metrics, client-id=connect-1><>successful-authentication-total)
+# TYPE kafka_connect_metrics_successful_authentication_total untyped
+kafka_connect_metrics_successful_authentication_total{client="connect-1",} 0.0
+# HELP kafka_producer_response_rate The number of responses received per second (kafka.producer<type=producer-metrics, client-id=producer-1><>response-rate)
+# TYPE kafka_producer_response_rate untyped
+kafka_producer_response_rate{client="producer-1",} 0.039663652229097256
+kafka_producer_response_rate{client="producer-2",} 0.019972438035510992
+kafka_producer_response_rate{client="producer-3",} 0.020087581856896068
+kafka_producer_response_rate{client="connector-producer-msdevt-source7-0",} 0.041517032362526726
+# HELP debezium_metrics_TotalTableCount TotalTableCount (debezium.db2as400_server<type=connector-metrics, context=snapshot, server=tracey.servers.jhc.co.uk><>TotalTableCount)
+# TYPE debezium_metrics_TotalTableCount untyped
+debezium_metrics_TotalTableCount{connector="db2as400_server",context="snapshot",server="tracey.servers.jhc.co.uk",} 0.0
+# HELP kafka_connect_worker_metrics_connector_startup_failure_percentage The average percentage of this worker's connectors starts that failed. (kafka.connect<type=connect-worker-metrics><>connector-startup-failure-percentage)
+# TYPE kafka_connect_worker_metrics_connector_startup_failure_percentage untyped
+kafka_connect_worker_metrics_connector_startup_failure_percentage 0.0
+# HELP kafka_connect_metrics_io_wait_ratio *Deprecated* The fraction of time the I/O thread spent waiting (kafka.connect<type=connect-metrics, client-id=connect-1><>io-wait-ratio)
+# TYPE kafka_connect_metrics_io_wait_ratio untyped
+kafka_connect_metrics_io_wait_ratio{client="connect-1",} 0.9986268651891957
+# HELP kafka_connect_metrics_request_size_avg The average size of requests sent. (kafka.connect<type=connect-metrics, client-id=connect-1><>request-size-avg)
+# TYPE kafka_connect_metrics_request_size_avg untyped
+kafka_connect_metrics_request_size_avg{client="connect-1",} 74.73684210526316
+# HELP kafka_connect_metrics_failed_authentication_total The total number of connections with failed authentication (kafka.connect<type=connect-metrics, client-id=connect-1><>failed-authentication-total)
+# TYPE kafka_connect_metrics_failed_authentication_total untyped
+kafka_connect_metrics_failed_authentication_total{client="connect-1",} 0.0
+# HELP kafka_producer_waiting_threads The number of user threads blocked waiting for buffer memory to enqueue their records (kafka.producer<type=producer-metrics, client-id=producer-1><>waiting-threads)
+# TYPE kafka_producer_waiting_threads untyped
+kafka_producer_waiting_threads{client="producer-1",} 0.0
+kafka_producer_waiting_threads{client="producer-2",} 0.0
+kafka_producer_waiting_threads{client="producer-3",} 0.0
+kafka_producer_waiting_threads{client="connector-producer-msdevt-source7-0",} 0.0
+# HELP kafka_producer_record_retry_rate The average per-second number of retried record sends (kafka.producer<type=producer-metrics, client-id=producer-1><>record-retry-rate)
+# TYPE kafka_producer_record_retry_rate untyped
+kafka_producer_record_retry_rate{client="producer-1",} 0.0
+kafka_producer_record_retry_rate{client="producer-2",} 0.0
+kafka_producer_record_retry_rate{client="producer-3",} 0.0
+kafka_producer_record_retry_rate{client="connector-producer-msdevt-source7-0",} 0.0
+# HELP debezium_metrics_SnapshotDurationInSeconds SnapshotDurationInSeconds (debezium.db2as400_server<type=connector-metrics, context=snapshot, server=tracey.servers.jhc.co.uk><>SnapshotDurationInSeconds)
+# TYPE debezium_metrics_SnapshotDurationInSeconds untyped
+debezium_metrics_SnapshotDurationInSeconds{connector="db2as400_server",context="snapshot",server="tracey.servers.jhc.co.uk",} 0.0
+# HELP kafka_connect_metrics_io_waittime_total *Deprecated* The total time the I/O thread spent waiting (kafka.connect<type=connect-metrics, client-id=connect-1><>io-waittime-total)
+# TYPE kafka_connect_metrics_io_waittime_total untyped
+kafka_connect_metrics_io_waittime_total{client="connect-1",} 3.17563725E11
+# HELP debezium_metrics_SnapshotCompleted SnapshotCompleted (debezium.db2as400_server<type=connector-metrics, context=snapshot, server=tracey.servers.jhc.co.uk><>SnapshotCompleted)
+# TYPE debezium_metrics_SnapshotCompleted untyped
+debezium_metrics_SnapshotCompleted{connector="db2as400_server",context="snapshot",server="tracey.servers.jhc.co.uk",} 0.0
+# HELP kafka_connect_metrics_successful_reauthentication_rate The number of successful re-authentication of connections per second (kafka.connect<type=connect-metrics, client-id=connect-1><>successful-reauthentication-rate)
+# TYPE kafka_connect_metrics_successful_reauthentication_rate untyped
+kafka_connect_metrics_successful_reauthentication_rate{client="connect-1",} 0.0
+# HELP kafka_connect_metrics_reauthentication_latency_max The max latency observed due to re-authentication (kafka.connect<type=connect-metrics, client-id=connect-1><>reauthentication-latency-max)
+# TYPE kafka_connect_metrics_reauthentication_latency_max untyped
+kafka_connect_metrics_reauthentication_latency_max{client="connect-1",} NaN
+# HELP kafka_producer_txn_send_offsets_time_ns_total Total time producer has spent in sendOffsetsToTransaction in nanoseconds. (kafka.producer<type=producer-metrics, client-id=producer-1><>txn-send-offsets-time-ns-total)
+# TYPE kafka_producer_txn_send_offsets_time_ns_total untyped
+kafka_producer_txn_send_offsets_time_ns_total{client="producer-1",} 0.0
+kafka_producer_txn_send_offsets_time_ns_total{client="producer-2",} 0.0
+kafka_producer_txn_send_offsets_time_ns_total{client="producer-3",} 0.0
+kafka_producer_txn_send_offsets_time_ns_total{client="connector-producer-msdevt-source7-0",} 0.0
+# HELP kafka_connect_worker_metrics_task_startup_success_percentage The average percentage of this worker's tasks starts that succeeded. (kafka.connect<type=connect-worker-metrics><>task-startup-success-percentage)
+# TYPE kafka_connect_worker_metrics_task_startup_success_percentage untyped
+kafka_connect_worker_metrics_task_startup_success_percentage 0.0
+# HELP debezium_metrics_SnapshotAborted SnapshotAborted (debezium.db2as400_server<type=connector-metrics, context=snapshot, server=tracey.servers.jhc.co.uk><>SnapshotAborted)
+# TYPE debezium_metrics_SnapshotAborted untyped
+debezium_metrics_SnapshotAborted{connector="db2as400_server",context="snapshot",server="tracey.servers.jhc.co.uk",} 0.0
+# HELP debezium_metrics_MilliSecondsBehindSource MilliSecondsBehindSource (debezium.db2as400_server<type=connector-metrics, context=streaming, server=tracey.servers.jhc.co.uk><>MilliSecondsBehindSource)
+# TYPE debezium_metrics_MilliSecondsBehindSource untyped
+debezium_metrics_MilliSecondsBehindSource{connector="db2as400_server",context="streaming",server="tracey.servers.jhc.co.uk",} -1.0
+# HELP kafka_connect_metrics_failed_reauthentication_rate The number of failed re-authentication of connections per second (kafka.connect<type=connect-metrics, client-id=connect-1><>failed-reauthentication-rate)
+# TYPE kafka_connect_metrics_failed_reauthentication_rate untyped
+kafka_connect_metrics_failed_reauthentication_rate{client="connect-1",} 0.0
+# HELP kafka_connect_metrics_connection_creation_total The total number of new connections established (kafka.connect<type=connect-metrics, client-id=connect-1><>connection-creation-total)
+# TYPE kafka_connect_metrics_connection_creation_total untyped
+kafka_connect_metrics_connection_creation_total{client="connect-1",} 3.0
+# HELP kafka_connect_worker_metrics_task_startup_failure_percentage The average percentage of this worker's tasks starts that failed. (kafka.connect<type=connect-worker-metrics><>task-startup-failure-percentage)
+# TYPE kafka_connect_worker_metrics_task_startup_failure_percentage untyped
+kafka_connect_worker_metrics_task_startup_failure_percentage 0.0
+# HELP kafka_connect_metrics_connection_close_rate The number of connections closed per second (kafka.connect<type=connect-metrics, client-id=connect-1><>connection-close-rate)
+# TYPE kafka_connect_metrics_connection_close_rate untyped
+kafka_connect_metrics_connection_close_rate{client="connect-1",} 0.0
+# HELP kafka_connect_metrics_network_io_rate The number of network operations (reads or writes) on all connections per second (kafka.connect<type=connect-metrics, client-id=connect-1><>network-io-rate)
+# TYPE kafka_connect_metrics_network_io_rate untyped
+kafka_connect_metrics_network_io_rate{client="connect-1",} 0.846775026332638
+# HELP debezium_metrics_TotalNumberOfDeleteEventsSeen TotalNumberOfDeleteEventsSeen (debezium.db2as400_server<type=connector-metrics, context=snapshot, server=tracey.servers.jhc.co.uk><>TotalNumberOfDeleteEventsSeen)
+# TYPE debezium_metrics_TotalNumberOfDeleteEventsSeen untyped
+debezium_metrics_TotalNumberOfDeleteEventsSeen{connector="db2as400_server",context="snapshot",server="tracey.servers.jhc.co.uk",} 0.0
+debezium_metrics_TotalNumberOfDeleteEventsSeen{connector="db2as400_server",context="streaming",server="tracey.servers.jhc.co.uk",} 0.0
+# HELP kafka_consumer_response_rate The number of responses received per second (kafka.consumer<type=consumer-metrics, client-id=consumer-1-2><>response-rate)
+# TYPE kafka_consumer_response_rate untyped
+kafka_consumer_response_rate{client="consumer-1-2",} 2.016875900391027
+kafka_consumer_response_rate{client="consumer-1-1",} 2.0155485171321623
+kafka_consumer_response_rate{client="consumer-1-3",} 2.014328730142249
+# HELP kafka_producer_requests_in_flight The current number of in-flight requests awaiting a response. (kafka.producer<type=producer-metrics, client-id=producer-1><>requests-in-flight)
+# TYPE kafka_producer_requests_in_flight untyped
+kafka_producer_requests_in_flight{client="producer-1",} 0.0
+kafka_producer_requests_in_flight{client="producer-2",} 0.0
+kafka_producer_requests_in_flight{client="producer-3",} 0.0
+kafka_producer_requests_in_flight{client="connector-producer-msdevt-source7-0",} 0.0
+# HELP kafka_connect_metrics_failed_reauthentication_total The total number of failed re-authentication of connections (kafka.connect<type=connect-metrics, client-id=connect-1><>failed-reauthentication-total)
+# TYPE kafka_connect_metrics_failed_reauthentication_total untyped
+kafka_connect_metrics_failed_reauthentication_total{client="connect-1",} 0.0
+# HELP kafka_consumer_request_size_avg The average size of requests sent. (kafka.consumer<type=consumer-metrics, client-id=consumer-1-2><>request-size-avg)
+# TYPE kafka_consumer_request_size_avg untyped
+kafka_consumer_request_size_avg{client="consumer-1-2",} 56.1530612244898
+kafka_consumer_request_size_avg{client="consumer-1-1",} 56.142857142857146
+kafka_consumer_request_size_avg{client="consumer-1-3",} 56.144329896907216
+# HELP kafka_producer_buffer_available_bytes The total amount of buffer memory that is not being used (either unallocated or in the free list). (kafka.producer<type=producer-metrics, client-id=producer-1><>buffer-available-bytes)
+# TYPE kafka_producer_buffer_available_bytes untyped
+kafka_producer_buffer_available_bytes{client="producer-1",} 3.3554432E7
+kafka_producer_buffer_available_bytes{client="producer-2",} 3.3554432E7
+kafka_producer_buffer_available_bytes{client="producer-3",} 3.3554432E7
+kafka_producer_buffer_available_bytes{client="connector-producer-msdevt-source7-0",} 3.3554432E7
+# HELP kafka_producer_connection_creation_rate The number of new connections established per second (kafka.producer<type=producer-metrics, client-id=producer-1><>connection-creation-rate)
+# TYPE kafka_producer_connection_creation_rate untyped
+kafka_producer_connection_creation_rate{client="producer-1",} 0.019831039543092847
+kafka_producer_connection_creation_rate{client="producer-2",} 0.0
+kafka_producer_connection_creation_rate{client="producer-3",} 0.0
+kafka_producer_connection_creation_rate{client="connector-producer-msdevt-source7-0",} 0.020757223513782796
+# HELP kafka_connect_worker_metrics_task_count The number of tasks run in this worker. (kafka.connect<type=connect-worker-metrics><>task-count)
+# TYPE kafka_connect_worker_metrics_task_count untyped
+kafka_connect_worker_metrics_task_count 1.0
+# HELP kafka_consumer_connection_count The current number of active connections. (kafka.consumer<type=consumer-metrics, client-id=consumer-1-2><>connection-count)
+# TYPE kafka_consumer_connection_count untyped
+kafka_consumer_connection_count{client="consumer-1-2",} 2.0
+kafka_consumer_connection_count{client="consumer-1-1",} 2.0
+kafka_consumer_connection_count{client="consumer-1-3",} 2.0
+# HELP debezium_metrics_TotalNumberOfCreateEventsSeen TotalNumberOfCreateEventsSeen (debezium.db2as400_server<type=connector-metrics, context=snapshot, server=tracey.servers.jhc.co.uk><>TotalNumberOfCreateEventsSeen)
+# TYPE debezium_metrics_TotalNumberOfCreateEventsSeen untyped
+debezium_metrics_TotalNumberOfCreateEventsSeen{connector="db2as400_server",context="snapshot",server="tracey.servers.jhc.co.uk",} 0.0
+debezium_metrics_TotalNumberOfCreateEventsSeen{connector="db2as400_server",context="streaming",server="tracey.servers.jhc.co.uk",} 0.0
+# HELP debezium_metrics_NumberOfErroneousEvents NumberOfErroneousEvents (debezium.db2as400_server<type=connector-metrics, context=snapshot, server=tracey.servers.jhc.co.uk><>NumberOfErroneousEvents)
+# TYPE debezium_metrics_NumberOfErroneousEvents untyped
+debezium_metrics_NumberOfErroneousEvents{connector="db2as400_server",context="snapshot",server="tracey.servers.jhc.co.uk",} 0.0
+debezium_metrics_NumberOfErroneousEvents{connector="db2as400_server",context="streaming",server="tracey.servers.jhc.co.uk",} 0.0
+# HELP kafka_connect_metrics_iotime_total *Deprecated* The total time the I/O thread spent doing I/O (kafka.connect<type=connect-metrics, client-id=connect-1><>iotime-total)
+# TYPE kafka_connect_metrics_iotime_total untyped
+kafka_connect_metrics_iotime_total{client="connect-1",} 5.64199E7
+# HELP kafka_producer_select_rate The number of times the I/O layer checked for new I/O to perform per second (kafka.producer<type=producer-metrics, client-id=producer-1><>select-rate)
+# TYPE kafka_producer_select_rate untyped
+kafka_producer_select_rate{client="producer-1",} 0.1460950870309304
+kafka_producer_select_rate{client="producer-2",} 0.0861363538481416
+kafka_producer_select_rate{client="producer-3",} 0.0832535486825126
+kafka_producer_select_rate{client="connector-producer-msdevt-source7-0",} 0.14531564634323557
+# HELP kafka_consumer_io_wait_time_ns_avg The average length of time the I/O thread spent waiting for a socket ready for reads or writes in nanoseconds. (kafka.consumer<type=consumer-metrics, client-id=consumer-1-2><>io-wait-time-ns-avg)
+# TYPE kafka_consumer_io_wait_time_ns_avg untyped
+kafka_consumer_io_wait_time_ns_avg{client="consumer-1-2",} 2.4744188578680202E8
+kafka_consumer_io_wait_time_ns_avg{client="consumer-1-1",} 2.47436738071066E8
+kafka_consumer_io_wait_time_ns_avg{client="consumer-1-3",} 2.486795969072165E8
+# HELP kafka_consumer_select_rate The number of times the I/O layer checked for new I/O to perform per second (kafka.consumer<type=consumer-metrics, client-id=consumer-1-2><>select-rate)
+# TYPE kafka_consumer_select_rate untyped
+kafka_consumer_select_rate{client="consumer-1-2",} 4.054332167112574
+kafka_consumer_select_rate{client="consumer-1-1",} 4.051663855867714
+kafka_consumer_select_rate{client="consumer-1-3",} 4.028657460284498
+# HELP kafka_connect_metrics_incoming_byte_rate The number of bytes read off all sockets per second (kafka.connect<type=connect-metrics, client-id=connect-1><>incoming-byte-rate)
+# TYPE kafka_connect_metrics_incoming_byte_rate untyped
+kafka_connect_metrics_incoming_byte_rate{client="connect-1",} 1472.931942579779
+# HELP kafka_connect_metrics_connection_creation_rate The number of new connections established per second (kafka.connect<type=connect-metrics, client-id=connect-1><>connection-creation-rate)
+# TYPE kafka_connect_metrics_connection_creation_rate untyped
+kafka_connect_metrics_connection_creation_rate{client="connect-1",} 0.020117486118934578
+# HELP kafka_producer_record_size_avg The average record size (kafka.producer<type=producer-metrics, client-id=producer-1><>record-size-avg)
+# TYPE kafka_producer_record_size_avg untyped
+kafka_producer_record_size_avg{client="producer-1",} NaN
+kafka_producer_record_size_avg{client="producer-2",} NaN
+kafka_producer_record_size_avg{client="producer-3",} NaN
+kafka_producer_record_size_avg{client="connector-producer-msdevt-source7-0",} NaN
+# HELP kafka_connect_metrics_request_size_max The maximum size of any request sent. (kafka.connect<type=connect-metrics, client-id=connect-1><>request-size-max)
+# TYPE kafka_connect_metrics_request_size_max untyped
+kafka_connect_metrics_request_size_max{client="connect-1",} 79.0
+# HELP kafka_connect_metrics_request_total The total number of requests sent (kafka.connect<type=connect-metrics, client-id=connect-1><>request-total)
+# TYPE kafka_connect_metrics_request_total untyped
+kafka_connect_metrics_request_total{client="connect-1",} 115.0
+# HELP debezium_metrics_TotalNumberOfEventsSeen TotalNumberOfEventsSeen (debezium.db2as400_server<type=connector-metrics, context=snapshot, server=tracey.servers.jhc.co.uk><>TotalNumberOfEventsSeen)
+# TYPE debezium_metrics_TotalNumberOfEventsSeen untyped
+debezium_metrics_TotalNumberOfEventsSeen{connector="db2as400_server",context="snapshot",server="tracey.servers.jhc.co.uk",} 0.0
+debezium_metrics_TotalNumberOfEventsSeen{connector="db2as400_server",context="streaming",server="tracey.servers.jhc.co.uk",} 0.0
+# HELP kafka_connect_metrics_io_time_ns_total The total time the I/O thread spent doing I/O (kafka.connect<type=connect-metrics, client-id=connect-1><>io-time-ns-total)
+# TYPE kafka_connect_metrics_io_time_ns_total untyped
+kafka_connect_metrics_io_time_ns_total{client="connect-1",} 5.64199E7
+# HELP debezium_metrics_RemainingTableCount RemainingTableCount (debezium.db2as400_server<type=connector-metrics, context=snapshot, server=tracey.servers.jhc.co.uk><>RemainingTableCount)
+# TYPE debezium_metrics_RemainingTableCount untyped
+debezium_metrics_RemainingTableCount{connector="db2as400_server",context="snapshot",server="tracey.servers.jhc.co.uk",} 0.0
+# HELP kafka_consumer_outgoing_byte_rate The number of outgoing bytes sent to all servers per second (kafka.consumer<type=consumer-metrics, client-id=consumer-1-2><>outgoing-byte-rate)
+# TYPE kafka_consumer_outgoing_byte_rate untyped
+kafka_consumer_outgoing_byte_rate{client="consumer-1-2",} 113.25375591685531
+kafka_consumer_outgoing_byte_rate{client="consumer-1-1",} 113.16097982353304
+kafka_consumer_outgoing_byte_rate{client="consumer-1-3",} 113.09313674592461
+# HELP kafka_producer_buffer_exhausted_rate The average per-second number of record sends that are dropped due to buffer exhaustion (kafka.producer<type=producer-metrics, client-id=producer-1><>buffer-exhausted-rate)
+# TYPE kafka_producer_buffer_exhausted_rate untyped
+kafka_producer_buffer_exhausted_rate{client="producer-1",} 0.0
+kafka_producer_buffer_exhausted_rate{client="producer-2",} 0.0
+kafka_producer_buffer_exhausted_rate{client="producer-3",} 0.0
+kafka_producer_buffer_exhausted_rate{client="connector-producer-msdevt-source7-0",} 0.0
+# HELP kafka_producer_incoming_byte_rate The number of bytes read off all sockets per second (kafka.producer<type=producer-metrics, client-id=producer-1><>incoming-byte-rate)
+# TYPE kafka_producer_incoming_byte_rate untyped
+kafka_producer_incoming_byte_rate{client="producer-1",} 9.915913057274313
+kafka_producer_incoming_byte_rate{client="producer-2",} 4.7734126904871275
+kafka_producer_incoming_byte_rate{client="producer-3",} 2.691735968824073
+kafka_producer_incoming_byte_rate{client="connector-producer-msdevt-source7-0",} 10.379258090631682
+# HELP kafka_connect_metrics_incoming_byte_total The total number of bytes read off all sockets (kafka.connect<type=connect-metrics, client-id=connect-1><>incoming-byte-total)
+# TYPE kafka_connect_metrics_incoming_byte_total untyped
+kafka_connect_metrics_incoming_byte_total{client="connect-1",} 144707.0
+# HELP jmx_scrape_duration_seconds Time this JMX scrape took, in seconds.
+# TYPE jmx_scrape_duration_seconds gauge
+jmx_scrape_duration_seconds 0.1075524
+# HELP jmx_scrape_error Non-zero if this scrape failed.
+# TYPE jmx_scrape_error gauge
+jmx_scrape_error 0.0
+# HELP jmx_scrape_cached_beans Number of beans with their matching rule cached
+# TYPE jmx_scrape_cached_beans gauge
+jmx_scrape_cached_beans 0.0
+# HELP jvm_classes_loaded The number of classes that are currently loaded in the JVM
+# TYPE jvm_classes_loaded gauge
+jvm_classes_loaded 12344.0
+# HELP jvm_classes_loaded_total The total number of classes that have been loaded since the JVM has started execution
+# TYPE jvm_classes_loaded_total counter
+jvm_classes_loaded_total 12344.0
+# HELP jvm_classes_unloaded_total The total number of classes that have been unloaded since the JVM has started execution
+# TYPE jvm_classes_unloaded_total counter
+jvm_classes_unloaded_total 0.0
+# HELP jmx_config_reload_success_total Number of times configuration have successfully been reloaded.
+# TYPE jmx_config_reload_success_total counter
+jmx_config_reload_success_total 0.0
+# HELP jvm_gc_collection_seconds Time spent in a given JVM garbage collector in seconds.
+# TYPE jvm_gc_collection_seconds summary
+jvm_gc_collection_seconds_count{gc="G1 Young Generation",} 19.0
+jvm_gc_collection_seconds_sum{gc="G1 Young Generation",} 0.104
+jvm_gc_collection_seconds_count{gc="G1 Old Generation",} 0.0
+jvm_gc_collection_seconds_sum{gc="G1 Old Generation",} 0.0
+# HELP jvm_memory_pool_allocated_bytes_total Total bytes allocated in a given JVM memory pool. Only updated after GC, not continuously.
+# TYPE jvm_memory_pool_allocated_bytes_total counter
+jvm_memory_pool_allocated_bytes_total{pool="CodeHeap 'profiled nmethods'",} 1.2225664E7
+jvm_memory_pool_allocated_bytes_total{pool="G1 Old Gen",} 2.8987904E7
+jvm_memory_pool_allocated_bytes_total{pool="G1 Eden Space",} 1.694498816E9
+jvm_memory_pool_allocated_bytes_total{pool="CodeHeap 'non-profiled nmethods'",} 4594048.0
+jvm_memory_pool_allocated_bytes_total{pool="G1 Survivor Space",} 2.525544E7
+jvm_memory_pool_allocated_bytes_total{pool="Compressed Class Space",} 7168640.0
+jvm_memory_pool_allocated_bytes_total{pool="Metaspace",} 5.7677576E7
+jvm_memory_pool_allocated_bytes_total{pool="CodeHeap 'non-nmethods'",} 1457664.0
+# HELP process_cpu_seconds_total Total user and system CPU time spent in seconds.
+# TYPE process_cpu_seconds_total counter
+process_cpu_seconds_total 44.9375
+# HELP process_start_time_seconds Start time of the process since unix epoch in seconds.
+# TYPE process_start_time_seconds gauge
+process_start_time_seconds 1.653039878533E9
+# HELP jvm_threads_current Current thread count of a JVM
+# TYPE jvm_threads_current gauge
+jvm_threads_current 45.0
+# HELP jvm_threads_daemon Daemon thread count of a JVM
+# TYPE jvm_threads_daemon gauge
+jvm_threads_daemon 23.0
+# HELP jvm_threads_peak Peak thread count of a JVM
+# TYPE jvm_threads_peak gauge
+jvm_threads_peak 45.0
+# HELP jvm_threads_started_total Started thread count of a JVM
+# TYPE jvm_threads_started_total counter
+jvm_threads_started_total 62.0
+# HELP jvm_threads_deadlocked Cycles of JVM-threads that are in deadlock waiting to acquire object monitors or ownable synchronizers
+# TYPE jvm_threads_deadlocked gauge
+jvm_threads_deadlocked 0.0
+# HELP jvm_threads_deadlocked_monitor Cycles of JVM-threads that are in deadlock waiting to acquire object monitors
+# TYPE jvm_threads_deadlocked_monitor gauge
+jvm_threads_deadlocked_monitor 0.0
+# HELP jvm_threads_state Current count of threads by state
+# TYPE jvm_threads_state gauge
+jvm_threads_state{state="RUNNABLE",} 23.0
+jvm_threads_state{state="BLOCKED",} 0.0
+jvm_threads_state{state="TIMED_WAITING",} 12.0
+jvm_threads_state{state="NEW",} 0.0
+jvm_threads_state{state="WAITING",} 10.0
+jvm_threads_state{state="TERMINATED",} 0.0
+# HELP jvm_info VM version info
+# TYPE jvm_info gauge
+jvm_info{runtime="OpenJDK Runtime Environment",vendor="Eclipse Adoptium",version="17.0.1+12",} 1.0
+# HELP jvm_memory_objects_pending_finalization The number of objects waiting in the finalizer queue.
+# TYPE jvm_memory_objects_pending_finalization gauge
+jvm_memory_objects_pending_finalization 0.0
+# HELP jvm_memory_bytes_used Used bytes of a given JVM memory area.
+# TYPE jvm_memory_bytes_used gauge
+jvm_memory_bytes_used{area="heap",} 5.2498936E7
+jvm_memory_bytes_used{area="nonheap",} 8.260252E7
+# HELP jvm_memory_bytes_committed Committed (bytes) of a given JVM memory area.
+# TYPE jvm_memory_bytes_committed gauge
+jvm_memory_bytes_committed{area="heap",} 8.388608E7
+jvm_memory_bytes_committed{area="nonheap",} 8.4475904E7
+# HELP jvm_memory_bytes_max Max (bytes) of a given JVM memory area.
+# TYPE jvm_memory_bytes_max gauge
+jvm_memory_bytes_max{area="heap",} 8.53540864E9
+jvm_memory_bytes_max{area="nonheap",} -1.0
+# HELP jvm_memory_bytes_init Initial bytes of a given JVM memory area.
+# TYPE jvm_memory_bytes_init gauge
+jvm_memory_bytes_init{area="heap",} 5.36870912E8
+jvm_memory_bytes_init{area="nonheap",} 7667712.0
+# HELP jvm_memory_pool_bytes_used Used bytes of a given JVM memory pool.
+# TYPE jvm_memory_pool_bytes_used gauge
+jvm_memory_pool_bytes_used{pool="CodeHeap 'non-nmethods'",} 1450880.0
+jvm_memory_pool_bytes_used{pool="Metaspace",} 5.7720408E7
+jvm_memory_pool_bytes_used{pool="CodeHeap 'profiled nmethods'",} 1.1783936E7
+jvm_memory_pool_bytes_used{pool="Compressed Class Space",} 7171392.0
+jvm_memory_pool_bytes_used{pool="G1 Eden Space",} 2.097152E7
+jvm_memory_pool_bytes_used{pool="G1 Old Gen",} 2.8987904E7
+jvm_memory_pool_bytes_used{pool="G1 Survivor Space",} 2539512.0
+jvm_memory_pool_bytes_used{pool="CodeHeap 'non-profiled nmethods'",} 4475904.0
+# HELP jvm_memory_pool_bytes_committed Committed bytes of a given JVM memory pool.
+# TYPE jvm_memory_pool_bytes_committed gauge
+jvm_memory_pool_bytes_committed{pool="CodeHeap 'non-nmethods'",} 2555904.0
+jvm_memory_pool_bytes_committed{pool="Metaspace",} 5.8195968E7
+jvm_memory_pool_bytes_committed{pool="CodeHeap 'profiled nmethods'",} 1.179648E7
+jvm_memory_pool_bytes_committed{pool="Compressed Class Space",} 7405568.0
+jvm_memory_pool_bytes_committed{pool="G1 Eden Space",} 3.7748736E7
+jvm_memory_pool_bytes_committed{pool="G1 Old Gen",} 4.194304E7
+jvm_memory_pool_bytes_committed{pool="G1 Survivor Space",} 4194304.0
+jvm_memory_pool_bytes_committed{pool="CodeHeap 'non-profiled nmethods'",} 4521984.0
+# HELP jvm_memory_pool_bytes_max Max bytes of a given JVM memory pool.
+# TYPE jvm_memory_pool_bytes_max gauge
+jvm_memory_pool_bytes_max{pool="CodeHeap 'non-nmethods'",} 5898240.0
+jvm_memory_pool_bytes_max{pool="Metaspace",} -1.0
+jvm_memory_pool_bytes_max{pool="CodeHeap 'profiled nmethods'",} 1.2288E8
+jvm_memory_pool_bytes_max{pool="Compressed Class Space",} 1.073741824E9
+jvm_memory_pool_bytes_max{pool="G1 Eden Space",} -1.0
+jvm_memory_pool_bytes_max{pool="G1 Old Gen",} 8.53540864E9
+jvm_memory_pool_bytes_max{pool="G1 Survivor Space",} -1.0
+jvm_memory_pool_bytes_max{pool="CodeHeap 'non-profiled nmethods'",} 1.2288E8
+# HELP jvm_memory_pool_bytes_init Initial bytes of a given JVM memory pool.
+# TYPE jvm_memory_pool_bytes_init gauge
+jvm_memory_pool_bytes_init{pool="CodeHeap 'non-nmethods'",} 2555904.0
+jvm_memory_pool_bytes_init{pool="Metaspace",} 0.0
+jvm_memory_pool_bytes_init{pool="CodeHeap 'profiled nmethods'",} 2555904.0
+jvm_memory_pool_bytes_init{pool="Compressed Class Space",} 0.0
+jvm_memory_pool_bytes_init{pool="G1 Eden Space",} 2.9360128E7
+jvm_memory_pool_bytes_init{pool="G1 Old Gen",} 5.07510784E8
+jvm_memory_pool_bytes_init{pool="G1 Survivor Space",} 0.0
+jvm_memory_pool_bytes_init{pool="CodeHeap 'non-profiled nmethods'",} 2555904.0
+# HELP jvm_memory_pool_collection_used_bytes Used bytes after last collection of a given JVM memory pool.
+# TYPE jvm_memory_pool_collection_used_bytes gauge
+jvm_memory_pool_collection_used_bytes{pool="G1 Eden Space",} 0.0
+jvm_memory_pool_collection_used_bytes{pool="G1 Old Gen",} 1.8340352E7
+jvm_memory_pool_collection_used_bytes{pool="G1 Survivor Space",} 2539512.0
+# HELP jvm_memory_pool_collection_committed_bytes Committed after last collection bytes of a given JVM memory pool.
+# TYPE jvm_memory_pool_collection_committed_bytes gauge
+jvm_memory_pool_collection_committed_bytes{pool="G1 Eden Space",} 3.7748736E7
+jvm_memory_pool_collection_committed_bytes{pool="G1 Old Gen",} 3.3554432E7
+jvm_memory_pool_collection_committed_bytes{pool="G1 Survivor Space",} 4194304.0
+# HELP jvm_memory_pool_collection_max_bytes Max bytes after last collection of a given JVM memory pool.
+# TYPE jvm_memory_pool_collection_max_bytes gauge
+jvm_memory_pool_collection_max_bytes{pool="G1 Eden Space",} -1.0
+jvm_memory_pool_collection_max_bytes{pool="G1 Old Gen",} 8.53540864E9
+jvm_memory_pool_collection_max_bytes{pool="G1 Survivor Space",} -1.0
+# HELP jvm_memory_pool_collection_init_bytes Initial after last collection bytes of a given JVM memory pool.
+# TYPE jvm_memory_pool_collection_init_bytes gauge
+jvm_memory_pool_collection_init_bytes{pool="G1 Eden Space",} 2.9360128E7
+jvm_memory_pool_collection_init_bytes{pool="G1 Old Gen",} 5.07510784E8
+jvm_memory_pool_collection_init_bytes{pool="G1 Survivor Space",} 0.0
+# HELP jmx_config_reload_failure_created Number of times configuration have failed to be reloaded.
+# TYPE jmx_config_reload_failure_created gauge
+jmx_config_reload_failure_created 1.653039879047E9
+# HELP jmx_config_reload_success_created Number of times configuration have successfully been reloaded.
+# TYPE jmx_config_reload_success_created gauge
+jmx_config_reload_success_created 1.653039879044E9
+# HELP jvm_memory_pool_allocated_bytes_created Total bytes allocated in a given JVM memory pool. Only updated after GC, not continuously.
+# TYPE jvm_memory_pool_allocated_bytes_created gauge
+jvm_memory_pool_allocated_bytes_created{pool="CodeHeap 'profiled nmethods'",} 1.653039880505E9
+jvm_memory_pool_allocated_bytes_created{pool="G1 Old Gen",} 1.653039880513E9
+jvm_memory_pool_allocated_bytes_created{pool="G1 Eden Space",} 1.653039880513E9
+jvm_memory_pool_allocated_bytes_created{pool="CodeHeap 'non-profiled nmethods'",} 1.653039880513E9
+jvm_memory_pool_allocated_bytes_created{pool="G1 Survivor Space",} 1.653039880513E9
+jvm_memory_pool_allocated_bytes_created{pool="Compressed Class Space",} 1.653039880513E9
+jvm_memory_pool_allocated_bytes_created{pool="Metaspace",} 1.653039880513E9
+jvm_memory_pool_allocated_bytes_created{pool="CodeHeap 'non-nmethods'",} 1.653039880513E9
