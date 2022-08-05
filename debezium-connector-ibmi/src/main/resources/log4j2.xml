@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="warn" packages="io.debezium.connector.db2as400.logging">
+	<Appenders>
+		<Console name="jsonConsole" target="SYSTEM_OUT">
+			<JsonTemplateLayout EventTemplateUri="classpath:GcpLayoutStructured.json" />
+		</Console>
+	</Appenders>
+
+	<Loggers>
+		<Root level="info">
+			<AppenderRef ref="jsonConsole" />
+		</Root>
+	</Loggers>
+	
+</Configuration>
