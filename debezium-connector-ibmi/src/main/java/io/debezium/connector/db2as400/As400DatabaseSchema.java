@@ -7,6 +7,7 @@ package io.debezium.connector.db2as400;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -56,8 +57,8 @@ public class As400DatabaseSchema extends RelationalDatabaseSchema implements Sch
         TableId id = table.id();
         // store in the short name
         // used directly by the decoder
-        final String systemTableName = jdbcConnection.getSystemName(id.schema(), id.table());
-        map.put(id.catalog() + id.schema() + systemTableName, tableInfo);
+        final Optional<String> systemTableNameOpt = jdbcConnection.getSystemName(id.schema(), id.table());
+        systemTableNameOpt.map(systemTableName -> map.put(id.catalog() + id.schema() + systemTableName, tableInfo));
 
         // and store the long name
         // use for serialisation
