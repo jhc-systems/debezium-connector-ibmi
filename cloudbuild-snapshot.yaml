@@ -1,0 +1,46 @@
+steps:
+  - name: google/cloud-sdk
+    entrypoint: "/bin/bash"
+    args:
+    - "-c"
+    - |
+      set -x 
+      set -e
+      set -o pipefail
+      date
+      if gsutil stat gs://debezium-maven-repo/$REPO_NAME.tar
+        then gsutil cp gs://debezium-maven-repo/$REPO_NAME.tar - | tar -xf -
+      fi
+      date
+  - name: "eu.gcr.io/$PROJECT_ID/java17-maven3-8-gcp:latest"
+    entrypoint: "/bin/bash"
+    args:
+    - "-c"
+    - |
+      set -x 
+      set -e
+      set -o pipefail
+      date
+
+      echo copy config into HOME
+      cp -ar /root/.docker $$HOME
+      
+      date
+
+      echo build snapshot version
+
+      mvn -B --no-transfer-progress -DskipNexusStagingDeployMojo=true -Drepository.project=$PROJECT_ID -Dmaven.repo.local=./_m2/repository/ -DskipITs -Dbuild=SNAPSHOT -DfailIfNoTests=false package deploy
+      date    
+    timeout: "8200s"
+  - name: google/cloud-sdk
+    entrypoint: "/bin/bash"
+    args:
+    - "-c"
+    - |
+      set -x 
+      set -e
+      set -o pipefail
+      date
+      tar -cf - ./_m2/ | gsutil cp - gs://debezium-maven-repo/$REPO_NAME.tar
+      date
+timeout: "8200s"
