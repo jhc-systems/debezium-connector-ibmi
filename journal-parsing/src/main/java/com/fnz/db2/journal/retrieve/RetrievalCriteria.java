@@ -98,29 +98,24 @@ public class RetrievalCriteria {
 	 * 
 	 * @param value
 	 */
-	public void addFromEnt(Object value) {
+	public void addFromEnt(FromEnt value) {
 		RetrieveKey curKey = RetrieveKey.FROMENT;
-		String temp = null;
-		if (value instanceof String) {
-			temp = ((String) value).trim();
-			if (temp.equals("*FIRST") || temp.equals("*LAST")) {
-				temp = StringHelpers.padRight(temp, 20);
-			} else {
-				throw new IllegalArgumentException(
-						String.format("Value for '%s' must be either '*FIRST' or an instance of Integer.",
-								curKey.getDescription()));
-			}
-		} else if (value instanceof BigInteger) {
-			Formatter nf = new Formatter();
-			temp = nf.format("%20d", value).toString();
-		} else {
-			throw new IllegalArgumentException(String.format(
-					"Value for '%s' must be either '*FIRST' or an instance of Integer.", curKey.getDescription()));
-		}
-
+		String temp = StringHelpers.padRight(value.getValue(), AS400_TEXT_20.getByteLength());
 		addStructureData(curKey, AS400_TEXT_20, temp);
 	}
 	
+	/**
+	 * Add retrieval criteria 02: starting sequence number. This can be used to
+	 * indicate where to start when previous returned continuation handle='1'.
+	 * 
+	 * @param value
+	 */
+	private final static Formatter nf = new Formatter();
+	public void addFromEnt(BigInteger value) {
+		RetrieveKey curKey = RetrieveKey.FROMENT;
+		String temp = nf.format("%20d", value).toString();
+		addStructureData(curKey, AS400_TEXT_20, temp);
+	}
 	
 	public void addToEnd() {
 		addStructureData(RetrieveKey.TOENT, AS400_TEXT_20, "*LAST");
@@ -134,13 +129,8 @@ public class RetrievalCriteria {
 	 * @param eKey
 	 * @param value
 	 */
-	private void addNbrEnt(Object value) {
+	private void addNbrEnt(Integer value) {
 		RetrieveKey curKey = RetrieveKey.NBRENT;
-		if (!(value instanceof Integer)) {
-			throw new IllegalArgumentException(
-					String.format("Value for '%s' must be an instance of Integer.", curKey.getDescription()));
-		}
-
 		addStructureData(curKey, BIN4, value);
 	}
 
@@ -152,46 +142,27 @@ public class RetrievalCriteria {
 	 * 
 	 * @param value
 	 */
-	public void addJrnCde(Object value) {
-		RetrieveKey curKey = RetrieveKey.JRNCDE;
-		String temp = null;
-		int count = 0;
-		if (value instanceof String) {
-			temp = ((String) value).trim();
-			if (temp.equals("*ALL") || temp.equals("*CTL")) {
-				temp = StringHelpers.padRight(temp, 20);
-				count = 1;
-			} else {
-				throw new IllegalArgumentException(String.format(
-						"Value for '%s' must be either '*ALL' or '*CTL' if String; "
-								+ "or an instance of JournalCode[] containing the desired journal codes to retrieve.",
-						curKey.getDescription()));
-			}
-		} else if (value instanceof JournalCode[]) {
-			JournalCode[] range = (JournalCode[]) value;
-			StringBuilder code = new StringBuilder();
-			for (int i = 0; i < range.length; i++) {
-				code.append(StringHelpers.padRight(range[i].getKey(), 10));
-				code.append(StringHelpers.padRight("*ALLSLT", 10));
-			}
-			temp = code.toString();
-			count = range.length;
-		} else {
-			throw new IllegalArgumentException(String.format(
-					"Value for '%s' must be either '*ALL' or '*CTL' if String; "
-							+ "or an instance of JournalCode[] containing the desired journal codes to retrieve.",
-					curKey.getDescription()));
+	public void addJrnCde(JournalCode[] value) {
+		JournalCode[] range = (JournalCode[]) value;
+		StringBuilder code = new StringBuilder();
+		for (int i = 0; i < range.length; i++) {
+			code.append(StringHelpers.padRight(range[i].getKey(), 10));
+			code.append(StringHelpers.padRight("*ALLSLT", 10));
 		}
-
+		 _addJrnCde(range.length, code.toString());
+	}
+	
+	private void _addJrnCde(int count, String codes) {
+		RetrieveKey curKey = RetrieveKey.JRNCDE;
 		Object[] temp2 = new Object[2];
 		temp2[0] = Integer.valueOf(count);
-		temp2[1] = temp;
-
+		temp2[1] = codes;
+	
 		AS400DataType type[] = AS400_DATA_TYPES_2;
 		type[0] = BIN4;
-		type[1] = new AS400Text(temp.length());
+		type[1] = new AS400Text(codes.length());
 		AS400Structure temp2Structure = new AS400Structure(type);
-
+	
 		addStructureData(curKey, temp2Structure, temp2);
 	}
 
@@ -200,36 +171,18 @@ public class RetrievalCriteria {
 	 * 
 	 * @param value
 	 */
-	public void addEntTyp(Object value) {
+	public void addEntTyp(JournalEntryType[] value) {
 		RetrieveKey curKey = RetrieveKey.ENTTYP;
 		String temp = null;
 		int count = 0;
-		if (value instanceof String) {
-			temp = ((String) value).trim();
-			if (temp.equals("*ALL") || temp.equals("*RCD")) {
-				temp = StringHelpers.padRight(temp, 10);
-				count = 1;
-			} else {
-				throw new IllegalArgumentException(String.format(
-						"Value for '%s' must be either '*ALL' or '*RCD' if String; "
-								+ "or an instance of JournalEntryType[] containing the desired entry types to retrieve.",
-						curKey.getDescription()));
-			}
-		} else if (value instanceof JournalEntryType[]) {
-			JournalEntryType[] range = (JournalEntryType[]) value;
-			StringBuilder entry = new StringBuilder();
-			for (int i = 0; i < range.length; i++) {
-				entry.append(StringHelpers.padRight(range[i].getKey(), 10));
-			}
-			temp = entry.toString();
-			count = range.length;
 
-		} else {
-			throw new IllegalArgumentException(String.format(
-					"Value for '%s' must be either '*ALL' or '*RCD' if String; "
-							+ "or an instance of JournalEntryType[] containing the desired entry types to retrieve.",
-					curKey.getDescription()));
+		JournalEntryType[] range = (JournalEntryType[]) value;
+		StringBuilder entry = new StringBuilder();
+		for (int i = 0; i < range.length; i++) {
+			entry.append(StringHelpers.padRight(range[i].getKey(), 10));
 		}
+		temp = entry.toString();
+		count = range.length;
 
 		Object[] temp2 = new Object[2];
 		temp2[0] = Integer.valueOf(count);
@@ -315,45 +268,6 @@ public class RetrievalCriteria {
 		data.add(key);
 		data.add(valueLength);
 		data.add(value);
-
-		// pump up "Number of Variable Length Records" by 1
-		data.set(0, (Integer) data.get(0) + 1);
-	}
-	
-	/**
-	 * Add additional selection entry to two ArrayList: structure and data.
-	 * 
-	 * @param rKey
-	 * @param dataType
-	 * @param value
-	 */
-	private void addStructureData(RetrieveKey rKey, AS400DataType[] valueTypes, Object[] values) {
-		AS400Bin4 totalLengthType = BIN4;
-		AS400Bin4 keyType = BIN4;
-		AS400Bin4 valueLenghtType = BIN4;
-		
-		int totalLengthValue = totalLengthType.getByteLength() + keyType.getByteLength()
-		+ valueLenghtType.getByteLength();
-		int paramLenght = valueTypes.length;
-		for (int i=0; i< paramLenght; i++) {
-			totalLengthValue = valueTypes[i].getByteLength();
-		}
-			
-		Integer key = Integer.valueOf(rKey.getKey());
-		structure.add(totalLengthType);
-		structure.add(keyType);
-		data.add(totalLengthValue);
-		data.add(key);
-
-		for (int i=0; i< paramLenght; i++) {
-	
-			structure.add(valueLenghtType);
-			structure.add(valueTypes[i]);
-
-			data.add(Integer.valueOf(Integer.valueOf(valueTypes[i].getByteLength())));
-			data.add(values[i]);
-	
-		}
 
 		// pump up "Number of Variable Length Records" by 1
 		data.set(0, (Integer) data.get(0) + 1);
@@ -455,6 +369,7 @@ public class RetrievalCriteria {
 	  UB ("UB", "Before-image of record updated in physical file member"),
 	  UP ("UP", "After-image of record updated in physical file member"),
 	  UR ("UR", "After-image of record updated for rollback"),
+	  ALL ("*ALL", "All entry types"),
 	    
 	  // D journal types file operations
 	      CT ("CT", "file created"),
@@ -484,6 +399,17 @@ public class RetrievalCriteria {
 		@Override
 		public String toString() {
 			return String.format("%s, (%s)", getDescription(), getKey());
+		}
+	}
+	
+	public static enum FromEnt {
+		FIRST("*FIRST"), LAST("*LAST");
+		private final String value;
+		FromEnt(String s) {
+			this.value = s;
+		}
+		public String getValue() {
+			return value;
 		}
 	}
 }
