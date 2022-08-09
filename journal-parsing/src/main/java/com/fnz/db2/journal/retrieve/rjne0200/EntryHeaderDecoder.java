@@ -90,8 +90,8 @@ public class EntryHeaderDecoder {
 	    Long nextEntryOffset = (Long)os[0];
 	    Long nullEntryOffset = (Long)os[1];
 	    Long entrySpecificDataOffset = (Long)os[2];
-	    Long sequenceNumber = ((BigInteger)os[6]).longValue();
-	    Long systemSequenceNumber = ((BigInteger)os[9]).longValue();
+	    BigInteger sequenceNumber = (BigInteger)os[6];
+	    BigInteger systemSequenceNumber = ((BigInteger)os[9]);
 	    java.sql.Timestamp timestamp = ((java.sql.Timestamp)os[7]);
 	    char journalCode = ((String)os[17]).charAt(0);
 	    String entryType = (String)os[18];

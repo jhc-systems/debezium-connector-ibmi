@@ -5,6 +5,8 @@
  */
 package io.debezium.connector.db2as400;
 
+import java.math.BigInteger;
+
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.common.config.ConfigDef.Importance;
 import org.apache.kafka.common.config.ConfigDef.Width;
@@ -132,9 +134,9 @@ public class As400ConnectorConfig extends RelationalDatabaseConnectorConfig {
     public JournalPosition getOffset() {
         String receiver = config.getString(As400OffsetContext.RECEIVER);
         String lib = config.getString(As400OffsetContext.RECEIVER_LIBRARY);
-        Long offset = config.getLong(As400OffsetContext.EVENT_SEQUENCE);
+        String offset = config.getString(As400OffsetContext.EVENT_SEQUENCE);
         Boolean processed = config.getBoolean(As400OffsetContext.PROCESSED);
-        return new JournalPosition(offset, receiver, lib, (processed == null) ? false : processed);
+    	return new JournalPosition(offset, receiver, lib, (processed == null) ? false : processed);
     }
 
     private static class SystemTablesPredicate implements TableFilter {

@@ -1,5 +1,6 @@
 package com.fnz.db2.journal.retrieve;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -40,8 +41,8 @@ public class JournalInfoRetrieval {
 	
 	public static JournalPosition getCurrentPosition(AS400 as400, JournalInfo journalLib) throws Exception {
 		JournalInfo ji = JournalInfoRetrieval.getReceiver(as400, journalLib);
-		Integer offset = getOffset(as400, ji).end();
-		return new JournalPosition(Long.valueOf(offset), ji.receiver, ji.receiverLibrary, false);
+		BigInteger offset = getOffset(as400, ji).end();
+		return new JournalPosition(offset, ji.receiver, ji.receiverLibrary, false);
 	}
 	
 	static final Pattern JOURNAL_REGEX = Pattern.compile("\\/[^/]*\\/([^.]*).LIB\\/(.*).JRN");
@@ -199,12 +200,12 @@ public class JournalInfoRetrieval {
 
 		return callServiceProgram(as400, "/QSYS.LIB/QJOURNAL.SRVPGM", "QjoRtvJrnReceiverInformation", parameters, (byte[] data) -> {
 			String journalName = decodeString(data, 8, 10);
-			Integer firstSequence = decodeInt(data, 72);
-			Integer lastSequence = decodeInt(data, 80);
 			String nextReceiver = decodeString(data, 332, 10);
 			String nextDualReceiver = decodeString(data, 352, 10);
 			Long numberOfEntries = Long.valueOf(decodeString(data, 372, 20));
             Long maxEntryLength = Long.valueOf(decodeString(data, 392, 20));
+			BigInteger firstSequence = decodeBigIntFromString(data, 412);
+			BigInteger lastSequence = decodeBigIntFromString(data, 432);
 			
 			if (!journalName.equals(receiverInfo.name())) {
 				String msg = String.format("journal names don't match requested %s got %s", receiverInfo.name(), journalName);
@@ -245,12 +246,12 @@ public class JournalInfoRetrieval {
 	}
 	
 	public static Integer decodeInt(byte[] data, int offset) {
-		byte [] b = Arrays.copyOfRange(data, offset, offset+4); 
+		byte [] b = Arrays.copyOfRange(data, offset, offset + 4); 
 		return Integer.valueOf(AS400_BIN4.toInt(b));		
 	}
 	
    public static Long decodeLong(byte[] data, int offset) {
-        byte [] b = Arrays.copyOfRange(data, offset, offset+8); 
+        byte [] b = Arrays.copyOfRange(data, offset, offset + 8); 
         return Long.valueOf(AS400_BIN8.toLong(b));        
     }
 	
@@ -267,5 +268,9 @@ public class JournalInfoRetrieval {
 		public T process(byte[] data) throws Exception;
 	}
 	
-
+	public static BigInteger decodeBigIntFromString(byte[] data, int offset) {
+		byte [] b = Arrays.copyOfRange(data, offset, offset + 20); 
+		String s = (String)AS400_TEXT_20.toObject(b);
+		return new BigInteger(s);
+	}
 }
