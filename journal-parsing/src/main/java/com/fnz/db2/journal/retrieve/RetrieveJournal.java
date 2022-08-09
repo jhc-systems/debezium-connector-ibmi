@@ -156,6 +156,7 @@ public class RetrieveJournal {
 		JournalPosition currentPosition = null;
 		if (!hasMoreData && filteirng) { // we didn't have any more data last time
 		    currentPosition = JournalInfoRetrieval.getCurrentPosition(as400.connection(), journalInfo);
+		    currentPosition.setProcessed(true);
 		}
 		hasMoreData = false;
 		
