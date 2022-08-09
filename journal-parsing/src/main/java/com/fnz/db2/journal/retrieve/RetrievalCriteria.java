@@ -1,6 +1,9 @@
 package com.fnz.db2.journal.retrieve;
 
+import java.math.BigInteger;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Formatter;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -107,10 +110,9 @@ public class RetrievalCriteria {
 						String.format("Value for '%s' must be either '*FIRST' or an instance of Integer.",
 								curKey.getDescription()));
 			}
-		} else if (value instanceof Integer) {
-			temp = value.toString();
-			// integer will be passed as String, need to padLeft()
-			temp = StringHelpers.padLeft(temp, 20);
+		} else if (value instanceof BigInteger) {
+			Formatter nf = new Formatter();
+			temp = nf.format("%20d", value).toString();
 		} else {
 			throw new IllegalArgumentException(String.format(
 					"Value for '%s' must be either '*FIRST' or an instance of Integer.", curKey.getDescription()));

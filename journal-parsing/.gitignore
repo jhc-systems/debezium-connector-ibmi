@@ -10,3 +10,4 @@ hs_err*
 .vscode/
 # intellij
 .idea/
+exceptions.txt

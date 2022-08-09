@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.math.BigInteger;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Arrays;
@@ -40,14 +41,14 @@ public class CommitLogProcessor {
 	    Connect<Connection, SQLException> sqlConnect = connector.getJdbc();
 	    String schema = connector.getSchema();
 	    
-		JournalPosition nextPosition = new JournalPosition(null, null, null, false);
+		JournalPosition nextPosition = new JournalPosition((BigInteger)null, null, null, false);
 
         JournalInfo journalLib = JournalInfoRetrieval.getJournal(as400Connect.connection(), schema);
 
         String offset =  System.getenv("ISERIES_OFFSET");
         String receiver =  System.getenv("ISERIES_RECEIVER");
         if (offset != null && receiver != null)
-            nextPosition = new JournalPosition(Long.parseLong(offset), receiver, journalLib.receiverLibrary, false);
+            nextPosition = new JournalPosition(new BigInteger(offset), receiver, journalLib.receiverLibrary, false);
         
         List<String> includes = null;
         String includesEnv = System.getenv("ISERIES_INCLUDES");
