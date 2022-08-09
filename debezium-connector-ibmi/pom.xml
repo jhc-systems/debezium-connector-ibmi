@@ -315,7 +315,7 @@
 					<to>
 						<image>eu.gcr.io/${repository.project}/debezium-connector-ibmi</image>
 						<tags>
-							<tag>${project.version}_${revision}</tag>
+							<tag>${debezium.version}_${project.version}</tag>
 							<tag>latest${changelist}</tag>
 						</tags>
 					</to>
