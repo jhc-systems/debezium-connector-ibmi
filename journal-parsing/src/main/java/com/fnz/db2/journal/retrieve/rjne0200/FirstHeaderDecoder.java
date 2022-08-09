@@ -1,5 +1,6 @@
 package com.fnz.db2.journal.retrieve.rjne0200;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Optional;
 
@@ -42,8 +43,9 @@ public class FirstHeaderDecoder {
 	        status = OffsetStatus.MORE_DATA_NEW_OFFSET;
 	        String receiver = StringHelpers.safeTrim((String)os[4]); 
 	        String library = StringHelpers.safeTrim((String)os[5]);
-	        String offset = StringHelpers.safeTrim((String)os[6]);	                
-	        pos = Optional.of(new JournalPosition(Long.valueOf(offset), receiver, library, false));
+	        String offsetStr = StringHelpers.safeTrim((String)os[6]);
+	        BigInteger offset = new BigInteger(offsetStr);
+	        pos = Optional.of(new JournalPosition(offset, receiver, library, false));
 	    }
 	    
 	    return new FirstHeader(

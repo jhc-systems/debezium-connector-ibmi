@@ -13,8 +13,8 @@ public class EntryHeader {
 //	private final int transactionDataOffset;
 //	private final int logicalWorkOffset;
 //	private final int receiverOffset;
-	private final long sequenceNumber;
-	private final long systemSequenceNumber;
+	private final BigInteger sequenceNumber;
+	private final BigInteger systemSequenceNumber;
 	private final java.sql.Timestamp timestamp;
 	private final char journalCode;
 	private final String entryType;
@@ -25,7 +25,7 @@ public class EntryHeader {
 	private final String receiver;
 	private final String receiverLibrary;
 	
-	public EntryHeader(int nextEntryOffset, int nullValueOffest, long entrySpecificDataOffset, long sequenceNumber, long systemSequenceNumber,
+	public EntryHeader(int nextEntryOffset, int nullValueOffest, long entrySpecificDataOffset, BigInteger sequenceNumber, BigInteger systemSequenceNumber,
 			java.sql.Timestamp timestamp, char journalCode, String entryType, String objectName, BigInteger commitCycle, int endOffset, long pointerHandle, 
 			String receiver, String receiverLibrary) {
 		super();
@@ -94,11 +94,11 @@ public class EntryHeader {
 		return entrySpecificDataOffset;
 	}
 
-	public long getSequenceNumber() {
+	public BigInteger getSequenceNumber() {
 		return sequenceNumber;
 	}
 
-	public long getSystemSequenceNumber() {
+	public BigInteger getSystemSequenceNumber() {
 		return systemSequenceNumber;
 	}
 

@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.IOException;
+import java.math.BigInteger;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -143,8 +144,7 @@ class JournalEntryDecoderTestIT {
 					default:
 					    break;
 				}
-				int sequence = (int) eheader.getSequenceNumber();
-				position.setOffset((long) sequence + 1, false);
+				position.setPosition(rj.getPosition());
 			}
 		}
 

@@ -5,9 +5,11 @@
  */
 package com.fnz.db2.journal.retrieve;
 
+import java.math.BigInteger;
+
 public class JournalPosition {
 	// position should be last processed record as requesting the next record will error and be indistinguishable from losing the journal 
-    private Long offset;
+    private BigInteger offset; // sequence number up to 18 446 644 000 000 000 000
     private String receiver;
     private String receiverLibrary;
     private boolean processed = false;
@@ -26,17 +28,28 @@ public class JournalPosition {
     public boolean processed() {
     	return processed;
     }
+    
+    public JournalPosition(String offsetStr, String receiver, String receiverLibrary, boolean processed) {
+        if (offsetStr == null || offsetStr.isBlank()) {
+        	this.offset = null;
+        } else {
+        	this.offset = new BigInteger(offsetStr);
+        }
+        this.receiver = StringHelpers.safeTrim(receiver);
+        this.receiverLibrary = StringHelpers.safeTrim(receiverLibrary);
+		this.processed = processed;
+    }
 
-    public JournalPosition(Long offset, String receiver, String receiverLibrary, boolean processed) {
+    public JournalPosition(BigInteger offset, String receiver, String receiverLibrary, boolean processed) {
         this.offset = offset;
         this.receiver = StringHelpers.safeTrim(receiver);
         this.receiverLibrary = StringHelpers.safeTrim(receiverLibrary);
 		this.processed = processed;
     }
 
-    public long getOffset() {
+    public BigInteger getOffset() {
         if (null == offset) {
-            return 0;
+            return BigInteger.ZERO;
         }
         return offset;
     }
@@ -53,7 +66,7 @@ public class JournalPosition {
         return receiverLibrary;
     }
 
-    public void setOffset(Long offset, boolean processed) {
+    public void setOffset(BigInteger offset, boolean processed) {
         this.offset = offset;
     	this.processed = processed;
     }
@@ -62,7 +75,7 @@ public class JournalPosition {
     	this.processed = processed;
     }
     
-    public void setJournalReciever(Long offset, String journalReciever, String schema, boolean processed) {
+    public void setJournalReciever(BigInteger offset, String journalReciever, String schema, boolean processed) {
         this.offset = offset;
         this.receiver = StringHelpers.safeTrim(journalReciever);
         this.receiverLibrary = StringHelpers.safeTrim(schema);
