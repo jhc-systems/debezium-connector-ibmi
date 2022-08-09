@@ -132,7 +132,7 @@ public class RetrieveJournal {
 		ServiceProgramCall spc = new ServiceProgramCall(as400.connection());
 		spc.getServerJob().setLoggingLevel(0);
 		builder.init();
-		builder.withJournalEntryType("*ALL");
+		builder.withJournalEntryType(JournalEntryType.ALL);
         if (includeFiles != null && !includeFiles.isEmpty()) {
             builder.filterFiles(includeFiles);
         }
@@ -401,8 +401,8 @@ public class RetrieveJournal {
 			criteria.reset();
 		}
 		
-		public ParameterListBuilder withJournalEntryType(String type) {
-			criteria.addEntTyp(type);
+		public ParameterListBuilder withJournalEntryType(JournalEntryType type) {
+			criteria.addEntTyp(new JournalEntryType[] {type});
 			return this;
 		}
 
@@ -432,7 +432,7 @@ public class RetrieveJournal {
 		}
 
 		public ParameterListBuilder withFromStart() {
-			criteria.addFromEnt("*FIRST");
+			criteria.addFromEnt(RetrievalCriteria.FromEnt.FIRST);
 			return this;
 		}
 		
