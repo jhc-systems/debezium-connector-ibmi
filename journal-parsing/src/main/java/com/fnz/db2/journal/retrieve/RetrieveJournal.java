@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.math.BigInteger;
 import java.nio.file.Files;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
@@ -137,7 +138,7 @@ public class RetrieveJournal {
         }
 
 		if (position.isOffsetSet()) {
-			builder.withStartingSequence((int)position.getOffset());
+			builder.withStartingSequence(position.getOffset());
 		} else {
 			builder.withFromStart();
 		}
@@ -425,7 +426,7 @@ public class RetrieveJournal {
 			return this;
 		}
 
-		public ParameterListBuilder withStartingSequence(int start) {
+		public ParameterListBuilder withStartingSequence(BigInteger start) {
 			criteria.addFromEnt(start);
 			return this;
 		}

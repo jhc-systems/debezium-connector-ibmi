@@ -5,6 +5,7 @@
  */
 package io.debezium.connector.db2as400.metrics;
 
+import java.math.BigInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import io.debezium.connector.base.ChangeEventQueueMetrics;
@@ -27,8 +28,8 @@ public class As400StreamingChangeEventSourceMetrics extends DefaultStreamingChan
         return journalBehind.get();
     }
 
-    public void setJournalBehind(long behind) {
-        this.journalBehind.lazySet(behind);
+    public void setJournalBehind(BigInteger behind) {
+        this.journalBehind.lazySet(behind.longValue());
     }
     
     @Override
@@ -36,7 +37,7 @@ public class As400StreamingChangeEventSourceMetrics extends DefaultStreamingChan
         return journalOffset.get();
     }
 
-    public void setJournalOffset(long offset) {
-        this.journalOffset.lazySet(offset);
+    public void setJournalOffset(BigInteger offset) {
+        this.journalOffset.lazySet(offset.longValue());
     }
 }

@@ -5,6 +5,7 @@
  */
 package io.debezium.connector.db2as400;
 
+import java.math.BigInteger;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.Collections;
@@ -107,7 +108,7 @@ public class As400OffsetContext implements OffsetContext {
             log.debug("new offset {}", position);
                  
         }
-        Long offset = position.getOffset();
+        BigInteger offset = position.getOffset();
         String offsetStr = "null";
         if (null != offset) {
             offsetStr = offset.toString();
@@ -198,7 +199,7 @@ public class As400OffsetContext implements OffsetContext {
             String inclueTables = (String) map.get(RelationalDatabaseConnectorConfig.TABLE_INCLUDE_LIST.name());
             JournalPosition position = new JournalPosition();
             if (!"null".equals(offsetStr)) {
-                long offset = Long.valueOf(offsetStr);
+            	BigInteger offset = new BigInteger(offsetStr);
                 position = new JournalPosition(offset, receiver, schema, processed);
             }
             return new As400OffsetContext(connectorConfig, position, inclueTables, snapshotComplete);

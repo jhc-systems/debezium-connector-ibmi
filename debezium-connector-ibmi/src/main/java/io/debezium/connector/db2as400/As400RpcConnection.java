@@ -6,6 +6,7 @@
 package io.debezium.connector.db2as400;
 
 import java.io.IOException;
+import java.math.BigInteger;
 import java.sql.SQLNonTransientConnectionException;
 import java.util.HashMap;
 import java.util.List;
@@ -131,7 +132,7 @@ public class As400RpcConnection implements AutoCloseable, Connect<AS400, IOExcep
             while (retrieveJournal.nextEntry()) {
                 watchDog.alive();
                 EntryHeader eheader = retrieveJournal.getEntryHeader();
-                Long currentOffset = eheader.getSequenceNumber();
+                BigInteger currentOffset = eheader.getSequenceNumber();
 
                 consumer.accept(currentOffset, retrieveJournal, eheader);
                 // while processing journal entries getPosistion is the current position
@@ -165,7 +166,7 @@ public class As400RpcConnection implements AutoCloseable, Connect<AS400, IOExcep
     private void logOffsets(JournalPosition position, boolean success) throws IOException, Exception {
         if (periodic.shouldLogRateLimted("offsets")) {
             JournalPosition currentPosition = getCurrentPosition();
-            long behind = currentPosition.getOffset() - position.getOffset();
+            BigInteger behind = currentPosition.getOffset().subtract(position.getOffset());
             streamingMetrics.setJournalOffset(currentPosition.getOffset());
             streamingMetrics.setJournalBehind(behind);
             log.info(new StructuredMessage("current position diagnostics", 
@@ -206,7 +207,7 @@ public class As400RpcConnection implements AutoCloseable, Connect<AS400, IOExcep
     }
 
     public static interface BlockingRecieverConsumer {
-        void accept(Long offset, RetrieveJournal r, EntryHeader eheader) throws RpcException, InterruptedException, IOException, SQLNonTransientConnectionException;
+        void accept(BigInteger offset, RetrieveJournal r, EntryHeader eheader) throws RpcException, InterruptedException, IOException, SQLNonTransientConnectionException;
     }
 
     public static interface BlockingNoDataConsumer {
