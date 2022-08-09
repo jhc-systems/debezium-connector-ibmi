@@ -1,0 +1,23 @@
+steps:
+#  - name: google/cloud-sdk
+#    args: ["/bin/bash", "-c", "date; if gsutil ls gs://debezium-maven-repo/$REPO_NAME/repository; then mkdir -p ./_m2/; gsutil -m cp -R gs://debezium-maven-repo/$REPO_NAME/repository ./_m2/; fi && date" ]
+
+  - name: "eu.gcr.io/$PROJECT_ID/java17-maven3-8-gcp:latest"
+    entrypoint: "/bin/bash"
+    args:
+    - "-c"
+    - |
+      set -x
+      set -e 
+      set -o pipefail
+      date
+
+      echo build release version
+
+      mvn -B -P 'jhc.release,!jhc.snapshot' -Drepository.project=$PROJECT_ID -Drevision=$TAG_NAME -Dchangelist= -DskipNexusStagingDeployMojo=true -DskipITs --no-transfer-progress -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn -Dmaven.repo.local=./_m2/repository/ package deploy
+      date
+    timeout: "2400s"
+
+#  - name: google/cloud-sdk
+#    args: ["/bin/bash", "-c", "date; gsutil -m cp -r ./_m2/repository gs://debezium-maven-repo/$REPO_NAME/; date"]
+timeout: "2400s"
