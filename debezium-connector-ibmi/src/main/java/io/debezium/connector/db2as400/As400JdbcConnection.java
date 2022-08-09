@@ -14,6 +14,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import org.slf4j.Logger;
@@ -45,7 +46,7 @@ public class As400JdbcConnection extends JdbcConnection implements Connect<Conne
             + "INNER JOIN qsys2.SYSCOLUMNS c on c.table_schema=k.dbklib and c.system_table_name=k.dbkfil AND c.system_column_name=k.DBKFLD "
             + "WHERE k.dbklib=? AND k.dbkfil=? ORDER BY k.DBKPOS ASC ";
     private final Map<String, String> systemToLongName = new HashMap<>();
-    private final Map<String, String> longToSystemName = new HashMap<>();
+    private final Map<String, Optional<String>> longToSystemName = new HashMap<>();
 
     private final String realDatabaseName;
 
@@ -70,7 +71,8 @@ public class As400JdbcConnection extends JdbcConnection implements Connect<Conne
             if (o > 0) {
                 i = i.substring(o + 1);
             }
-            r.add(getSystemName(schema, i));
+            getSystemName(schema, i).map(x -> r.add(x));
+           
         }
         return r;
     }
@@ -156,7 +158,7 @@ public class As400JdbcConnection extends JdbcConnection implements Connect<Conne
                         String systemName = rs.getString(1);
                         String tableName = rs.getString(2);
                         String longKey = String.format("%s.%s", schemaName, tableName);
-                        longToSystemName.put(longKey, systemName);
+                        longToSystemName.put(longKey, Optional.of(systemName));
                         String shortKey = String.format("%s.%s", schemaName, systemName);
                         systemToLongName.put(shortKey, tableName);
 
@@ -165,7 +167,7 @@ public class As400JdbcConnection extends JdbcConnection implements Connect<Conne
         log.info("fetched {} long names", longToSystemName.size());
     }
 
-    public String getSystemName(String schemaName, String longTableName) {
+    public Optional<String> getSystemName(String schemaName, String longTableName) {
         String longKey = String.format("%s.%s", schemaName, longTableName);
         if (longToSystemName.containsKey(longKey)) {
             return longToSystemName.get(longKey);
@@ -182,17 +184,21 @@ public class As400JdbcConnection extends JdbcConnection implements Connect<Conne
                     systemName = longTableName;
                 }
                 String systemKey = String.format("%s.%s", schemaName, systemName);
-                longToSystemName.put(longKey, systemName);
+                Optional<String> systemNameOpt = Optional.of(systemName);
+                longToSystemName.put(longKey, systemNameOpt);
                 systemToLongName.put(systemKey, longTableName);
-                return systemName;
+                return systemNameOpt;
             }
             catch (IllegalStateException | SQLException e) {
                 log.error("failed lookup for system name {}.{}", schemaName, longTableName, e);
+                if (longTableName.length() > 10) {
+                	return Optional.empty();
+                }
                 String systemName = longTableName;
                 String systemKey = String.format("%s.%s", schemaName, systemName);
-                longToSystemName.put(longKey, systemName);
+                longToSystemName.put(longKey, Optional.of(systemName));
                 systemToLongName.put(systemKey, longTableName);
-                return systemName;
+                return Optional.of(systemName);
             }
         }
     }
@@ -220,14 +226,14 @@ public class As400JdbcConnection extends JdbcConnection implements Connect<Conne
                     longTableName = systemName;
                 }
                 String longKey = String.format("%s.%s", schemaName, longTableName);
-                longToSystemName.put(longKey, systemName);
+                longToSystemName.put(longKey, Optional.of(systemName));
                 systemToLongName.put(systemKey, longTableName);
                 return longTableName;
             }
             catch (IllegalStateException | SQLException e) {
                 log.warn("failed lookup for long name {}.{}", schemaName, systemName, e);
                 String longKey = String.format("%s.%s", schemaName, systemName);
-                longToSystemName.put(longKey, systemName);
+                longToSystemName.put(longKey, Optional.of(systemName));
                 systemToLongName.put(systemKey, systemName);
                 return systemName;
             }
