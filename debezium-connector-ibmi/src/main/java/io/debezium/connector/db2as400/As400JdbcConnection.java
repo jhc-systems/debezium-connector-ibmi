@@ -264,8 +264,6 @@ public class As400JdbcConnection extends JdbcConnection implements Connect<Conne
     
     @Override
     protected Optional<ColumnEditor> readTableColumn(ResultSet columnMetadata, TableId tableId, ColumnNameFilter columnFilter) throws SQLException {
-        // Oracle drivers require this for LONG/LONGRAW to be fetched first.
-        final String defaultValue = columnMetadata.getString(13);
 
         final String columnName = columnMetadata.getString(4);
         if (columnFilter == null || columnFilter.matches(tableId.catalog(), tableId.schema(), tableId.table(), columnName)) {
@@ -293,9 +291,7 @@ public class As400JdbcConnection extends JdbcConnection implements Connect<Conne
             // Allow implementation to make column changes if required before being added to table
             column = overrideColumn(column);
 
-            if (defaultValue != null && !"NULL".equals(defaultValue)) { // TODO find out how this is converted into a default value for type and remove the null there
-                column.defaultValueExpression(defaultValue);
-            }
+            // don't fetch defaults or we will send the default value when not set even though the database value is not set
             return Optional.of(column);
         }
 
