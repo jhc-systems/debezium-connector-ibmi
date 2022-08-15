@@ -30,6 +30,7 @@ import com.ibm.as400.access.AS400Bin4;
 import com.ibm.as400.access.AS400Message;
 import com.ibm.as400.access.AS400Structure;
 import com.ibm.as400.access.AS400Text;
+import com.ibm.as400.access.MessageFile;
 import com.ibm.as400.access.ProgramParameter;
 import com.ibm.as400.access.ServiceProgramCall;
 
@@ -200,6 +201,12 @@ public class RetrieveJournal {
         			}
         			case "CPF7054": { // e.g. last < first
         			  throw new InvalidPositionException(String.format("Call failed position %s failed to find offset or invalid offsets: %s", position, id.getText()));
+        			}
+					case "CPF7060": { // object in filter doesn't exist, or was not journaled 
+						id.load(MessageFile.RETURN_FORMATTING_CHARACTERS);
+						throw new InvalidPositionException(
+        			    	String.format("Call failed position %s object not found or not journaled: %s", position, id.getHelp())
+						);
         			}
         			case "CPF7062": {
         			    log.debug("Call failed position {} no data received, probably all filtered: {}", position, id.getText());
