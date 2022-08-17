@@ -126,7 +126,7 @@ public class As400StreamingChangeEventSource implements StreamingChangeEventSour
                     retries = 0;
                 }
                 catch (InvalidPositionException e) {
-                    log.error("Invalid posision resetting offsets to beginning", e);
+                    log.error("Invalid position resetting offsets to beginning", e);
                     offsetContext.setPosition(new JournalPosition());
                 }
                 catch (InterruptedException e) {
