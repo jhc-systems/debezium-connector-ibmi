@@ -62,7 +62,7 @@ public class RetrieveJournal {
 	private final int journalBufferSize;
 	private long totalTransferred = 0;
 	private final boolean filterCodes;
-	private final List<String> includeFiles;
+	private final List<FileFilter> includeFiles;
 	private boolean hasMoreData = true;
 	private final boolean filteirng;
 	private final JournalInfo journalInfo;
@@ -71,7 +71,7 @@ public class RetrieveJournal {
 		this(as400, journalLib, null, ParameterListBuilder.DEFAULT_JOURNAL_BUFFER_SIZE, true, null);
 	}
 	
-	public RetrieveJournal(Connect<AS400, IOException> as400, JournalInfo journalLib, int journalBufferSize, boolean filterCodes, List<String> includeFiles) {
+	public RetrieveJournal(Connect<AS400, IOException> as400, JournalInfo journalLib, int journalBufferSize, boolean filterCodes, List<FileFilter> includeFiles) {
 		this(as400, journalLib, null, journalBufferSize, true, includeFiles);
 	}
 	
@@ -79,7 +79,7 @@ public class RetrieveJournal {
 		this(as400, journalLib, dumpFolder, ParameterListBuilder.DEFAULT_JOURNAL_BUFFER_SIZE, true, null);
 	}
 	
-	public RetrieveJournal(Connect<AS400, IOException> as400, JournalInfo journalInfo, String dumpFolder, int journalBufferSize, boolean filterCodes, List<String> includeFiles) {
+	public RetrieveJournal(Connect<AS400, IOException> as400, JournalInfo journalInfo, String dumpFolder, int journalBufferSize, boolean filterCodes, List<FileFilter> includeFiles) {
 	    this.filterCodes = filterCodes;
 		this.journalBufferSize = journalBufferSize;
 		if (includeFiles != null) {
@@ -135,7 +135,7 @@ public class RetrieveJournal {
 		builder.init();
 		builder.withJournalEntryType(JournalEntryType.ALL);
         if (includeFiles != null && !includeFiles.isEmpty()) {
-            builder.filterFiles(includeFiles);
+            builder.withFileFilters(includeFiles);
         }
 
 		if (position.isOffsetSet()) {
@@ -449,10 +449,10 @@ public class RetrieveJournal {
 		    return this;
 		}
 
-	      public ParameterListBuilder filterFiles(List<String> includeFiles) {
-	            criteria.addFILE(this.receiverLibrary, includeFiles);
-	            return this;
-	        }
+		public ParameterListBuilder withFileFilters(List<FileFilter> tableFilters) {
+			criteria.addFILE(tableFilters);
+	        return this;
+	    }
 		
 		public ParameterListBuilder filterJournalEntryType(RetrievalCriteria.JournalEntryType[] codes) {
             criteria.addEntTyp(codes);

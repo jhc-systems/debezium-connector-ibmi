@@ -16,6 +16,8 @@ import org.apache.kafka.connect.source.SourceRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.fnz.db2.journal.retrieve.FileFilter;
+
 import io.debezium.config.Configuration;
 import io.debezium.config.Field;
 import io.debezium.connector.base.ChangeEventQueue;
@@ -100,7 +102,7 @@ public class As400ConnectorTask extends BaseSourceTask<As400Partition, As400Offs
 
         final As400StreamingChangeEventSourceMetrics streamingMetrics = new As400StreamingChangeEventSourceMetrics(taskContext, queue, metadataProvider);
         
-        List<String> shortIncludes = jdbcConnection.shortIncludes(schema.getSchemaName(), newConfig.tableIncludeList());
+        List<FileFilter> shortIncludes = jdbcConnection.shortIncludes(schema.getSchemaName(), newConfig.tableIncludeList());
         
         As400RpcConnection rpcConnection = new As400RpcConnection(connectorConfig, streamingMetrics, shortIncludes);
 

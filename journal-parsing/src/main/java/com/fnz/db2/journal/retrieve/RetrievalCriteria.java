@@ -196,7 +196,7 @@ public class RetrievalCriteria {
 		addStructureData(curKey, temp2Structure, temp2);
 	}
 	
-	   /**
+    /**
      * Add retrieval criteria 16: FILE. Input parameter must be one of the
      *          BINARY(4)   Number in array
      *  Note: These fields repeat for each file member.
@@ -204,12 +204,12 @@ public class RetrievalCriteria {
      *           CHAR(10)    Library name
      *           CHAR(10)    Member name 
      * 
-     * @param value
+     * @param fileFilters
      */
-    public void addFILE(String library, List<String> files) {
-        if (files == null)
+	public void addFILE(List<FileFilter> fileFilters) {
+        if (fileFilters == null)
             return;
-        int length = files.size();
+        int length = fileFilters.size();
         if (length > 300) {
             log.error("unable to filter for more than 300 files requested length was {}", length);
             return;
@@ -220,13 +220,12 @@ public class RetrievalCriteria {
         fdata[0] = Integer.valueOf(length);
         types[0] = BIN4;
 
-        String paddedLib = StringHelpers.padRight(library, 10);
         int i = 1;
-        for (String file: files) {
+        for (FileFilter f: fileFilters) {
             types[i] = TEXT10;
-            fdata[i++] = StringHelpers.padRight(file.toUpperCase(), 10);
+            fdata[i++] = StringHelpers.padRight(f.getTableName().toUpperCase(), 10);
             types[i] = TEXT10;
-            fdata[i++] = paddedLib;
+            fdata[i++] = StringHelpers.padRight(f.getSchema().toUpperCase(), 10);
             types[i] = TEXT10;
             fdata[i++] = "*ALL      ";
         }
