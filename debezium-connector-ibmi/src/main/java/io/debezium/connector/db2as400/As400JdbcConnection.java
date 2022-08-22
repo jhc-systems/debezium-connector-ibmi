@@ -22,6 +22,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.fnz.db2.journal.retrieve.Connect;
+import com.fnz.db2.journal.retrieve.FileFilter;
 import com.ibm.as400.access.AS400JDBCDriver;
 
 import io.debezium.config.Configuration;
@@ -62,19 +63,34 @@ public class As400JdbcConnection extends JdbcConnection implements Connect<Conne
         log.debug("connection:" + this.connectionString(URL_PATTERN));
     }
 
-    public List<String> shortIncludes(String schema, String includes) {
+    public List<FileFilter> shortIncludes(String schema, String includes) {
         if (includes == null || includes.isBlank()) {
-            return Collections.<String>emptyList();
+            return Collections.<FileFilter>emptyList();
         }
         String[] incs = includes.split(",");
-        List<String> r = new ArrayList<>();
-        for (String i: incs) {
-            int o = i.lastIndexOf('.');
+        List<FileFilter> r = new ArrayList<>();
+        for (String tableName: incs) {
+            String schemaName = "";
+            int o = tableName.lastIndexOf('.');
             if (o > 0) {
-                i = i.substring(o + 1);
+                schemaName = tableName.substring(0, o);
+                tableName = tableName.substring(o + 1);
             }
-            getSystemName(schema, i).map(x -> r.add(x));
-           
+
+            // This handles the case where the table name has been specified as "database.schema.table"
+            if (!"".equals(schemaName)) {
+                o = schemaName.lastIndexOf('.');
+                if (o> 0 ) {
+                    schemaName = schemaName.substring(o + 1);
+                }
+            }
+
+            if ("".equals(schemaName)) {
+                schemaName = schema;
+            }
+
+            final String tableSchema = schemaName;
+            getSystemName(tableSchema, tableName).map(x -> r.add(new FileFilter(tableSchema, x)));
         }
         return r;
     }

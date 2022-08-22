@@ -16,6 +16,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.fnz.db2.journal.retrieve.Connect;
+import com.fnz.db2.journal.retrieve.FileFilter;
 import com.fnz.db2.journal.retrieve.JournalInfo;
 import com.fnz.db2.journal.retrieve.JournalInfoRetrieval;
 import com.fnz.db2.journal.retrieve.JournalPosition;
@@ -42,7 +43,7 @@ public class As400RpcConnection implements AutoCloseable, Connect<AS400, IOExcep
     private final LogLimmiting infrequent = new LogLimmiting(60 * 60 * 1000);
 
 
-    public As400RpcConnection(As400ConnectorConfig config, As400StreamingChangeEventSourceMetrics streamingMetrics, List<String> includes) {
+    public As400RpcConnection(As400ConnectorConfig config, As400StreamingChangeEventSourceMetrics streamingMetrics, List<FileFilter> includes) {
         super();
         this.config = config;
         this.streamingMetrics = streamingMetrics;
