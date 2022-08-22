@@ -1,6 +1,6 @@
 package com.fnz.db2.journal.retrieve.exception;
 
-public class InvalidJournalFilterException extends Exception {
+public class InvalidJournalFilterException extends FatalException {
 
     public InvalidJournalFilterException(String message) {
         super(message);

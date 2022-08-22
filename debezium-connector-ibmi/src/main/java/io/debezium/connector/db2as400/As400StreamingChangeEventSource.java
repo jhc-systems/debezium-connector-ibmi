@@ -24,8 +24,10 @@ import com.fnz.db2.journal.retrieve.JdbcFileDecoder;
 import com.fnz.db2.journal.retrieve.JournalEntryType;
 import com.fnz.db2.journal.retrieve.JournalPosition;
 import com.fnz.db2.journal.retrieve.SchemaCacheIF;
+import com.fnz.db2.journal.retrieve.exception.FatalException;
 import com.fnz.db2.journal.retrieve.exception.InvalidPositionException;
 
+import io.debezium.DebeziumException;
 import io.debezium.connector.db2as400.As400RpcConnection.BlockingRecieverConsumer;
 import io.debezium.data.Envelope.Operation;
 import io.debezium.pipeline.ErrorHandler;
@@ -124,6 +126,10 @@ public class As400StreamingChangeEventSource implements StreamingChangeEventSour
                         dispatcher.dispatchHeartbeatEvent(partition, offsetContext);
                     }
                     retries = 0;
+                }
+                catch (FatalException e) {
+                	log.error("Unable to process offset {}", offsetContext.getPosition(), e);
+                	throw new DebeziumException("Unable to process offset " + offsetContext.getPosition(), e);
                 }
                 catch (InvalidPositionException e) {
                     log.error("Invalid position resetting offsets to beginning", e);
