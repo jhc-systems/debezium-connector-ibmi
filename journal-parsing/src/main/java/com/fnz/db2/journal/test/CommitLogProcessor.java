@@ -7,14 +7,18 @@ import java.io.PrintWriter;
 import java.math.BigInteger;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.fnz.db2.journal.retrieve.Connect;
+import com.fnz.db2.journal.retrieve.FileFilter;
 import com.fnz.db2.journal.retrieve.JdbcFileDecoder;
 import com.fnz.db2.journal.retrieve.JournalEntryType;
 import com.fnz.db2.journal.retrieve.JournalInfo;
@@ -50,10 +54,13 @@ public class CommitLogProcessor {
         if (offset != null && receiver != null)
             nextPosition = new JournalPosition(new BigInteger(offset), receiver, journalLib.receiverLibrary, false);
         
-        List<String> includes = null;
+        List<FileFilter> includes = new ArrayList<FileFilter>();
         String includesEnv = System.getenv("ISERIES_INCLUDES");
-        if (includesEnv != null)
-            includes = Arrays.asList(includesEnv.split(","));
+        if (includesEnv != null) {
+			for (String i : Arrays.asList(includesEnv.split(","))) {
+				includes.add(new FileFilter(schema, i));
+			}
+		}
 
 		String database = JdbcFileDecoder.getDatabaseName(sqlConnect.connection());
 		fileDecoder = new JdbcFileDecoder(sqlConnect, database, schemaCache);
