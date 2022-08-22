@@ -110,10 +110,9 @@ public class RetrievalCriteria {
 	 * 
 	 * @param value
 	 */
-	private final static Formatter nf = new Formatter();
 	public void addFromEnt(BigInteger value) {
 		RetrieveKey curKey = RetrieveKey.FROMENT;
-		String temp = nf.format("%20d", value).toString();
+		String temp = String.format("%20d", value).toString();
 		addStructureData(curKey, AS400_TEXT_20, temp);
 	}
 	
