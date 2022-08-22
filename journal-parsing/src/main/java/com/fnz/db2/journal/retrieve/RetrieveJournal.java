@@ -274,7 +274,11 @@ public class RetrieveJournal {
 			if (header.size() > 0) {
 				offset=header.offset();
 				entryHeader = entryHeaderDecoder.decode(outputData, offset);
-				updatePosition(entryHeader);
+				if (alreadyProcessed(position, entryHeader)) {
+					updatePosition(position, entryHeader);
+					return nextEntry();
+				}
+				updatePosition(position, entryHeader);
 				return true;
 			} else {
 				return false;
@@ -284,7 +288,7 @@ public class RetrieveJournal {
 			if (nextOffset > 0) {
 				offset += (int)nextOffset;
 				entryHeader = entryHeaderDecoder.decode(outputData, offset);
-				updatePosition(entryHeader);
+				updatePosition(position, entryHeader);
 				return true;
 			}
 			
@@ -297,12 +301,19 @@ public class RetrieveJournal {
 			return false;
 		}
 	}
+	
+	private static boolean alreadyProcessed(JournalPosition position, EntryHeader entryHeader) {
+		JournalPosition entryPosition = new JournalPosition(position);
+		updatePosition(entryPosition, entryHeader);
+		return position.processed() && entryPosition.equals(position);
+		
+	}
 
-	private void updatePosition(EntryHeader entryHeader) {
+	private static void updatePosition(JournalPosition p, EntryHeader entryHeader) {
 		if (entryHeader.hasReceiver()) {
-			position.setJournalReciever(entryHeader.getSequenceNumber(), entryHeader.getReceiver(), entryHeader.getReceiverLibrary(), true);
+			p.setJournalReciever(entryHeader.getSequenceNumber(), entryHeader.getReceiver(), entryHeader.getReceiverLibrary(), true);
 		} else {
-			position.setOffset(entryHeader.getSequenceNumber(), true);
+			p.setOffset(entryHeader.getSequenceNumber(), true);
 		}
 	}
 	

@@ -165,5 +165,4 @@ public class EntryHeader {
 	public String getReceiverLibrary() {
 		return receiverLibrary;
 	}
-	
 }

@@ -1,9 +1,7 @@
 package com.fnz.db2.journal.retrieve;
 
 import java.math.BigInteger;
-import java.text.DecimalFormat;
 import java.util.ArrayList;
-import java.util.Formatter;
 import java.util.List;
 
 import org.slf4j.Logger;

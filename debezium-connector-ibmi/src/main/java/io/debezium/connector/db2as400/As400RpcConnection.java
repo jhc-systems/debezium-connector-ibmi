@@ -121,15 +121,6 @@ public class As400RpcConnection implements AutoCloseable, Connect<AS400, IOExcep
             if (!retrieveJournal.hasData()) {
                 noDataDiagnostics(position);
             }
-            if (position.processed()) {
-                if (retrieveJournal.nextEntry()) {
-                    EntryHeader eheader = retrieveJournal.getEntryHeader();
-    
-                    if (eheader.getNextEntryOffset() <= 0) { // check if there is more data to process
-                        noDataDiagnostics(position);
-                    }
-                }
-            }
             while (retrieveJournal.nextEntry()) {
                 watchDog.alive();
                 EntryHeader eheader = retrieveJournal.getEntryHeader();
