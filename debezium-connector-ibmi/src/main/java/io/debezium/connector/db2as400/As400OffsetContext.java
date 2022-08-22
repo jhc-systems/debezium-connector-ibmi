@@ -160,6 +160,7 @@ public class As400OffsetContext implements OffsetContext {
     @Override
     public void postSnapshotCompletion() {
         sourceInfo.setSnapshot(SnapshotRecord.FALSE);
+        snapshotComplete = true;
     }
 
     @Override
