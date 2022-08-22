@@ -19,6 +19,7 @@ import org.slf4j.LoggerFactory;
 
 import com.fnz.db2.journal.retrieve.RetrievalCriteria.JournalCode;
 import com.fnz.db2.journal.retrieve.RetrievalCriteria.JournalEntryType;
+import com.fnz.db2.journal.retrieve.exception.InvalidJournalFilterException;
 import com.fnz.db2.journal.retrieve.exception.InvalidPositionException;
 import com.fnz.db2.journal.retrieve.rjne0200.EntryHeader;
 import com.fnz.db2.journal.retrieve.rjne0200.EntryHeaderDecoder;
@@ -194,18 +195,17 @@ public class RetrieveJournal {
 			    }
     			switch (idt) {
         			case "CPF7053": { // sequence number does not exist or break in receivers
-        			    throw new InvalidPositionException(String.format("Call failed position %s failed to find sequence or break in receivers: %s", position, id.getText()));
+        			    throw new InvalidPositionException(String.format("Call failed position %s failed to find sequence or break in receivers: %s", position, getFullAS400MessageText(id)));
         			}
         			case "CPF9801": { // specify invalid receiver
-                      throw new InvalidPositionException(String.format("Call failed position %s failed to find receiver: %s", position, id.getText()));
+                        throw new InvalidPositionException(String.format("Call failed position %s failed to find receiver: %s", position, getFullAS400MessageText(id)));
         			}
         			case "CPF7054": { // e.g. last < first
-        			  throw new InvalidPositionException(String.format("Call failed position %s failed to find offset or invalid offsets: %s", position, id.getText()));
+        			    throw new InvalidPositionException(String.format("Call failed position %s failed to find offset or invalid offsets: %s", position, id.getText()));
         			}
 					case "CPF7060": { // object in filter doesn't exist, or was not journaled 
-						id.load(MessageFile.RETURN_FORMATTING_CHARACTERS);
-						throw new InvalidPositionException(
-        			    	String.format("Call failed position %s object not found or not journaled: %s", position, id.getHelp())
+						throw new InvalidJournalFilterException(
+        			    	String.format("Call failed position %s object not found or not journaled: %s", position, getFullAS400MessageText(id))
 						);
         			}
         			case "CPF7062": {
@@ -214,13 +214,24 @@ public class RetrieveJournal {
         			    return true;
         			}
                     default: 
-                        log.error("Call failed position {} with error code {} message {}", position, idt, id.getText());                        
+                        log.error("Call failed position {} with error code {} message {}", position, idt, getFullAS400MessageText(id));                        
     			}
 			}
 			
 			throw new Exception(String.format("Call failed position %s", position));
 		}
 		return success;
+	}
+
+	private String getFullAS400MessageText(AS400Message message)
+	{
+		try {
+			message.load(MessageFile.RETURN_FORMATTING_CHARACTERS);
+			return message.getText() + " " + message.getHelp();
+		}
+		catch(Exception e) {
+			return message.getText();
+		}
 	}
 	
 	/**
