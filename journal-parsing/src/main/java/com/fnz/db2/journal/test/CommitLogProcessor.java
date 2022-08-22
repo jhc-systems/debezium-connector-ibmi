@@ -94,9 +94,6 @@ public class CommitLogProcessor {
 		log.info("success: " + success + " position: " + position);
 
 		if (success) {
-			if (position.processed()) {
-				r.nextEntry();
-			}
 			log.info("more journal data: " + r.futureDataAvailable());
 			while (r.nextEntry()) {
 				EntryHeader eheader = r.getEntryHeader();
