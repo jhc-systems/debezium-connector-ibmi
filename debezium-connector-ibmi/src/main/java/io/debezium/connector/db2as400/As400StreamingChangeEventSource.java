@@ -114,52 +114,55 @@ public class As400StreamingChangeEventSource implements StreamingChangeEventSour
         int retries = 0;
         WatchDog watchDog = new WatchDog(Thread.currentThread(), MAX_STUCK_THREAD);
         watchDog.start();
-        while (context.isRunning()) {
-            try {
-                try {
-                    JournalPosition before = new JournalPosition(offsetContext.getPosition());
-                    if (!dataConnection.getJournalEntries(offsetContext, processJournalEntries(partition, offsetContext), watchDog)) {
-                        log.debug("sleep");
-                        metronome.pause();
-                    }
-                    if (!offsetContext.getPosition().equals(before)) {
-                        dispatcher.dispatchHeartbeatEvent(partition, offsetContext);
-                    }
-                    retries = 0;
-                }
-                catch (FatalException e) {
-                	log.error("Unable to process offset {}", offsetContext.getPosition(), e);
-                	throw new DebeziumException("Unable to process offset " + offsetContext.getPosition(), e);
-                }
-                catch (InvalidPositionException e) {
-                    log.error("Invalid position resetting offsets to beginning", e);
-                    offsetContext.setPosition(new JournalPosition());
-                }
-                catch (InterruptedException e) {
-                    log.error("Interrupted processing offset {} retry {}", offsetContext.getPosition().toString(), retries);
-                    closeAndReconnect();
-                    retries++;
-                    metronome.pause();
-                }
-                catch (IOException | SQLNonTransientConnectionException e) { // SQLNonTransientConnectionException thrown by jt400 jdbc driver when connection errors
-                    log.error("Connection failed offset {} retry {}", offsetContext.getPosition().toString(), retries, e);
-                    closeAndReconnect();
-
-                    retries++;
-                    metronome.pause(); // throws interruptedException
-                }
-                catch (Exception e) {
-                    log.error("Failed to process offset {} retry {}", offsetContext.getPosition().toString(), retries, e);
-
-                    retries++;
-                    metronome.pause();
-                }
-            }
-            catch (InterruptedException e) { // handle InterruptedException during the exception handling
-                log.debug("Interrupted", e);
-            }
+        try {
+	        while (context.isRunning()) {
+	            try {
+	                try {
+	                    JournalPosition before = new JournalPosition(offsetContext.getPosition());
+	                    if (!dataConnection.getJournalEntries(offsetContext, processJournalEntries(partition, offsetContext), watchDog)) {
+	                        log.debug("sleep");
+	                        metronome.pause();
+	                    }
+	                    if (!offsetContext.getPosition().equals(before)) {
+	                        dispatcher.dispatchHeartbeatEvent(partition, offsetContext);
+	                    }
+	                    retries = 0;
+	                }
+	                catch (FatalException e) {
+	                	log.error("Unable to process offset {}", offsetContext.getPosition(), e);
+	                	throw new DebeziumException("Unable to process offset " + offsetContext.getPosition(), e);
+	                }
+	                catch (InvalidPositionException e) {
+	                    log.error("Invalid position resetting offsets to beginning", e);
+	                    offsetContext.setPosition(new JournalPosition());
+	                }
+	                catch (InterruptedException e) {
+	                    log.error("Interrupted processing offset {} retry {}", offsetContext.getPosition().toString(), retries);
+	                    closeAndReconnect();
+	                    retries++;
+	                    metronome.pause();
+	                }
+	                catch (IOException | SQLNonTransientConnectionException e) { // SQLNonTransientConnectionException thrown by jt400 jdbc driver when connection errors
+	                    log.error("Connection failed offset {} retry {}", offsetContext.getPosition().toString(), retries, e);
+	                    closeAndReconnect();
+	
+	                    retries++;
+	                    metronome.pause(); // throws interruptedException
+	                }
+	                catch (Exception e) {
+	                    log.error("Failed to process offset {} retry {}", offsetContext.getPosition().toString(), retries, e);
+	
+	                    retries++;
+	                    metronome.pause();
+	                }
+	            }
+	            catch (InterruptedException e) { // handle InterruptedException during the exception handling
+	                log.debug("Interrupted", e);
+	            }
+	        }
+        } finally {
+        	watchDog.stop();
         }
-        watchDog.stop();
     }
 
     public void rateLimittedClose() {
