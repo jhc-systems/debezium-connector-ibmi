@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public record Task (
     String id,
     State state,
-    @JsonProperty("worker_id") String workerId
+    @JsonProperty("worker_id") String workerId,
+    String trace
 //    {"id":0,"state":"RUNNING","worker_id":"10.10.20.77:8083"}
 ) { }

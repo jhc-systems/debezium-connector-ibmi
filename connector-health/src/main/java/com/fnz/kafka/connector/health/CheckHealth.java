@@ -64,7 +64,7 @@ public class CheckHealth {
                     if (Acceptable.contains(t.state())) {
                         System.out.println(String.format("%s task %s %s OK", cs.name(), t.id(), t.state()));
                     } else {
-                        System.out.println(String.format("%s task %s %s NOT OK", cs.name(), t.id(), t.state()));
+                        System.out.println(String.format("%s task %s %s NOT OK - trace: %s", cs.name(), t.id(), t.state(), t.trace()));
                         ok = false;
                     }
                 }
