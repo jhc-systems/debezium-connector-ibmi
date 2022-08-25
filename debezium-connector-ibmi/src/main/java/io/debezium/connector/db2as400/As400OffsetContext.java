@@ -49,7 +49,6 @@ public class As400OffsetContext implements OffsetContext {
     private JournalPosition position;
     private String inclueTables;
     private boolean hasNewTables = false;
-    private boolean snapshotComplete = false;
 
     public As400OffsetContext(As400ConnectorConfig connectorConfig) {
         super();
@@ -76,17 +75,12 @@ public class As400OffsetContext implements OffsetContext {
         this.connectorConfig = connectorConfig;
         sourceInfo = new SourceInfo(connectorConfig);
         this.inclueTables = includeTables;
-        this.snapshotComplete = snapshotComplete;
     }
 
     public void setPosition(JournalPosition newPosition) {
         this.position.setPosition(newPosition);
     }
     
-    public boolean isSnapshotCompplete() {
-        return this.snapshotComplete;
-    }
-
     public JournalPosition getPosition() {
         return position;
     }
@@ -118,8 +112,7 @@ public class As400OffsetContext implements OffsetContext {
                 As400OffsetContext.RECEIVER, position.getReciever(),
                 As400OffsetContext.PROCESSED, Boolean.toString(position.processed()),
                 As400OffsetContext.RECEIVER_LIBRARY, position.getReceiverLibrary(),
-                RelationalDatabaseConnectorConfig.TABLE_INCLUDE_LIST.name(), inclueTables,
-                As400OffsetContext.SNAPSHOT_COMPLETED_KEY, Boolean.toString(snapshotComplete));   
+                RelationalDatabaseConnectorConfig.TABLE_INCLUDE_LIST.name(), inclueTables);   
     }
 
     @Override
@@ -148,19 +141,16 @@ public class As400OffsetContext implements OffsetContext {
 
     @Override
     public void preSnapshotStart() {
-        snapshotComplete = false;
         sourceInfo.setSnapshot(SnapshotRecord.TRUE);
     }
 
     @Override
     public void preSnapshotCompletion() {
-        snapshotComplete = true;
     }
 
     @Override
     public void postSnapshotCompletion() {
         sourceInfo.setSnapshot(SnapshotRecord.FALSE);
-        snapshotComplete = true;
     }
 
     @Override

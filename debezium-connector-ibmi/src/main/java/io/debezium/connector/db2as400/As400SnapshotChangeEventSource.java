@@ -195,7 +195,7 @@ public class As400SnapshotChangeEventSource extends RelationalSnapshotChangeEven
     @Override
     protected SnapshottingTask getSnapshottingTask(As400Partition partition, As400OffsetContext previousOffset) {
 
-        if (previousOffset != null && previousOffset.isSnapshotCompplete()) {
+        if (previousOffset != null) {
             if (previousOffset instanceof As400OffsetContext) {
                 As400OffsetContext ctx = (As400OffsetContext) previousOffset;
                 if (!ctx.hasNewTables()) {
