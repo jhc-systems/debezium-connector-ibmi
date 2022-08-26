@@ -198,7 +198,7 @@ public class As400SnapshotChangeEventSource extends RelationalSnapshotChangeEven
         if (previousOffset != null) {
             if (previousOffset instanceof As400OffsetContext) {
                 As400OffsetContext ctx = (As400OffsetContext) previousOffset;
-                if (!ctx.hasNewTables()) {
+                if (ctx.hasNewTables()) {
                     return new SnapshottingTask(false, false);
                 }
             }
