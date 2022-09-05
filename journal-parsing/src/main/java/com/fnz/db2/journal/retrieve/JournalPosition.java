@@ -71,8 +71,9 @@ public class JournalPosition {
     	this.processed = processed;
     }
     
-    public void setProcessed(boolean processed) {
+    public JournalPosition setProcessed(boolean processed) {
     	this.processed = processed;
+    	return this;
     }
     
     public void setJournalReciever(BigInteger offset, String journalReciever, String schema, boolean processed) {

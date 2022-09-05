@@ -155,10 +155,10 @@ public class RetrieveJournal {
 		}
 		builder.withEnd();
 
-		JournalPosition currentPosition = null;
+		Optional<JournalPosition> latestJournalPosition = Optional.<JournalPosition>empty();
 		if (!hasMoreData && filteirng) { // we didn't have any more data last time
-		    currentPosition = JournalInfoRetrieval.getCurrentPosition(as400.connection(), journalInfo);
-		    currentPosition.setProcessed(true);
+			JournalPosition p = JournalInfoRetrieval.getCurrentPosition(as400.connection(), journalInfo).setProcessed(true);
+		    latestJournalPosition = Optional.of(p);
 		}
 		hasMoreData = false;
 		
@@ -176,16 +176,17 @@ public class RetrieveJournal {
 			offset = -1;
 			if (header.status() == OffsetStatus.MORE_DATA_NEW_OFFSET && header.offset()==0) {
 				log.error("buffer too small skipping this entry {}", position);
-				header.nextPosition().map(offset -> {
+				header.nextPosition().ifPresent(offset -> {
 	                position.setPosition(offset); 
-	                return null;    
 	            });
 			} 
-			if (header.status() == OffsetStatus.NO_MORE_DATA && currentPosition != null) {
-			    log.debug("moving on to current position");
-			    header = header.withCurrentJournalPosition(currentPosition);
+			if (!hasData()) {
+				latestJournalPosition.ifPresent(l -> {
+				    log.debug("moving on to current position");
+				    header = header.withCurrentJournalPosition(l);
+				    position.setPosition(l);
+				});			
 			}
-				
 		} else {
 			for (AS400Message id: spc.getMessageList()) {
 			    String idt = id.getID();
@@ -210,7 +211,11 @@ public class RetrieveJournal {
         			}
         			case "CPF7062": {
         			    log.debug("Call failed position {} no data received, probably all filtered: {}", position, id.getText());
-        		        header = new FirstHeader(0, 0, 0, OffsetStatus.NO_MORE_DATA, Optional.<JournalPosition>empty());
+        		        header = new FirstHeader(0, 0, 0, OffsetStatus.NO_MORE_DATA, latestJournalPosition);
+        				latestJournalPosition.ifPresent(l -> {
+        				    log.debug("moving on to current position");
+        				    position.setPosition(l);
+        				});        		        
         			    return true;
         			}
                     default: 
@@ -262,10 +267,15 @@ public class RetrieveJournal {
 	
 	// test without moving on
 	public boolean hasData() {
-	    if (offset < 0 && header.size() > 0)
+		if (header.status() == OffsetStatus.NO_MORE_DATA) {
+			return false;
+		}
+	    if (offset < 0 && header.size() > 0) {
 	        return true;
-	    if (offset > 0 && entryHeader.getNextEntryOffset() > 0)
-	        return true;
+	    }
+	    if (offset > 0 && entryHeader.getNextEntryOffset() > 0) {
+	    	return true;
+	    }
 	    return false;
 	}
 	
@@ -292,14 +302,17 @@ public class RetrieveJournal {
 				return true;
 			}
 			
-			// after we hit the end use the continuation header for the next offset
-			header.nextPosition().map(offset -> {
-			    log.debug("Setting confinuation offset {}", offset);
-        		position.setPosition(offset); 
-        		return null;	
-        	});
+			updateOffsetFromContinuation();
 			return false;
 		}
+	}
+
+	private void updateOffsetFromContinuation() {
+		// after we hit the end use the continuation header for the next offset
+		header.nextPosition().ifPresent(offset -> {
+		    log.debug("Setting confinuation offset {}", offset);
+			position.setPosition(offset); 
+		});
 	}
 	
 	private static boolean alreadyProcessed(JournalPosition position, EntryHeader entryHeader) {
