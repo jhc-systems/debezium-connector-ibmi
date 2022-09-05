@@ -180,7 +180,7 @@ public class RetrieveJournal {
 	                position.setPosition(offset); 
 	            });
 			} 
-			if (!hasData() || header.status() == OffsetStatus.NO_MORE_DATA) {
+			if (!hasData()) {
 				latestJournalPosition.ifPresent(l -> {
 				    log.debug("moving on to current position");
 				    header = header.withCurrentJournalPosition(l);
@@ -267,6 +267,9 @@ public class RetrieveJournal {
 	
 	// test without moving on
 	public boolean hasData() {
+		if (header.status() == OffsetStatus.NO_MORE_DATA) {
+			return false;
+		}
 	    if (offset < 0 && header.size() > 0) {
 	        return true;
 	    }
