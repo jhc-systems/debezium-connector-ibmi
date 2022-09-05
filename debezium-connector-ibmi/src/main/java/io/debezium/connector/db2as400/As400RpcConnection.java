@@ -132,7 +132,7 @@ public class As400RpcConnection implements AutoCloseable, Connect<AS400, IOExcep
             }
 
             // note that getPosition returns the current position or the next continuation offset after the current block
-            position.setPosition(retrieveJournal.getPosition());
+            offsetCtx.setPosition(retrieveJournal.getPosition());
 
         }
         else {
