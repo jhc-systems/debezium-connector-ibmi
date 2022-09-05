@@ -176,22 +176,17 @@ public class RetrieveJournal {
 			offset = -1;
 			if (header.status() == OffsetStatus.MORE_DATA_NEW_OFFSET && header.offset()==0) {
 				log.error("buffer too small skipping this entry {}", position);
-				header.nextPosition().map(offset -> {
+				header.nextPosition().ifPresent(offset -> {
 	                position.setPosition(offset); 
-	                return null;    
 	            });
 			} 
-			if (!hasData()) { // if there's no data in this response, if we have a continuation offset we can move on to that
-				updateOffsetFromContinuation();
-			}
-			if (header.status() == OffsetStatus.NO_MORE_DATA) { // there's no data normally due to filtering 
+			if (!hasData() || header.status() == OffsetStatus.NO_MORE_DATA) {
 				latestJournalPosition.ifPresent(l -> {
 				    log.debug("moving on to current position");
 				    header = header.withCurrentJournalPosition(l);
 				    position.setPosition(l);
-				});
+				});			
 			}
-				
 		} else {
 			for (AS400Message id: spc.getMessageList()) {
 			    String idt = id.getID();
@@ -311,10 +306,9 @@ public class RetrieveJournal {
 
 	private void updateOffsetFromContinuation() {
 		// after we hit the end use the continuation header for the next offset
-		header.nextPosition().map(offset -> {
+		header.nextPosition().ifPresent(offset -> {
 		    log.debug("Setting confinuation offset {}", offset);
 			position.setPosition(offset); 
-			return null;	
 		});
 	}
 	
