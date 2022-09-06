@@ -66,9 +66,10 @@ public class JournalPosition {
         return receiverLibrary;
     }
 
-    public void setOffset(BigInteger offset, boolean processed) {
+    public JournalPosition setOffset(BigInteger offset, boolean processed) {
         this.offset = offset;
     	this.processed = processed;
+    	return this;
     }
     
     public JournalPosition setProcessed(boolean processed) {

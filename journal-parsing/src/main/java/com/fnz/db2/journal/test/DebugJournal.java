@@ -19,6 +19,8 @@ import com.fnz.db2.journal.retrieve.JournalPosition;
 import com.fnz.db2.journal.retrieve.JournalReceiver;
 import com.fnz.db2.journal.retrieve.JournalRecordDecoder;
 import com.fnz.db2.journal.retrieve.NullIndicatorDecoder;
+import com.fnz.db2.journal.retrieve.RetrieveConfig;
+import com.fnz.db2.journal.retrieve.RetrieveConfigBuilder;
 import com.fnz.db2.journal.retrieve.RetrieveJournal;
 import com.fnz.db2.journal.retrieve.SchemaCacheHash;
 import com.fnz.db2.journal.retrieve.rjne0200.EntryHeader;
@@ -41,7 +43,9 @@ public class DebugJournal {
 
         byte[] data = Files.readAllBytes(Paths.get("C:\\dev\\kafka\\journal-parsing\\good-journal\\201218-0616-0"));
         JournalInfo journal = JournalInfoRetrieval.getJournal(as400Connect.connection(), schema);
-        RetrieveJournal rnj = new RetrieveJournal(as400Connect, journal,  null);
+		RetrieveConfig config = new RetrieveConfigBuilder().withAs400(as400Connect).withJournalInfo(journal).build();
+		RetrieveJournal rnj = new RetrieveJournal(config);
+
         rnj.setOutputData(data, new FirstHeader(data.length, 0, data.length, OffsetStatus.NO_MORE_DATA, Optional.empty()), new JournalPosition());
         if (rnj.nextEntry() ) {
         	EntryHeader entry = rnj.getEntryHeader();
