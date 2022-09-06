@@ -49,7 +49,7 @@ public class As400RpcConnection implements AutoCloseable, Connect<AS400, IOExcep
         this.streamingMetrics = streamingMetrics;
         try {
             journalInfo = JournalInfoRetrieval.getJournal(connection(), config.getSchema());
-            retrieveJournal = new RetrieveJournal(this, journalInfo, config.getJournalBufferSize(), true, includes);
+            retrieveJournal = new RetrieveJournal(this, journalInfo, config.getJournalBufferSize(), config.serverFiltering(), includes);
         }
         catch (IOException e) {
             log.error("Failed to fetch library", e);

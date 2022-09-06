@@ -80,6 +80,11 @@ public class As400ConnectorConfig extends RelationalDatabaseConnectorConfig {
      */
     public static final Field SOCKET_TIMEOUT = Field.create("socket timeout", "socket timeout in milliseconds", "socket timeout", 0);
 
+    /**
+     * if filtering should be done on the server
+     */
+    public static final Field SERVER_FILTERING = Field.create("server_filtering", "server filtering", "should server filteirng be used", true);
+
 
 
     public As400ConnectorConfig(Configuration config) {
@@ -100,6 +105,10 @@ public class As400ConnectorConfig extends RelationalDatabaseConnectorConfig {
 
     public SnapshotMode getSnapshotMode() {
         return snapshotMode;
+    }
+    
+    public boolean serverFiltering() {
+        return config.getBoolean(SERVER_FILTERING);
     }
 
     public String getHostName() {
@@ -163,7 +172,8 @@ public class As400ConnectorConfig extends RelationalDatabaseConnectorConfig {
     }
 
     public static Field.Set ALL_FIELDS = Field.setOf(JdbcConfiguration.HOSTNAME, USER, PASSWORD, SCHEMA, BUFFER_SIZE,
-            RelationalDatabaseConnectorConfig.SNAPSHOT_SELECT_STATEMENT_OVERRIDES_BY_TABLE, KEEP_ALIVE, THREAD_USED, SOCKET_TIMEOUT);
+            RelationalDatabaseConnectorConfig.SNAPSHOT_SELECT_STATEMENT_OVERRIDES_BY_TABLE, KEEP_ALIVE, THREAD_USED, 
+            SOCKET_TIMEOUT, SERVER_FILTERING);
 
     public static ConfigDef configDef() {
         ConfigDef c = RelationalDatabaseConnectorConfig.CONFIG_DEFINITION.edit()
