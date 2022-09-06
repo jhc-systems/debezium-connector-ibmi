@@ -5,13 +5,12 @@
  */
 package io.debezium.connector.db2as400;
 
-import java.math.BigInteger;
-
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.common.config.ConfigDef.Importance;
 import org.apache.kafka.common.config.ConfigDef.Width;
 
 import com.fnz.db2.journal.retrieve.JournalPosition;
+import com.fnz.db2.journal.retrieve.RetrieveConfig;
 
 import io.debezium.config.Configuration;
 import io.debezium.config.EnumeratedValue;
@@ -80,6 +79,10 @@ public class As400ConnectorConfig extends RelationalDatabaseConnectorConfig {
      */
     public static final Field SOCKET_TIMEOUT = Field.create("socket timeout", "socket timeout in milliseconds", "socket timeout", 0);
 
+    /**
+     * Maximum number of journal entries to process server side
+     */
+    public static final Field MAX_SERVER_SIDE_ENTRIES = Field.create("max_entries", "max server side entries", "Maximum number of journal entries to process server side when filtering", RetrieveConfig.DEFAULT_MAX_SERVER_SIDE_ENTRIES);
 
 
     public As400ConnectorConfig(Configuration config) {
@@ -130,6 +133,10 @@ public class As400ConnectorConfig extends RelationalDatabaseConnectorConfig {
     public Integer getKeepAlive() {
         return config.getInteger(KEEP_ALIVE);
     }
+    
+    public Integer getMaxServerSideEntries() {
+        return config.getInteger(MAX_SERVER_SIDE_ENTRIES);
+    }
 
     public JournalPosition getOffset() {
         String receiver = config.getString(As400OffsetContext.RECEIVER);
@@ -163,7 +170,8 @@ public class As400ConnectorConfig extends RelationalDatabaseConnectorConfig {
     }
 
     public static Field.Set ALL_FIELDS = Field.setOf(JdbcConfiguration.HOSTNAME, USER, PASSWORD, SCHEMA, BUFFER_SIZE,
-            RelationalDatabaseConnectorConfig.SNAPSHOT_SELECT_STATEMENT_OVERRIDES_BY_TABLE, KEEP_ALIVE, THREAD_USED, SOCKET_TIMEOUT);
+            RelationalDatabaseConnectorConfig.SNAPSHOT_SELECT_STATEMENT_OVERRIDES_BY_TABLE, KEEP_ALIVE, THREAD_USED, SOCKET_TIMEOUT,
+            MAX_SERVER_SIDE_ENTRIES);
 
     public static ConfigDef configDef() {
         ConfigDef c = RelationalDatabaseConnectorConfig.CONFIG_DEFINITION.edit()
