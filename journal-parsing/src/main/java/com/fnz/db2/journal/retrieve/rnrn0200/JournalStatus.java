@@ -37,6 +37,6 @@ public enum JournalStatus {
 	    It was restored from a version that was saved while it was attached to the journal. Additional journal entries may have been written that were not restored.
 	    It was one of a pair of dual journal receivers, and it was found damaged while attached to the journal. The journal receiver has since been detached. This journal receiver is considered partial because additional journal entries may have been written to the dual journal receiver.
 	    It is associated with a remote journal and it does not contain all the journal entries that are in the corresponding journal receiver associated with the source journal.
-6   The journal receiver status is empty, since the receiver has never been attached to a journal.	    
+	6   The journal receiver status is empty, since the receiver has never been attached to a journal.	    
 	*/
 }
