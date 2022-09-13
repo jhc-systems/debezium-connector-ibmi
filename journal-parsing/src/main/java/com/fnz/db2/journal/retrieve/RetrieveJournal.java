@@ -72,7 +72,7 @@ public class RetrieveJournal {
 	
 	/**
 	 * retrieves a block of journal data
-	 * @param retrievePosision
+	 * @param retrievePosition
 	 * @return true if the journal was read successfully false if there was some problem reading the journal
 	 * @throws Exception
 	 * 
@@ -80,14 +80,14 @@ public class RetrieveJournal {
 	 * CURCHAIN will work though journals that have happened but may no longer be available
 	 * if the journal is no longer available we need to capture this and log an error as we may have missed data
 	 */
-	public boolean retrieveJournal(JournalPosition retrievePosision) throws Exception {
+	public boolean retrieveJournal(JournalPosition retrievePosition) throws Exception {
         offset = -1;
         entryHeader = null;
         header = null;
 
-        this.position = retrievePosision;
+        this.position = retrievePosition;
 		this.entryHeader = null;
-		log.debug("Fetch journal at postion {}", retrievePosision);
+		log.debug("Fetch journal at postion {}", retrievePosition);
 		ServiceProgramCall spc = new ServiceProgramCall(config.as400().connection());
 		spc.getServerJob().setLoggingLevel(0);
 		builder.init();
@@ -96,13 +96,13 @@ public class RetrieveJournal {
             builder.withFileFilters(config.includeFiles());
         }
 
-		if (retrievePosision.isOffsetSet()) {
-			builder.withStartingSequence(retrievePosision.getOffset());
+		if (retrievePosition.isOffsetSet()) {
+			builder.withStartingSequence(retrievePosition.getOffset());
 		} else {
 			builder.withFromStart();
 		}
-		if (retrievePosision.getJournal().length > 0) {
-			builder.withReceivers(retrievePosision.getReciever(), retrievePosision.getReceiverLibrary());
+		if (retrievePosition.getJournal().length > 0) {
+			builder.withReceivers(retrievePosition.getReciever(), retrievePosition.getReceiverLibrary());
 		} else {
 			builder.withReceivers("*CURCHAIN"); 
 		}
@@ -112,11 +112,11 @@ public class RetrieveJournal {
 		}
 		Optional<JournalPosition> latestJournalPosition = Optional.<JournalPosition>empty();
 		if (config.filtering()) {			
-			Optional<JournalPosition> endPosition = findEndPosition(config.as400().connection(), retrievePosision);
+			Optional<JournalPosition> endPosition = findEndPosition(config.as400().connection(), retrievePosition);
 			endPosition.ifPresent(jp -> {
 				builder.withEnd(jp.getOffset());
 			});
-			if (positionsEqual(retrievePosision, endPosition)) { // we are already at the end
+			if (positionsEqual(retrievePosition, endPosition)) { // we are already at the end
 				header = new FirstHeader(0, 0, 0, OffsetStatus.NO_MORE_DATA, endPosition);
 				return true;
 			}
@@ -140,63 +140,63 @@ public class RetrieveJournal {
 			log.debug("first header: {} ", header);
 			offset = -1;
 			if (header.status() == OffsetStatus.MORE_DATA_NEW_OFFSET && header.offset()==0) {
-				log.error("buffer too small skipping this entry {}", retrievePosision);
+				log.error("buffer too small skipping this entry {}", retrievePosition);
 				header.nextPosition().ifPresent(offset -> {
-	                retrievePosision.setPosition(offset); 
+	                retrievePosition.setPosition(offset); 
 	            });
 			} 
 			if (!hasData()) {
 			    log.debug("moving on to current position");
 			    latestJournalPosition.ifPresent(l -> {
 				    header = header.withCurrentJournalPosition(l);
-				    retrievePosision.setPosition(l);
+				    retrievePosition.setPosition(l);
 			    });
 			}
 		} else {
 			for (AS400Message id: spc.getMessageList()) {
 			    String idt = id.getID();
 			    if (idt == null) {
-			        log.error("Call failed position {} no Id, message: {}", retrievePosision, id.getText());
+			        log.error("Call failed position {} no Id, message: {}", retrievePosition, id.getText());
 			        continue;
 			    }
     			switch (idt) {
         			case "CPF7053": { // sequence number does not exist or break in receivers
-        			    throw new InvalidPositionException(String.format("Call failed position %s failed to find sequence or break in receivers: %s", retrievePosision, getFullAS400MessageText(id)));
+        			    throw new InvalidPositionException(String.format("Call failed position %s failed to find sequence or break in receivers: %s", retrievePosition, getFullAS400MessageText(id)));
         			}
         			case "CPF9801": { // specify invalid receiver
-                        throw new InvalidPositionException(String.format("Call failed position %s failed to find receiver: %s", retrievePosision, getFullAS400MessageText(id)));
+                        throw new InvalidPositionException(String.format("Call failed position %s failed to find receiver: %s", retrievePosition, getFullAS400MessageText(id)));
         			}
         			case "CPF7054": { // e.g. last < first
-        			    throw new InvalidPositionException(String.format("Call failed position %s failed to find offset or invalid offsets: %s", retrievePosision, id.getText()));
+        			    throw new InvalidPositionException(String.format("Call failed position %s failed to find offset or invalid offsets: %s", retrievePosition, id.getText()));
         			}
 					case "CPF7060": { // object in filter doesn't exist, or was not journaled 
 						throw new InvalidJournalFilterException(
-        			    	String.format("Call failed position %s object not found or not journaled: %s", retrievePosision, getFullAS400MessageText(id))
+        			    	String.format("Call failed position %s object not found or not journaled: %s", retrievePosition, getFullAS400MessageText(id))
 						);
         			}
         			case "CPF7062": { 
-        			    log.debug("Call failed position {} no data received, probably all filtered: {}", retrievePosision, id.getText());
+        			    log.debug("Call failed position {} no data received, probably all filtered: {}", retrievePosition, id.getText());
         			 // if we're filtering we get no continuation offset just an error
         		        header = new FirstHeader(0, 0, 0, OffsetStatus.NO_MORE_DATA, latestJournalPosition);
         			    latestJournalPosition.ifPresent(l -> { 
         				    header = header.withCurrentJournalPosition(l);
-        				    retrievePosision.setPosition(l);
+        				    retrievePosition.setPosition(l);
         			    });
         			    return true;
         			}
                     default: 
-                        log.error("Call failed position {} with error code {} message {}", retrievePosision, idt, getFullAS400MessageText(id));                        
+                        log.error("Call failed position {} with error code {} message {}", retrievePosition, idt, getFullAS400MessageText(id));                        
     			}
 			}
 			
-			throw new Exception(String.format("Call failed position %s", retrievePosision));
+			throw new Exception(String.format("Call failed position %s", retrievePosition));
 		}
 		return success;
 	}
 
 
-	private boolean positionsEqual(JournalPosition retrievePosision, Optional<JournalPosition> endPosition) {
-		return endPosition.isPresent() && endPosition.get().equals(retrievePosision);
+	private boolean positionsEqual(JournalPosition retrievePosition, Optional<JournalPosition> endPosition) {
+		return endPosition.isPresent() && endPosition.get().equals(retrievePosition);
 	}
 
 	private Optional<JournalPosition> findEndPosition(AS400 as400, JournalPosition position) throws Exception {
