@@ -29,6 +29,7 @@ import io.debezium.pipeline.ChangeEventSourceCoordinator;
 import io.debezium.pipeline.DataChangeEvent;
 import io.debezium.pipeline.ErrorHandler;
 import io.debezium.pipeline.EventDispatcher;
+import io.debezium.pipeline.source.snapshot.incremental.SignalBasedIncrementalSnapshotContext;
 import io.debezium.pipeline.spi.Offsets;
 import io.debezium.relational.TableId;
 import io.debezium.schema.TopicSelector;
@@ -81,11 +82,11 @@ public class As400ConnectorTask extends BaseSourceTask<As400Partition, As400Offs
         ErrorHandler errorHandler = new ErrorHandler(As400RpcConnector.class, connectorConfig, queue);
 
         Offsets<As400Partition, As400OffsetContext> previousOffsetPartition = getPreviousOffsets(new As400Partition.Provider(connectorConfig),
-                new As400OffsetContext.Loader(connectorConfig));
+                new As400OffsetContext.Loader(connectorConfig, new SignalBasedIncrementalSnapshotContext<>()));
         As400OffsetContext previousOffset = previousOffsetPartition.getTheOnlyOffset();
         if (previousOffset == null) {
             log.info("previous offsets not found creating from config");
-            previousOffset = new As400OffsetContext(connectorConfig);
+            previousOffset = new As400OffsetContext(connectorConfig, new SignalBasedIncrementalSnapshotContext<>());
         }
 
 

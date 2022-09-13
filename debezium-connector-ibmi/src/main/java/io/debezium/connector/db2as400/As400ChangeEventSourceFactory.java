@@ -5,14 +5,19 @@
  */
 package io.debezium.connector.db2as400;
 
-import io.debezium.connector.db2as400.metrics.As400StreamingChangeEventSourceMetrics;
+import java.util.Optional;
+
 import io.debezium.pipeline.ErrorHandler;
 import io.debezium.pipeline.EventDispatcher;
+import io.debezium.pipeline.source.snapshot.incremental.IncrementalSnapshotChangeEventSource;
+import io.debezium.pipeline.source.snapshot.incremental.SignalBasedIncrementalSnapshotChangeEventSource;
 import io.debezium.pipeline.source.spi.ChangeEventSourceFactory;
+import io.debezium.pipeline.source.spi.DataChangeEventListener;
 import io.debezium.pipeline.source.spi.SnapshotChangeEventSource;
 import io.debezium.pipeline.source.spi.SnapshotProgressListener;
 import io.debezium.pipeline.source.spi.StreamingChangeEventSource;
 import io.debezium.relational.TableId;
+import io.debezium.schema.DataCollectionId;
 import io.debezium.util.Clock;
 
 public class As400ChangeEventSourceFactory implements ChangeEventSourceFactory<As400Partition, As400OffsetContext> {
@@ -56,4 +61,14 @@ public class As400ChangeEventSourceFactory implements ChangeEventSourceFactory<A
                 clock,
                 schema);
     }
+
+	@Override
+	public Optional<IncrementalSnapshotChangeEventSource<As400Partition, ? extends DataCollectionId>> getIncrementalSnapshotChangeEventSource(
+			As400OffsetContext offsetContext, SnapshotProgressListener<As400Partition> snapshotProgressListener,
+			DataChangeEventListener<As400Partition> dataChangeEventListener) {
+
+		return Optional.of(new SignalBasedIncrementalSnapshotChangeEventSource<>(configuration,
+				jdbcConnection, dispatcher,	schema, clock, snapshotProgressListener,
+				dataChangeEventListener));
+	}
 }
