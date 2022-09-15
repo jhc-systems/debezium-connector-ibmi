@@ -20,6 +20,8 @@ import com.fnz.db2.journal.retrieve.FileFilter;
 import com.fnz.db2.journal.retrieve.JournalInfo;
 import com.fnz.db2.journal.retrieve.JournalInfoRetrieval;
 import com.fnz.db2.journal.retrieve.JournalPosition;
+import com.fnz.db2.journal.retrieve.RetrieveConfig;
+import com.fnz.db2.journal.retrieve.RetrieveConfigBuilder;
 import com.fnz.db2.journal.retrieve.RetrieveJournal;
 import com.fnz.db2.journal.retrieve.rjne0200.EntryHeader;
 import com.fnz.db2.journal.retrieve.rnrn0200.DetailedJournalReceiver;
@@ -49,7 +51,13 @@ public class As400RpcConnection implements AutoCloseable, Connect<AS400, IOExcep
         this.streamingMetrics = streamingMetrics;
         try {
             journalInfo = JournalInfoRetrieval.getJournal(connection(), config.getSchema());
-            retrieveJournal = new RetrieveJournal(this, journalInfo, config.getJournalBufferSize(), true, includes);
+			RetrieveConfig rconfig = new RetrieveConfigBuilder().withAs400(this)
+					.withJournalBufferSize(config.getJournalBufferSize())
+					.withJournalInfo(journalInfo)
+					.withMaxServerSideEntries(config.getMaxServerSideEntries())
+					.withServerFiltering(true)
+					.withIncludeFiles(includes).build();
+			retrieveJournal = new RetrieveJournal(rconfig);
         }
         catch (IOException e) {
             log.error("Failed to fetch library", e);
