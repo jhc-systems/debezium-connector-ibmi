@@ -4,6 +4,7 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -176,7 +177,7 @@ public class JournalInfoRetrieval {
 	}
 
 	static DetailedJournalReceiver getOffset(AS400 as400, JournalInfo info) throws Exception {
-	    return getOffset(as400, new JournalReceiverInfo(info.receiver, info.receiverLibrary, null, null));
+	    return getOffset(as400, new JournalReceiverInfo(info.receiver, info.receiverLibrary, null, null, Optional.empty()));
 	}
 	
 	/**

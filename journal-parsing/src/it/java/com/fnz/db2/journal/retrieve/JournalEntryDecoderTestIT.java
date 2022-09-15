@@ -109,7 +109,10 @@ class JournalEntryDecoderTestIT {
 			}
 		}
 
-		RetrieveJournal rj = new RetrieveJournal(as400Connect, journal);
+		RetrieveConfig config = new RetrieveConfigBuilder().withAs400(as400Connect).withJournalInfo(journal).build();
+		RetrieveJournal rj = new RetrieveJournal(config);
+		
+		
 		SchemaCacheHash schemaHash = new SchemaCacheHash();
 
         String database = JdbcFileDecoder.getDatabaseName(sqlConnect.connection());

@@ -24,7 +24,7 @@ import com.ibm.as400.access.AS400Text;
  * 
  * TODO optimise so we don't have to rebuild entire thing for every offset
  * 
- * @author Stanley
+ * @author loosely based off work by Stanley
  * 
  */
 public class RetrievalCriteria {
@@ -55,39 +55,34 @@ public class RetrievalCriteria {
 	 * 
 	 * @param value
 	 */
-	public void addRcvRng(String value) {
-		RetrieveKey curKey = RetrieveKey.RCVRNG;
-		String temp = null;
-		temp = ((String) value).trim();
+	public void withReceiverRange(String value) {
+		String temp = ((String) value).trim();
 		if (temp.equals("*CURAVLCHN") || temp.equals("*CURCHAIN") || temp.equals("*CURRENT")) {
 			temp = StringHelpers.padRight(temp, 40);
 		} else {
 			throw new IllegalArgumentException(
-					String.format("Value for '%s' must be either '*CURAVLCHN' or '*CURCHAIN' or '*CURRENT' if String; "
-							+ "or an instance of String[] with four elements (in the order of: starting receiver, staring library, "
-							+ "ending receiver, ending library).", curKey.getDescription()));
+					String.format("Simple value for 'Range of journal receivers' must be either '*CURAVLCHN' or '*CURCHAIN' or '*CURRENT'"));
 		}
 		addStructureData(RetrieveKey.RCVRNG, AS400_TEXT_40, temp);
 	}
 
-	public void addReceiverRange(String startReceiver, String startLibrary, String endReceiver, String endLibrary) {
+	public void withReceiverRange(String startReceiver, String startLibrary, String endReceiver, String endLibrary) {
 		String padded = String.format("%-10s%-10s%-10s%-10s", startReceiver, startLibrary, endReceiver, endLibrary);
 		addStructureData(RetrieveKey.RCVRNG,  AS400_TEXT_40, padded);
 	}
 	
-	public void varLenNullPointerIndicatorLength() {
+	public void withLenNullPointerIndicatorVarLength() {
 		addStructureData(RetrieveKey.NULLINDLEN, AS400_TEXT_10, StringHelpers.padRight("*VARLEN", 10));
 	}
 	
-	public void varLenNullPointerIndicatorLength(int value) {
-		RetrieveKey curKey = RetrieveKey.NULLINDLEN;
+	public void withNullPointerIndicatorLength(int value) {
 		String padded = null;
 		if (value % 16 != 0) {
 			throw new IllegalArgumentException(String.format(
-					"Value for '%s' should be divisible by 16", curKey.getDescription()));
+					"Value for 'Null value indicators length' should be divisible by 16"));
 		}
 		padded = StringHelpers.padLeft(Integer.toString(value), 10);
-		addStructureData(curKey, AS400_TEXT_10, padded);
+		addStructureData(RetrieveKey.NULLINDLEN, AS400_TEXT_10, padded);
 	}
 
 	/**
@@ -96,10 +91,9 @@ public class RetrievalCriteria {
 	 * 
 	 * @param value
 	 */
-	public void addFromEnt(FromEnt value) {
-		RetrieveKey curKey = RetrieveKey.FROMENT;
+	public void withFromEnt(FromEnt value) {
 		String temp = StringHelpers.padRight(value.getValue(), AS400_TEXT_20.getByteLength());
-		addStructureData(curKey, AS400_TEXT_20, temp);
+		addStructureData(RetrieveKey.FROMENT, AS400_TEXT_20, temp);
 	}
 	
 	/**
@@ -108,14 +102,18 @@ public class RetrievalCriteria {
 	 * 
 	 * @param value
 	 */
-	public void addFromEnt(BigInteger value) {
-		RetrieveKey curKey = RetrieveKey.FROMENT;
+	public void withFromEnt(BigInteger value) {
 		String temp = String.format("%20d", value).toString();
-		addStructureData(curKey, AS400_TEXT_20, temp);
+		addStructureData(RetrieveKey.FROMENT, AS400_TEXT_20, temp);
 	}
 	
-	public void addToEnd() {
+	public void withEnd() {
 		addStructureData(RetrieveKey.TOENT, AS400_TEXT_20, "*LAST");
+	}
+	
+	public void withEnd(BigInteger value) {
+		String temp = String.format("%20d", value).toString();
+		addStructureData(RetrieveKey.TOENT, AS400_TEXT_20, temp);
 	}
 
 	/**
@@ -126,9 +124,8 @@ public class RetrievalCriteria {
 	 * @param eKey
 	 * @param value
 	 */
-	private void addNbrEnt(Integer value) {
-		RetrieveKey curKey = RetrieveKey.NBRENT;
-		addStructureData(curKey, BIN4, value);
+	private void withMaxEntriesToReturn(Integer value) {
+		addStructureData(RetrieveKey.NBRENT, BIN4, value);
 	}
 
 	/**
@@ -139,18 +136,17 @@ public class RetrievalCriteria {
 	 * 
 	 * @param value
 	 */
-	public void addJrnCde(JournalCode[] value) {
+	public void withJrnCde(JournalCode[] value) {
 		JournalCode[] range = (JournalCode[]) value;
 		StringBuilder code = new StringBuilder();
 		for (int i = 0; i < range.length; i++) {
 			code.append(StringHelpers.padRight(range[i].getKey(), 10));
 			code.append(StringHelpers.padRight("*ALLSLT", 10));
 		}
-		 _addJrnCde(range.length, code.toString());
+		 _withJrnCde(range.length, code.toString());
 	}
 	
-	private void _addJrnCde(int count, String codes) {
-		RetrieveKey curKey = RetrieveKey.JRNCDE;
+	private void _withJrnCde(int count, String codes) {
 		Object[] temp2 = new Object[2];
 		temp2[0] = Integer.valueOf(count);
 		temp2[1] = codes;
@@ -160,7 +156,7 @@ public class RetrievalCriteria {
 		type[1] = new AS400Text(codes.length());
 		AS400Structure temp2Structure = new AS400Structure(type);
 	
-		addStructureData(curKey, temp2Structure, temp2);
+		addStructureData(RetrieveKey.JRNCDE, temp2Structure, temp2);
 	}
 
 	/**
@@ -168,8 +164,7 @@ public class RetrievalCriteria {
 	 * 
 	 * @param value
 	 */
-	public void addEntTyp(JournalEntryType[] value) {
-		RetrieveKey curKey = RetrieveKey.ENTTYP;
+	public void withEntTyp(JournalEntryType[] value) {
 		String temp = null;
 		int count = 0;
 
@@ -190,7 +185,7 @@ public class RetrievalCriteria {
 		type[1] = new AS400Text(temp.length());
 		AS400Structure temp2Structure = new AS400Structure(type);
 
-		addStructureData(curKey, temp2Structure, temp2);
+		addStructureData(RetrieveKey.ENTTYP, temp2Structure, temp2);
 	}
 	
     /**
@@ -203,7 +198,7 @@ public class RetrievalCriteria {
      * 
      * @param fileFilters
      */
-	public void addFILE(List<FileFilter> fileFilters) {
+	public void withFILE(List<FileFilter> fileFilters) {
         if (fileFilters == null)
             return;
         int length = fileFilters.size();

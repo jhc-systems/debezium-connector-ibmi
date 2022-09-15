@@ -23,12 +23,15 @@ public class JournalInfoMain {
         JournalInfo ji = JournalInfoRetrieval.getJournal(as400Connect.connection(), schema);
 
         List<DetailedJournalReceiver> jri = JournalInfoRetrieval.getReceivers(as400Connect.connection(), ji);
-        for (DetailedJournalReceiver j : jri) {
-            log.info("receiver {}", j);
-        }
-        JournalInfo jr = JournalInfoRetrieval.getReceiver(as400Connect.connection(), ji);
-        log.info("Journal info {}", jr);
         
-        log.info("current position: {}", JournalInfoRetrieval.getCurrentPosition(as400Connect.connection(), ji));
+        log.info(DetailedJournalReceiver.firstInLatestChain(jri).toString());
+        
+//        for (DetailedJournalReceiver j : jri) {
+//            log.info("receiver {}", j);
+//        }
+//        JournalInfo jr = JournalInfoRetrieval.getReceiver(as400Connect.connection(), ji);
+//        log.info("Journal info {}", jr);
+//        
+//        log.info("current position: {}", JournalInfoRetrieval.getCurrentPosition(as400Connect.connection(), ji));
 	}
 }

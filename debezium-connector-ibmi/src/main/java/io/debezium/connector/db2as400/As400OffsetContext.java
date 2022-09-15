@@ -49,7 +49,7 @@ public class As400OffsetContext implements OffsetContext {
     private JournalPosition position;
     private String inclueTables;
     private boolean hasNewTables = false;
-    private boolean snapshotComplete = false;
+    private volatile boolean snapshotComplete = false;
 
     public As400OffsetContext(As400ConnectorConfig connectorConfig) {
         super();

@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.file.Files;
 import java.text.SimpleDateFormat;
@@ -12,7 +13,6 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
-import java.util.regex.Pattern;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,6 +26,7 @@ import com.fnz.db2.journal.retrieve.rjne0200.EntryHeaderDecoder;
 import com.fnz.db2.journal.retrieve.rjne0200.FirstHeader;
 import com.fnz.db2.journal.retrieve.rjne0200.FirstHeaderDecoder;
 import com.fnz.db2.journal.retrieve.rjne0200.OffsetStatus;
+import com.fnz.db2.journal.retrieve.rnrn0200.DetailedJournalReceiver;
 import com.ibm.as400.access.AS400;
 import com.ibm.as400.access.AS400Bin4;
 import com.ibm.as400.access.AS400Message;
@@ -53,69 +54,25 @@ public class RetrieveJournal {
     private static final SimpleDateFormat DATE_FORMATTER = new SimpleDateFormat("yyMMdd-hhmm");
     
 	private ParameterListBuilder builder = new ParameterListBuilder();
-	private final Connect<AS400, IOException> as400;
+	
+	private RetrieveConfig config;
 	private byte[] outputData = null;
 	private FirstHeader header = null;
 	private EntryHeader entryHeader = null;
 	private int offset = -1;
 	private JournalPosition position;
-    private final File dumpFolder; 
-	private final int journalBufferSize;
 	private long totalTransferred = 0;
-	private final boolean filterCodes;
-	private final List<FileFilter> includeFiles;
 	private boolean hasMoreData = true;
-	private final boolean filteirng;
-	private final JournalInfo journalInfo;
-
-	public RetrieveJournal(Connect<AS400, IOException> as400, JournalInfo journalLib) {
-		this(as400, journalLib, null, ParameterListBuilder.DEFAULT_JOURNAL_BUFFER_SIZE, true, null);
-	}
 	
-	public RetrieveJournal(Connect<AS400, IOException> as400, JournalInfo journalLib, int journalBufferSize, boolean filterCodes, List<FileFilter> includeFiles) {
-		this(as400, journalLib, null, journalBufferSize, true, includeFiles);
-	}
-	
-	public RetrieveJournal(Connect<AS400, IOException> as400, JournalInfo journalLib, String dumpFolder) {
-		this(as400, journalLib, dumpFolder, ParameterListBuilder.DEFAULT_JOURNAL_BUFFER_SIZE, true, null);
-	}
-	
-	public RetrieveJournal(Connect<AS400, IOException> as400, JournalInfo journalInfo, String dumpFolder, int journalBufferSize, boolean filterCodes, List<FileFilter> includeFiles) {
-	    this.filterCodes = filterCodes;
-		this.journalBufferSize = journalBufferSize;
-		if (includeFiles != null) {
-		    if (includeFiles.size() < 300) {
-		        this.includeFiles = includeFiles;
-		        filteirng = true;
-		    } else {
-		        log.error("ignoring filter list as too many files included {} limit 300", includeFiles.size());
-		        this.includeFiles = null;
-		        filteirng = filterCodes;
-		    }
-		} else {
-		    filteirng = filterCodes;
-            this.includeFiles = null;
-		}
-
-		this.journalInfo = journalInfo;
-		builder.withJournal(journalInfo.receiver, journalInfo.receiverLibrary); 
-		this.as400 = as400;
-		if (dumpFolder != null) {
-			File f = new File(dumpFolder);
-			if (f.exists())
-				this.dumpFolder = f;
-			else
-				this.dumpFolder = null;
-		} else {
-			this.dumpFolder = null;
-		}
+	public RetrieveJournal(RetrieveConfig config) {
+		this.config = config;
+		builder.withJournal(config.journalInfo().receiver, config.journalInfo().receiverLibrary); 
 	}
 
-	private Pattern NOT_FOUND_PATTERN = Pattern.compile(".*Object [^ ]* in library [^ ]* not found.*");
 	
 	/**
 	 * retrieves a block of journal data
-	 * @param position
+	 * @param retrievePosition
 	 * @return true if the journal was read successfully false if there was some problem reading the journal
 	 * @throws Exception
 	 * 
@@ -123,43 +80,51 @@ public class RetrieveJournal {
 	 * CURCHAIN will work though journals that have happened but may no longer be available
 	 * if the journal is no longer available we need to capture this and log an error as we may have missed data
 	 */
-	public boolean retrieveJournal(JournalPosition position) throws Exception {
+	public boolean retrieveJournal(JournalPosition retrievePosition) throws Exception {
         offset = -1;
         entryHeader = null;
         header = null;
 
-        this.position = position;
+        this.position = retrievePosition;
 		this.entryHeader = null;
-		log.debug("Fetch journal at postion {}", position);
-		ServiceProgramCall spc = new ServiceProgramCall(as400.connection());
+		log.debug("Fetch journal at postion {}", retrievePosition);
+		ServiceProgramCall spc = new ServiceProgramCall(config.as400().connection());
 		spc.getServerJob().setLoggingLevel(0);
 		builder.init();
 		builder.withJournalEntryType(JournalEntryType.ALL);
-        if (includeFiles != null && !includeFiles.isEmpty()) {
-            builder.withFileFilters(includeFiles);
+        if (config.filtering() && !config.includeFiles().isEmpty()) {
+            builder.withFileFilters(config.includeFiles());
         }
 
-		if (position.isOffsetSet()) {
-			builder.withStartingSequence(position.getOffset());
+		if (retrievePosition.isOffsetSet()) {
+			builder.withStartingSequence(retrievePosition.getOffset());
 		} else {
 			builder.withFromStart();
 		}
-		if (position.getJournal().length > 0) {
-			builder.withReceivers(position.getReciever(), position.getReceiverLibrary());
+		if (retrievePosition.getJournal().length > 0) {
+			builder.withReceivers(retrievePosition.getReciever(), retrievePosition.getReceiverLibrary());
 		} else {
 			builder.withReceivers("*CURCHAIN"); 
 		}
-		builder.withBufferLenth(journalBufferSize);
-		if (filterCodes) {
+		builder.withBufferLenth(config.journalBufferSize());
+		if (config.filtering() && config.filterCodes().length > 0) {
 		    builder.filterJournalCodes(REQUIRED_JOURNAL_CODES);
 		}
-		builder.withEnd();
-
 		Optional<JournalPosition> latestJournalPosition = Optional.<JournalPosition>empty();
-		if (!hasMoreData && filteirng) { // we didn't have any more data last time
-			JournalPosition p = JournalInfoRetrieval.getCurrentPosition(as400.connection(), journalInfo).setProcessed(true);
-		    latestJournalPosition = Optional.of(p);
+		if (config.filtering()) {			
+			Optional<JournalPosition> endPosition = findEndPosition(config.as400().connection(), retrievePosition);
+			endPosition.ifPresent(jp -> {
+				builder.withEnd(jp.getOffset());
+			});
+			if (positionsEqual(retrievePosition, endPosition)) { // we are already at the end
+				header = new FirstHeader(0, 0, 0, OffsetStatus.NO_MORE_DATA, endPosition);
+				return true;
+			}
+			latestJournalPosition = endPosition;
+		} else {
+			builder.withEnd();
 		}
+
 		hasMoreData = false;
 		
 		ProgramParameter[] parameters = builder.build();
@@ -175,57 +140,93 @@ public class RetrieveJournal {
 			log.debug("first header: {} ", header);
 			offset = -1;
 			if (header.status() == OffsetStatus.MORE_DATA_NEW_OFFSET && header.offset()==0) {
-				log.error("buffer too small skipping this entry {}", position);
+				log.error("buffer too small skipping this entry {}", retrievePosition);
 				header.nextPosition().ifPresent(offset -> {
-	                position.setPosition(offset); 
+	                retrievePosition.setPosition(offset); 
 	            });
 			} 
 			if (!hasData()) {
-				latestJournalPosition.ifPresent(l -> {
-				    log.debug("moving on to current position");
+			    log.debug("moving on to current position");
+			    latestJournalPosition.ifPresent(l -> {
 				    header = header.withCurrentJournalPosition(l);
-				    position.setPosition(l);
-				});			
+				    retrievePosition.setPosition(l);
+			    });
 			}
 		} else {
 			for (AS400Message id: spc.getMessageList()) {
 			    String idt = id.getID();
 			    if (idt == null) {
-			        log.error("Call failed position {} no Id, message: {}", position, id.getText());
+			        log.error("Call failed position {} no Id, message: {}", retrievePosition, id.getText());
 			        continue;
 			    }
     			switch (idt) {
         			case "CPF7053": { // sequence number does not exist or break in receivers
-        			    throw new InvalidPositionException(String.format("Call failed position %s failed to find sequence or break in receivers: %s", position, getFullAS400MessageText(id)));
+        			    throw new InvalidPositionException(String.format("Call failed position %s failed to find sequence or break in receivers: %s", retrievePosition, getFullAS400MessageText(id)));
         			}
         			case "CPF9801": { // specify invalid receiver
-                        throw new InvalidPositionException(String.format("Call failed position %s failed to find receiver: %s", position, getFullAS400MessageText(id)));
+                        throw new InvalidPositionException(String.format("Call failed position %s failed to find receiver: %s", retrievePosition, getFullAS400MessageText(id)));
         			}
         			case "CPF7054": { // e.g. last < first
-        			    throw new InvalidPositionException(String.format("Call failed position %s failed to find offset or invalid offsets: %s", position, id.getText()));
+        			    throw new InvalidPositionException(String.format("Call failed position %s failed to find offset or invalid offsets: %s", retrievePosition, id.getText()));
         			}
 					case "CPF7060": { // object in filter doesn't exist, or was not journaled 
 						throw new InvalidJournalFilterException(
-        			    	String.format("Call failed position %s object not found or not journaled: %s", position, getFullAS400MessageText(id))
+        			    	String.format("Call failed position %s object not found or not journaled: %s", retrievePosition, getFullAS400MessageText(id))
 						);
         			}
-        			case "CPF7062": {
-        			    log.debug("Call failed position {} no data received, probably all filtered: {}", position, id.getText());
+        			case "CPF7062": { 
+        			    log.debug("Call failed position {} no data received, probably all filtered: {}", retrievePosition, id.getText());
+        			 // if we're filtering we get no continuation offset just an error
         		        header = new FirstHeader(0, 0, 0, OffsetStatus.NO_MORE_DATA, latestJournalPosition);
-        				latestJournalPosition.ifPresent(l -> {
-        				    log.debug("moving on to current position");
-        				    position.setPosition(l);
-        				});        		        
+        			    latestJournalPosition.ifPresent(l -> { 
+        				    header = header.withCurrentJournalPosition(l);
+        				    retrievePosition.setPosition(l);
+        			    });
         			    return true;
         			}
                     default: 
-                        log.error("Call failed position {} with error code {} message {}", position, idt, getFullAS400MessageText(id));                        
+                        log.error("Call failed position {} with error code {} message {}", retrievePosition, idt, getFullAS400MessageText(id));                        
     			}
 			}
 			
-			throw new Exception(String.format("Call failed position %s", position));
+			throw new Exception(String.format("Call failed position %s", retrievePosition));
 		}
 		return success;
+	}
+
+
+	private boolean positionsEqual(JournalPosition retrievePosition, Optional<JournalPosition> endPosition) {
+		return endPosition.isPresent() && endPosition.get().equals(retrievePosition);
+	}
+
+	private Optional<JournalPosition> findEndPosition(AS400 as400, JournalPosition position) throws Exception {
+		if (position.getOffset().compareTo(BigInteger.ZERO)>0) {
+	        JournalPosition endPosition = JournalInfoRetrieval.getCurrentPosition(as400, config.journalInfo());
+	        
+	        JournalPosition p = limitEndPosition(position, position.getOffset(), endPosition.getOffset());
+			builder.withEnd(p.getOffset());
+			return Optional.of(p);
+		} else {
+			List<DetailedJournalReceiver> receivers = JournalInfoRetrieval.getReceivers(as400, config.journalInfo());
+			Optional<DetailedJournalReceiver> first = DetailedJournalReceiver.firstInLatestChain(receivers);
+			Optional<DetailedJournalReceiver> last = DetailedJournalReceiver.latest(receivers);
+			return first.flatMap(f -> {
+				return last.map(l -> {
+					return limitEndPosition(position, f.start(), l.end());				        
+				});
+			});
+		}
+	}
+	
+	private JournalPosition limitEndPosition(JournalPosition position, BigInteger start,
+			BigInteger end) {
+		BigInteger nextBlock = start.add(BigInteger.valueOf(config.maxServerSideEntries()));
+		if (nextBlock.compareTo(end) > 0) { // don't beyond end
+			nextBlock = end;
+		}
+
+		JournalPosition p = new JournalPosition(position).setOffset(nextBlock, true);
+		return p;
 	}
 
 	private String getFullAS400MessageText(AS400Message message)
@@ -352,7 +353,7 @@ public class RetrieveJournal {
 			T t = decoder.decode(entryHeader, outputData, offset);
 			return t;
 		} catch (Exception e) {
-			dumpEntryToFile(dumpFolder);
+			dumpEntryToFile(config.dumpFolder());
 			throw e;
 		}
 	}
@@ -404,6 +405,7 @@ public class RetrieveJournal {
 		return header;
 	}
 
+	// TODO remove now we've sanitised RetrievalCriteria
 	public static class ParameterListBuilder {
 		public static final int DEFAULT_JOURNAL_BUFFER_SIZE = 65536 * 2;
 		public static final int ERROR_CODE = 0;
@@ -420,7 +422,7 @@ public class RetrieveJournal {
 		private byte[] journalData;
 
 		public ParameterListBuilder() {
-			criteria.varLenNullPointerIndicatorLength();
+			criteria.withLenNullPointerIndicatorVarLength();
 		}
 		
 		public ParameterListBuilder withBufferLenth(int bufferLength) {
@@ -445,52 +447,57 @@ public class RetrieveJournal {
 		}
 		
 		public ParameterListBuilder withJournalEntryType(JournalEntryType type) {
-			criteria.addEntTyp(new JournalEntryType[] {type});
+			criteria.withEntTyp(new JournalEntryType[] {type});
 			return this;
 		}
 
 		public ParameterListBuilder withReceivers(String startReceiver, String startLibrary) {
-			criteria.addReceiverRange(startReceiver, startLibrary, "*CURRENT", startLibrary);
+			criteria.withReceiverRange(startReceiver, startLibrary, "*CURRENT", startLibrary);
 			return this;
 		}
 		
 		public ParameterListBuilder withReceivers(String startReceiver, String startLibrary, String endReceiver, String endLibrary) {
-			criteria.addReceiverRange(startReceiver, startLibrary, endReceiver, endLibrary);
+			criteria.withReceiverRange(startReceiver, startLibrary, endReceiver, endLibrary);
 			return this;
 		}
 		
 		public ParameterListBuilder withEnd() {
-			criteria.addToEnd();
+			criteria.withEnd();
 			return this;
 		}
-
+		
+		public ParameterListBuilder withEnd(BigInteger end) {
+			criteria.withEnd(end);
+			return this;
+		}
+		
 		public ParameterListBuilder withReceivers(String receivers) {
-			criteria.addRcvRng(receivers);
+			criteria.withReceiverRange(receivers);
 			return this;
 		}
 
 		public ParameterListBuilder withStartingSequence(BigInteger start) {
-			criteria.addFromEnt(start);
+			criteria.withFromEnt(start);
 			return this;
 		}
 
 		public ParameterListBuilder withFromStart() {
-			criteria.addFromEnt(RetrievalCriteria.FromEnt.FIRST);
+			criteria.withFromEnt(RetrievalCriteria.FromEnt.FIRST);
 			return this;
 		}
 		
 		public ParameterListBuilder filterJournalCodes(JournalCode[] codes) {
-		    criteria.addJrnCde(codes);
+		    criteria.withJrnCde(codes);
 		    return this;
 		}
 
 		public ParameterListBuilder withFileFilters(List<FileFilter> tableFilters) {
-			criteria.addFILE(tableFilters);
+			criteria.withFILE(tableFilters);
 	        return this;
 	    }
 		
 		public ParameterListBuilder filterJournalEntryType(RetrievalCriteria.JournalEntryType[] codes) {
-            criteria.addEntTyp(codes);
+            criteria.withEntTyp(codes);
             return this;
         }
 		

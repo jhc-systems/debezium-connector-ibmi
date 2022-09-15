@@ -6,6 +6,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Optional;
 
 import com.fnz.db2.journal.retrieve.StringHelpers;
 import com.ibm.as400.access.AS400Bin4;
@@ -56,12 +57,21 @@ public class ReceiverDecoder {
 	public JournalReceiverInfo decode(byte[] data, int offset) {
 	    Object[] os = (Object[]) structure.toObject(data, offset);
 	    String itime =  (String)os[3];
+	    String receiverNumber =  (String)os[2];
+	    Optional<Integer> chain = Optional.empty();
+	    try {
+	    	if (receiverNumber != null && receiverNumber.length() == 5) {
+			    String chainStr = receiverNumber.substring(0, 2);
+			    chain = Optional.of(Integer.valueOf(chainStr));
+	    	}
+	    } catch (Exception e) { }
 	    Date attached = toDate(itime);
 	    JournalReceiverInfo jr = new JournalReceiverInfo(
 	            StringHelpers.safeTrim((String)os[0]), 
 	            StringHelpers.safeTrim((String)os[1]), 
 	            attached, 
-	            JournalStatus.valueOfString((String)os[4]));
+	            JournalStatus.valueOfString((String)os[4]),
+	            chain);
         return jr;
 	}
 	static Date toDate(String itime) {

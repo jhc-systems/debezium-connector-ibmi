@@ -11,8 +11,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,6 +22,8 @@ import com.fnz.db2.journal.retrieve.JournalEntryType;
 import com.fnz.db2.journal.retrieve.JournalInfo;
 import com.fnz.db2.journal.retrieve.JournalInfoRetrieval;
 import com.fnz.db2.journal.retrieve.JournalPosition;
+import com.fnz.db2.journal.retrieve.RetrieveConfig;
+import com.fnz.db2.journal.retrieve.RetrieveConfigBuilder;
 import com.fnz.db2.journal.retrieve.RetrieveJournal;
 import com.fnz.db2.journal.retrieve.SchemaCacheHash;
 import com.fnz.db2.journal.retrieve.SchemaCacheIF.TableInfo;
@@ -75,11 +75,12 @@ public class CommitLogProcessor {
 		try (PrintWriter pw = new PrintWriter(new File("exceptions.txt"))) {
 			JournalInfo journal = JournalInfoRetrieval.getJournal(as400Connect.connection(), schema);
 			log.info("journal: " + journal);
-			RetrieveJournal rnj = new RetrieveJournal(as400Connect, journal, "./bad-journal", 655350, false, includes);
+			RetrieveConfig config = new RetrieveConfigBuilder().withAs400(as400Connect).withJournalInfo(journal).withDumpFolder("./bad-journal").withServerFiltering(true).withIncludeFiles(includes).build();
+			RetrieveJournal rj = new RetrieveJournal(config);
 
 			do {
 				lastPosition = new JournalPosition(nextPosition);
-				nextPosition = retrieveJorunal(as400Connect, journal, rnj, nextPosition, pw);
+				nextPosition = retrieveJorunal(as400Connect, journal, rj, nextPosition, pw);
 				log.info("after : " + nextPosition + " previous " + lastPosition);
 				if (nextPosition.equals(lastPosition)) {
 					log.info("caught up");
@@ -182,7 +183,7 @@ public class CommitLogProcessor {
 				Optional<TableInfo> tableInfoOpt = fileDecoder.getRecordFormat(eheader.getFile(), eheader.getLibrary());
 				tableInfoOpt.map(tableInfo -> {
 					try {
-	//				log.info("tableInfo: " + tableInfo);
+//					log.info("tableInfo: " + tableInfo);
 	
 					Object[] fields = rnje.decode(fileDecoder);
 					if (fields != null) {
