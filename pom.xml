@@ -9,7 +9,7 @@
 	<name>parent project for debezium-connector-ibmi</name>
 
 	<properties>
-		<jt400.version>10.6</jt400.version>
+		<jt400.version>11.0</jt400.version>
 		<revision>1.0.0-SNAPSHOT</revision>
 		<log4j2.version>2.18.0</log4j2.version>
 		<slf4j.version>1.7.29</slf4j.version>
