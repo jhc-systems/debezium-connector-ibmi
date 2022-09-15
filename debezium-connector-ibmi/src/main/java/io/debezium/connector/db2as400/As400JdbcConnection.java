@@ -37,7 +37,7 @@ import io.debezium.relational.Tables.TableFilter;
 public class As400JdbcConnection extends JdbcConnection implements Connect<Connection, SQLException> {
     private static final Logger log = LoggerFactory.getLogger(As400JdbcConnection.class);
     private static final String URL_PATTERN = "jdbc:as400://${" + JdbcConfiguration.HOSTNAME + "}/${"
-            + JdbcConfiguration.DATABASE + "};thread used=false";
+            + JdbcConfiguration.DATABASE + "};thread used=false;date format=iso;keep alive = true";
     private final JdbcConfiguration config;
 
     private static final String GET_DATABASE_NAME = "SELECT CURRENT_SERVER FROM SYSIBM.SYSDUMMY1";
