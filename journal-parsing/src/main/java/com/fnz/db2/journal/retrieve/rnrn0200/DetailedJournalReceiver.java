@@ -21,7 +21,6 @@ public record DetailedJournalReceiver(
 	
 	public static Optional<DetailedJournalReceiver> firstInLatestChain(List<DetailedJournalReceiver> l) {
 		Optional<ReceiverChain> lastDisjointNamed = lastDisjointNamedReceivers(l);
-		System.out.println(lastDisjointNamed.get().dr);
 		
 		// find the first in latest chain
 		Optional<DetailedJournalReceiver> firstInChain = lastDisjointNamed.map(x -> {
@@ -72,6 +71,10 @@ public record DetailedJournalReceiver(
 				if (nr != null) {
 					noNext.remove(nr);
 					or.tail = nr;
+				}
+				ReceiverChain dualr = m.get(or.dr.nextDualReceiver);
+				if (dualr != null) {
+					noNext.remove(dualr);
 				}
 			}
 		}
