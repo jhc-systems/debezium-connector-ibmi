@@ -54,7 +54,7 @@ public class As400ConnectorTask extends BaseSourceTask<As400Partition, As400Offs
 
     @Override
     protected ChangeEventSourceCoordinator<As400Partition, As400OffsetContext> start(Configuration config) {
-        log.info("starting connector task {}", version());
+        log.warn("starting connector task {}", version());
         config = addDefaultHeartbeatToConfig(config);
         final As400ConnectorConfig connectorConfig = new As400ConnectorConfig(config);
 

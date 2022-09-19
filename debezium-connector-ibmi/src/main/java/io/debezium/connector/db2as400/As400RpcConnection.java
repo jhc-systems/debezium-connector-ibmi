@@ -30,6 +30,7 @@ import com.ibm.as400.access.AS400;
 import com.ibm.as400.access.SocketProperties;
 
 import io.debezium.connector.db2as400.metrics.As400StreamingChangeEventSourceMetrics;
+import io.debezium.pipeline.source.spi.ChangeEventSource.ChangeEventSourceContext;
 
 
 public class As400RpcConnection implements AutoCloseable, Connect<AS400, IOException> {
@@ -114,7 +115,7 @@ public class As400RpcConnection implements AutoCloseable, Connect<AS400, IOExcep
         }
     }
 
-    public boolean getJournalEntries(As400OffsetContext offsetCtx, BlockingRecieverConsumer consumer, WatchDog watchDog)
+    public boolean getJournalEntries(ChangeEventSourceContext context, As400OffsetContext offsetCtx, BlockingRecieverConsumer consumer, WatchDog watchDog)
             throws Exception {
         boolean success = false;
         JournalPosition position = offsetCtx.getPosition();
@@ -129,7 +130,7 @@ public class As400RpcConnection implements AutoCloseable, Connect<AS400, IOExcep
             if (!retrieveJournal.hasData()) {
                 noDataDiagnostics(position);
             }
-            while (retrieveJournal.nextEntry()) {
+            while (retrieveJournal.nextEntry() && context.isRunning()) {
                 watchDog.alive();
                 EntryHeader eheader = retrieveJournal.getEntryHeader();
                 BigInteger currentOffset = eheader.getSequenceNumber();
