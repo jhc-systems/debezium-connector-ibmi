@@ -86,7 +86,7 @@ public class As400ConnectorConfig extends RelationalDatabaseConnectorConfig {
 
 
     public As400ConnectorConfig(Configuration config) {
-        super(config, config.getString(JdbcConfiguration.HOSTNAME), new SystemTablesPredicate(),
+        super(config, config.getString(RelationalDatabaseConnectorConfig.SERVER_NAME) == null ? config.getString(JdbcConfiguration.HOSTNAME): config.getString(RelationalDatabaseConnectorConfig.SERVER_NAME), new SystemTablesPredicate(),
                 tableToString, 1, ColumnFilterMode.SCHEMA);
         this.config = config;
         this.snapshotMode = SnapshotMode.parse(config.getString(SNAPSHOT_MODE), SNAPSHOT_MODE.defaultValueAsString());
