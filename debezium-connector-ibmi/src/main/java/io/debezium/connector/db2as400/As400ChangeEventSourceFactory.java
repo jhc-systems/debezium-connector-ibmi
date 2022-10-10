@@ -5,7 +5,6 @@
  */
 package io.debezium.connector.db2as400;
 
-import io.debezium.connector.db2as400.metrics.As400StreamingChangeEventSourceMetrics;
 import io.debezium.pipeline.ErrorHandler;
 import io.debezium.pipeline.EventDispatcher;
 import io.debezium.pipeline.source.spi.ChangeEventSourceFactory;
