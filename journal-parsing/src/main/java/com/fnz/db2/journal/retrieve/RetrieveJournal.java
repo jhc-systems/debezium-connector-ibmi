@@ -200,10 +200,14 @@ public class RetrieveJournal {
 	}
 
 	private Optional<JournalPosition> findEndPosition(AS400 as400, JournalPosition position) throws Exception {
+		BigInteger maxPosition = position.getOffset().add(BigInteger.valueOf(config.maxServerSideEntries()));
 		if (position.getOffset().compareTo(BigInteger.ZERO)>0) {
-	        JournalPosition endPosition = JournalInfoRetrieval.getCurrentPosition(as400, config.journalInfo());
-	        if (!shouldLimitRange(position.getOffset(), endPosition.getOffset())) {
-	        	return Optional.of(endPosition);
+			DetailedJournalReceiver currentPosition = JournalInfoRetrieval.getCurrentDetailedJournalReceiver(as400, config.journalInfo());
+	        if (!shouldLimitRange(position.getOffset(), maxPosition)) {
+	        	return Optional.empty();
+	        }
+	        if (withinRange(maxPosition, currentPosition.start(), currentPosition.end())) {
+	        	return Optional.of(new JournalPosition(maxPosition, currentPosition.info().name(), currentPosition.info().library(), true));
 	        }
 		}
 	        
@@ -211,10 +215,14 @@ public class RetrieveJournal {
 		return journalAtMaxOffset(position, receivers);				        
 	}
 	
+	boolean withinRange(BigInteger desiredPosition, BigInteger startPosition,
+			BigInteger endPosition) {
+		return startPosition.compareTo(desiredPosition) <= 0 && endPosition.compareTo(desiredPosition) >= 0;
+	}
+	
 	boolean shouldLimitRange(BigInteger startPosition,
 			BigInteger endPosition) {
-		BigInteger maxPosition = startPosition.add(BigInteger.valueOf(config.maxServerSideEntries()));
-		return maxPosition.compareTo(endPosition) < 0;
+		return startPosition.compareTo(endPosition) < 0;
 	}
 	
 	// returns journal within range of the max offset
@@ -222,7 +230,7 @@ public class RetrieveJournal {
 		BigInteger start = position.getOffset();
 		BigInteger maxOffset = start.add(BigInteger.valueOf(config.maxServerSideEntries()));
 		Optional<DetailedJournalReceiver> found = receivers.stream().filter(p -> {
-			return p.start().compareTo(maxOffset) <= 0 && p.end().compareTo(maxOffset) >= 0;
+			return withinRange(maxOffset, p.start(), p.end());
 		}).findFirst();
 		return found.map(p -> new JournalPosition(maxOffset, p.info().name(), p.info().library(), true));
 	}

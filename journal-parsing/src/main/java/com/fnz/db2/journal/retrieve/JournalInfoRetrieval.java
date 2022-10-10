@@ -46,6 +46,11 @@ public class JournalInfoRetrieval {
 		return new JournalPosition(offset, ji.receiver, ji.receiverLibrary, false);
 	}
 	
+	public static DetailedJournalReceiver getCurrentDetailedJournalReceiver(AS400 as400, JournalInfo journalLib) throws Exception {
+		JournalInfo ji = JournalInfoRetrieval.getReceiver(as400, journalLib);
+		return getOffset(as400, ji);
+	}
+	
 	static final Pattern JOURNAL_REGEX = Pattern.compile("\\/[^/]*\\/([^.]*).LIB\\/(.*).JRN");
 	public static JournalInfo getJournal(AS400 as400, String schema) throws IllegalStateException {
 		try {
