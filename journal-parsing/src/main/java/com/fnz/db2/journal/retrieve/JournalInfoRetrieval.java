@@ -115,6 +115,7 @@ public class JournalInfoRetrieval {
 		};
 
 		return callServiceProgram(as400, "/QSYS.LIB/QJOURNAL.SRVPGM", "QjoRetrieveJournalInformation", parameters, (byte[] data) -> {
+			// Attached journal receiver name. The name of the journal receiver that is currently attached to this journal. This field will be blank if no journal receivers are attached.
 			String journalReceiver = decodeString(data, 200, 10);
 			String journalLibrary = decodeString(data, 210, 10);
 			return new JournalInfo(journalReceiver, journalLibrary);
