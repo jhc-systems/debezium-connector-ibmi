@@ -55,7 +55,7 @@ public class RetrieveJournal {
     
 	private ParameterListBuilder builder = new ParameterListBuilder();
 	
-	private RetrieveConfig config;
+	RetrieveConfig config;
 	private byte[] outputData = null;
 	private FirstHeader header = null;
 	private EntryHeader entryHeader = null;
@@ -202,31 +202,29 @@ public class RetrieveJournal {
 	private Optional<JournalPosition> findEndPosition(AS400 as400, JournalPosition position) throws Exception {
 		if (position.getOffset().compareTo(BigInteger.ZERO)>0) {
 	        JournalPosition endPosition = JournalInfoRetrieval.getCurrentPosition(as400, config.journalInfo());
-	        
-	        JournalPosition p = limitEndPosition(position, position.getOffset(), endPosition.getOffset());
-			builder.withEnd(p.getOffset());
-			return Optional.of(p);
-		} else {
-			List<DetailedJournalReceiver> receivers = JournalInfoRetrieval.getReceivers(as400, config.journalInfo());
-			Optional<DetailedJournalReceiver> first = DetailedJournalReceiver.firstInLatestChain(receivers);
-			Optional<DetailedJournalReceiver> last = DetailedJournalReceiver.latest(receivers);
-			return first.flatMap(f -> {
-				return last.map(l -> {
-					return limitEndPosition(position, f.start(), l.end());				        
-				});
-			});
+	        if (!shouldLimitRange(position.getOffset(), endPosition.getOffset())) {
+	        	return Optional.of(endPosition);
+	        }
 		}
+	        
+		List<DetailedJournalReceiver> receivers = JournalInfoRetrieval.getReceivers(as400, config.journalInfo());
+		return journalAtMaxOffset(position, receivers);				        
 	}
 	
-	private JournalPosition limitEndPosition(JournalPosition position, BigInteger start,
-			BigInteger end) {
-		BigInteger nextBlock = start.add(BigInteger.valueOf(config.maxServerSideEntries()));
-		if (nextBlock.compareTo(end) > 0) { // don't beyond end
-			nextBlock = end;
-		}
-
-		JournalPosition p = new JournalPosition(position).setOffset(nextBlock, true);
-		return p;
+	boolean shouldLimitRange(BigInteger startPosition,
+			BigInteger endPosition) {
+		BigInteger maxPosition = startPosition.add(BigInteger.valueOf(config.maxServerSideEntries()));
+		return maxPosition.compareTo(endPosition) < 0;
+	}
+	
+	// returns journal within range of the max offset
+	Optional<JournalPosition> journalAtMaxOffset(JournalPosition position, List<DetailedJournalReceiver> receivers) {
+		BigInteger start = position.getOffset();
+		BigInteger maxOffset = start.add(BigInteger.valueOf(config.maxServerSideEntries()));
+		Optional<DetailedJournalReceiver> found = receivers.stream().filter(p -> {
+			return p.start().compareTo(maxOffset) <= 0 && p.end().compareTo(maxOffset) >= 0;
+		}).findFirst();
+		return found.map(p -> new JournalPosition(maxOffset, p.info().name(), p.info().library(), true));
 	}
 
 	private String getFullAS400MessageText(AS400Message message)
