@@ -25,21 +25,21 @@ public class RetrieveJournalTest {
 	@Test
 	public void testLimitEndPositionShouldLimit() throws Exception {
 		RetrieveJournal testSubject = createTestSubject();
-		boolean shouldLimit = testSubject.shouldLimitRange(BigInteger.TEN, BigInteger.TEN.add(BigInteger.valueOf(RetrieveConfig.DEFAULT_MAX_SERVER_SIDE_ENTRIES + 1)));
+		boolean shouldLimit = testSubject.shouldLimitRange(BigInteger.TEN, BigInteger.valueOf(RetrieveConfig.DEFAULT_MAX_SERVER_SIDE_ENTRIES + 11));
 		assertTrue(shouldLimit);
 	}
 
 	@Test
 	public void testLimitEndPositionShouldNotLimitExactLimit() throws Exception {
 		RetrieveJournal testSubject = createTestSubject();
-		boolean shouldLimit = testSubject.shouldLimitRange(BigInteger.TEN, BigInteger.TEN.add(BigInteger.valueOf(RetrieveConfig.DEFAULT_MAX_SERVER_SIDE_ENTRIES)));
+		boolean shouldLimit = testSubject.shouldLimitRange(BigInteger.valueOf(RetrieveConfig.DEFAULT_MAX_SERVER_SIDE_ENTRIES), BigInteger.TEN);
 		assertFalse(shouldLimit);
 	}
 
 	@Test
 	public void testLimitEndPositionShouldNotLimit() throws Exception {
 		RetrieveJournal testSubject = createTestSubject();
-		boolean shouldLimit = testSubject.shouldLimitRange(BigInteger.TEN, BigInteger.valueOf(RetrieveConfig.DEFAULT_MAX_SERVER_SIDE_ENTRIES));
+		boolean shouldLimit = testSubject.shouldLimitRange(BigInteger.valueOf(RetrieveConfig.DEFAULT_MAX_SERVER_SIDE_ENTRIES+1), BigInteger.valueOf(RetrieveConfig.DEFAULT_MAX_SERVER_SIDE_ENTRIES));
 		assertFalse(shouldLimit);
 	}
 	
@@ -85,7 +85,6 @@ public class RetrieveJournalTest {
 			BigInteger start = BigInteger.valueOf(i*size + 1);
 			BigInteger end = BigInteger.valueOf((i+1)*size);
 			DetailedJournalReceiver j = new DetailedJournalReceiver(new JournalReceiverInfo("name"+i, "lib", new Date(), JournalStatus.Attached, Optional.<Integer>empty()), start, end, "next", "nextDual", 100, 10000);
-			System.out.println(j);
 			receivers.add(j);
 		}
 		return receivers;
