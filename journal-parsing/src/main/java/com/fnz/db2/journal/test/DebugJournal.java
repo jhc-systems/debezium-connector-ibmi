@@ -18,7 +18,6 @@ import com.fnz.db2.journal.retrieve.JournalInfoRetrieval;
 import com.fnz.db2.journal.retrieve.JournalPosition;
 import com.fnz.db2.journal.retrieve.JournalReceiver;
 import com.fnz.db2.journal.retrieve.JournalRecordDecoder;
-import com.fnz.db2.journal.retrieve.NullIndicatorDecoder;
 import com.fnz.db2.journal.retrieve.RetrieveConfig;
 import com.fnz.db2.journal.retrieve.RetrieveConfigBuilder;
 import com.fnz.db2.journal.retrieve.RetrieveJournal;
@@ -38,9 +37,6 @@ public class DebugJournal {
         Connect<Connection, SQLException> sqlConnect = connector.getJdbc();
         String schema = connector.getSchema();
         
-        String database = JdbcFileDecoder.getDatabaseName(sqlConnect.connection());
-        JdbcFileDecoder fileDecoder = new JdbcFileDecoder(sqlConnect, database, new SchemaCacheHash());
-
         byte[] data = Files.readAllBytes(Paths.get("C:\\dev\\kafka\\journal-parsing\\good-journal\\201218-0616-0"));
         JournalInfo journal = JournalInfoRetrieval.getJournal(as400Connect.connection(), schema);
 		RetrieveConfig config = new RetrieveConfigBuilder().withAs400(as400Connect).withJournalInfo(journal).build();

@@ -5,11 +5,11 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.file.Files;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -43,7 +43,9 @@ import com.ibm.as400.access.ServiceProgramCall;
 public class RetrieveJournal {
     private static final Logger log = LoggerFactory.getLogger(RetrieveJournal.class);
 
-    private final static JournalCode[] REQUIRED_JOURNAL_CODES = new JournalCode[] {JournalCode.D, JournalCode.R, JournalCode.C};
+    private final static JournalCode[] REQUIRED_JOURNAL_CODES = new JournalCode[] {
+    		JournalCode.D, JournalCode.R, JournalCode.C
+    		};
     private final static JournalEntryType[] REQURED_ENTRY_TYPES = new JournalEntryType[] {       
             JournalEntryType.PT, JournalEntryType.PX, JournalEntryType.UP, JournalEntryType.UB, 
             JournalEntryType.DL, JournalEntryType.DR, JournalEntryType.CT, JournalEntryType.CG, 
@@ -62,7 +64,6 @@ public class RetrieveJournal {
 	private int offset = -1;
 	private JournalPosition position;
 	private long totalTransferred = 0;
-	private boolean hasMoreData = true;
 	
 	public RetrieveJournal(RetrieveConfig config) {
 		this.config = config;
@@ -96,37 +97,25 @@ public class RetrieveJournal {
             builder.withFileFilters(config.includeFiles());
         }
 
-		if (retrievePosition.isOffsetSet()) {
-			builder.withStartingSequence(retrievePosition.getOffset());
-		} else {
+        Optional<JournalPosition> latestJournalPosition = Optional.empty();
+		Optional<PositionRange> range = findRange(config.as400().connection(), retrievePosition);
+		if (range.isEmpty()) {
 			builder.withFromStart();
-		}
-		if (retrievePosition.getJournal().length > 0) {
-			builder.withReceivers(retrievePosition.getReciever(), retrievePosition.getReceiverLibrary());
+			builder.withReceivers("*CURCHAIN");
+			builder.withEnd();
 		} else {
-			builder.withReceivers("*CURCHAIN"); 
-		}
-		builder.withBufferLenth(config.journalBufferSize());
-		if (config.filtering() && config.filterCodes().length > 0) {
-		    builder.filterJournalCodes(REQUIRED_JOURNAL_CODES);
-		}
-		Optional<JournalPosition> latestJournalPosition = Optional.<JournalPosition>empty();
-		if (config.filtering()) {			
-			Optional<JournalPosition> endPosition = findEndPosition(config.as400().connection(), retrievePosition);
-			endPosition.ifPresent(jp -> {
-				builder.withEnd(jp.getOffset());
-			});
-			if (positionsEqual(retrievePosition, endPosition)) { // we are already at the end
-				header = new FirstHeader(0, 0, 0, OffsetStatus.NO_MORE_DATA, endPosition);
+			PositionRange r = range.get();
+			builder.withStartingSequence(r.start.getOffset());
+			builder.withReceivers("*CURCHAIN");
+			builder.withEnd(r.end.getOffset());
+			
+			if (retrievePosition.equals(r.end)) { // we are already at the end
+				header = new FirstHeader(0, 0, 0, OffsetStatus.NO_MORE_DATA, Optional.of(r.end));
 				return true;
 			}
-			latestJournalPosition = endPosition;
-		} else {
-			builder.withEnd();
+			latestJournalPosition = Optional.of(r.end);
 		}
 
-		hasMoreData = false;
-		
 		ProgramParameter[] parameters = builder.build();
 		spc.setProgram("/QSYS.LIB/QJOURNAL.SRVPGM", parameters);
 		spc.setProcedureName("QjoRetrieveJournalEntries");
@@ -194,41 +183,67 @@ public class RetrieveJournal {
 		return success;
 	}
 
+	record PositionRange(JournalPosition start, JournalPosition end) {};
 
-	private boolean positionsEqual(JournalPosition retrievePosition, Optional<JournalPosition> endPosition) {
-		return endPosition.isPresent() && endPosition.get().equals(retrievePosition);
-	}
-
-	private Optional<JournalPosition> findEndPosition(AS400 as400, JournalPosition position) throws Exception {
-		BigInteger maxPosition = position.getOffset().add(BigInteger.valueOf(config.maxServerSideEntries()));
-		if (position.getOffset().compareTo(BigInteger.ZERO)>0) {
-			DetailedJournalReceiver currentPosition = JournalInfoRetrieval.getCurrentDetailedJournalReceiver(as400, config.journalInfo());
-	        if (!shouldLimitRange(position.getOffset(), maxPosition)) {
-	        	return Optional.empty();
-	        }
+	List<DetailedJournalReceiver> cachedReceivers = Collections.emptyList();
+	DetailedJournalReceiver cachedCurrentPosition = null;
+	
+	Optional<PositionRange> findRange(AS400 as400, JournalPosition start) throws Exception {
+        if (!shouldLimitRange()) {
+        	return Optional.empty();
+        }
+		BigInteger maxPosition = start.getOffset().add(BigInteger.valueOf(config.maxServerSideEntries()));
+        boolean startValid = start.isOffsetSet() && !start.getOffset().equals(BigInteger.ZERO);
+		if (startValid) {
+			DetailedJournalReceiver currentPosition = cachedCurrentPosition;
+			if (cachedCurrentPosition == null || cachedCurrentPosition.end().compareTo(maxPosition) < 0 ) {
+				currentPosition = JournalInfoRetrieval.getCurrentDetailedJournalReceiver(as400, config.journalInfo());
+				cachedCurrentPosition = currentPosition;
+			}
 	        if (withinRange(maxPosition, currentPosition.start(), currentPosition.end())) {
-	        	return Optional.of(new JournalPosition(maxPosition, currentPosition.info().name(), currentPosition.info().library(), true));
+	        	JournalPosition end = new JournalPosition(maxPosition, currentPosition.info().name(), currentPosition.info().library(), true);
+	        	return Optional.of(new PositionRange(start, end));
 	        }
 		}
-	        
+		Optional<PositionRange> cached = findInReceivers(start, maxPosition, startValid, cachedReceivers);
+		if (cached.isPresent())
+			return cached;
+		
 		List<DetailedJournalReceiver> receivers = JournalInfoRetrieval.getReceivers(as400, config.journalInfo());
-		return journalAtMaxOffset(position, receivers);				        
+		cachedReceivers = receivers;
+		return findInReceivers(start, maxPosition, startValid, receivers);
+	}
+
+
+	private Optional<PositionRange> findInReceivers(JournalPosition start, BigInteger maxPosition, boolean startValid,
+			List<DetailedJournalReceiver> receivers) {
+		if (!startValid) {
+			Optional<DetailedJournalReceiver> first = DetailedJournalReceiver.firstInLatestChain(receivers);
+			Optional<JournalPosition> startOpt = first.map(x -> new JournalPosition(x.start(), x.info().name(), x.info().library(), false));
+			if (startOpt.isPresent()) {
+				start = startOpt.get();
+				maxPosition = start.getOffset().add(BigInteger.valueOf(config.maxServerSideEntries()));
+			} else {
+				return Optional.empty();
+			}
+		}
+		Optional<JournalPosition> end = journalAtMaxOffset(maxPosition, receivers);
+		if (end.isPresent())
+			return Optional.of(new PositionRange(start, end.get()));
+		else
+			return Optional.empty();
 	}
 	
-	boolean withinRange(BigInteger desiredPosition, BigInteger startPosition,
-			BigInteger endPosition) {
+	boolean withinRange(BigInteger desiredPosition, BigInteger startPosition, BigInteger endPosition) {
 		return startPosition.compareTo(desiredPosition) <= 0 && endPosition.compareTo(desiredPosition) >= 0;
 	}
 	
-	boolean shouldLimitRange(BigInteger startPosition,
-			BigInteger endPosition) {
-		return startPosition.compareTo(endPosition) < 0;
+	boolean shouldLimitRange() {
+		return config.filtering();
 	}
 	
 	// returns journal within range of the max offset
-	Optional<JournalPosition> journalAtMaxOffset(JournalPosition position, List<DetailedJournalReceiver> receivers) {
-		BigInteger start = position.getOffset();
-		BigInteger maxOffset = start.add(BigInteger.valueOf(config.maxServerSideEntries()));
+	Optional<JournalPosition> journalAtMaxOffset(BigInteger maxOffset, List<DetailedJournalReceiver> receivers) {
 		Optional<DetailedJournalReceiver> found = receivers.stream().filter(p -> {
 			return withinRange(maxOffset, p.start(), p.end());
 		}).findFirst();
@@ -370,7 +385,9 @@ public class RetrieveJournal {
 		if (path != null) {
 			boolean created = false;
 			for (int i=0; !created && i < 100 ; i++) {
-				File f = new File(path, String.format("%s-%s", DATE_FORMATTER.format( new Date() ), Integer.toString(i)));
+				
+				String formattedDate = DATE_FORMATTER.format( new Date() );
+				File f = new File(path, String.format("%s-%s", formattedDate, Integer.toString(i)));
 				try {
 					created = f.createNewFile();
 					if (created)
@@ -438,7 +455,7 @@ public class RetrieveJournal {
 		}
 
 		public ParameterListBuilder withJournal(String receiver, String receiverLibrary) {
-			if (this.receiver != receiver && this.receiverLibrary != receiverLibrary) {
+			if ( ! this.receiver.equals(receiver) && ! this.receiverLibrary.equals(receiverLibrary)) {
 				this.receiver = receiver;
 				this.receiverLibrary = receiverLibrary;
 				

@@ -57,7 +57,7 @@ public class RetrieveConfigBuilder {
 
 	public RetrieveConfigBuilder withFilterCodes(JournalCode[] filterCodes) {
 		if (filterCodes == null) {
-			filterCodes = new JournalCode[] {};
+			this.filterCodes = new JournalCode[] {};
 		} else {
 			this.filterCodes = filterCodes;
 		}

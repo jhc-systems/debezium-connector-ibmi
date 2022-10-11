@@ -9,7 +9,6 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,15 +37,10 @@ public class JournalFilterTimeout {
 	    Connect<Connection, SQLException> sqlConnect = connector.getJdbc();
 	    String schema = connector.getSchema();
 	    
-		JournalPosition nextPosition = new JournalPosition((BigInteger)null, null, null, false);
-
         JournalInfo journalLib = JournalInfoRetrieval.getJournal(as400Connect.connection(), schema);
 
         String offset =  System.getenv("ISERIES_OFFSET");
         String receiver =  System.getenv("ISERIES_RECEIVER");
-        if (offset != null && receiver != null)
-            nextPosition = new JournalPosition(new BigInteger(offset), receiver, journalLib.receiverLibrary, false);
-        
         List<FileFilter> includes = new ArrayList<FileFilter>();
         String includesEnv = System.getenv("ISERIES_INCLUDES");
         if (includesEnv != null) {
@@ -55,9 +49,6 @@ public class JournalFilterTimeout {
 			}
 		}
 
-		String database = JdbcFileDecoder.getDatabaseName(sqlConnect.connection());
-		JdbcFileDecoder fileDecoder = new JdbcFileDecoder(sqlConnect, database, schemaCache);
-		
 		List<DetailedJournalReceiver> receivers = JournalInfoRetrieval.getReceivers(as400Connect.connection(), journalLib);
 		DetailedJournalReceiver first = receivers.stream().min((x, y) -> x.start().compareTo(y.start())).get();
 		

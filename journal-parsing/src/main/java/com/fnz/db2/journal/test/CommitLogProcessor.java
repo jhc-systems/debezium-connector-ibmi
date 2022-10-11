@@ -52,7 +52,7 @@ public class CommitLogProcessor {
         String offset =  System.getenv("ISERIES_OFFSET");
         String receiver =  System.getenv("ISERIES_RECEIVER");
         if (offset != null && receiver != null)
-            nextPosition = new JournalPosition(new BigInteger(offset), receiver, journalLib.receiverLibrary, false);
+            nextPosition = new JournalPosition(offset, receiver, journalLib.receiverLibrary, false);
         
         List<FileFilter> includes = new ArrayList<FileFilter>();
         String includesEnv = System.getenv("ISERIES_INCLUDES");
@@ -122,15 +122,15 @@ public class CommitLogProcessor {
 						break;
 					case ADD_ROW2,ADD_ROW1:
                         log.debug("add row lib: {} file: {} member: {}", lib, file, member);
-                        dumpTable(eheader, r, file, lib, member);
+//                        dumpTable(eheader, r, file, lib, member);
                         break;
                     case BEFORE_IMAGE:
                         log.debug("update row old values lib: {} file: {} member: {}", lib, file, member);
-                        dumpTable(eheader, r, file, lib, member);
+//                        dumpTable(eheader, r, file, lib, member);
                         break;
 					case AFTER_IMAGE:
 					    log.debug("update row new values lib: {} file: {} member: {}", lib, file, member);
-				        dumpTable(eheader, r, file, lib, member);
+//				        dumpTable(eheader, r, file, lib, member);
 						break;
 					default:
 						break;
