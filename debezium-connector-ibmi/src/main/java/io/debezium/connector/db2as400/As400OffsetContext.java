@@ -27,7 +27,7 @@ import io.debezium.schema.DataCollectionId;
 import io.debezium.util.Collect;
 
 public class As400OffsetContext implements OffsetContext {
-    Logger log = LoggerFactory.getLogger(As400OffsetContext.class);
+    private static Logger log = LoggerFactory.getLogger(As400OffsetContext.class);
     // TODO note believe there is a per journal offset
     private static final String SERVER_PARTITION_KEY = "server";
     public static final String EVENT_SEQUENCE = "offset.event_sequence";
@@ -199,7 +199,9 @@ public class As400OffsetContext implements OffsetContext {
             String schema = (String) map.get(As400OffsetContext.RECEIVER_LIBRARY);
             String inclueTables = (String) map.get(RelationalDatabaseConnectorConfig.TABLE_INCLUDE_LIST.name());
             JournalPosition position = new JournalPosition();
-            if (!"null".equals(offsetStr)) {
+            if ("null".equals(offsetStr)) {
+	         	log.warn("setting offsets to zero");
+	         } else {
             	BigInteger offset = new BigInteger(offsetStr);
                 position = new JournalPosition(offset, receiver, schema, processed);
             }

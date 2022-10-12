@@ -9,7 +9,6 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,15 +37,10 @@ public class JournalFilterTimeout {
 	    Connect<Connection, SQLException> sqlConnect = connector.getJdbc();
 	    String schema = connector.getSchema();
 	    
-		JournalPosition nextPosition = new JournalPosition((BigInteger)null, null, null, false);
-
         JournalInfo journalLib = JournalInfoRetrieval.getJournal(as400Connect.connection(), schema);
 
         String offset =  System.getenv("ISERIES_OFFSET");
         String receiver =  System.getenv("ISERIES_RECEIVER");
-        if (offset != null && receiver != null)
-            nextPosition = new JournalPosition(new BigInteger(offset), receiver, journalLib.receiverLibrary, false);
-        
         List<FileFilter> includes = new ArrayList<FileFilter>();
         String includesEnv = System.getenv("ISERIES_INCLUDES");
         if (includesEnv != null) {
@@ -55,13 +49,10 @@ public class JournalFilterTimeout {
 			}
 		}
 
-		String database = JdbcFileDecoder.getDatabaseName(sqlConnect.connection());
-		JdbcFileDecoder fileDecoder = new JdbcFileDecoder(sqlConnect, database, schemaCache);
-		
-		List<DetailedJournalReceiver> receivers = JournalInfoRetrieval.getReceivers(as400Connect.connection(), journalLib);
+		JournalInfoRetrieval journalInfoRetrieval = new JournalInfoRetrieval();
+		List<DetailedJournalReceiver> receivers = journalInfoRetrieval.getReceivers(as400Connect.connection(), journalLib);
 		DetailedJournalReceiver first = receivers.stream().min((x, y) -> x.start().compareTo(y.start())).get();
-		
-        JournalPosition endPosition = JournalInfoRetrieval.getCurrentPosition(as400Connect.connection(), journalLib);
+        JournalPosition endPosition = journalInfoRetrieval.getCurrentPosition(as400Connect.connection(), journalLib);
 		log.info("start {} end {}", first, endPosition);
 		
 		
@@ -70,7 +61,7 @@ public class JournalFilterTimeout {
 			JournalInfo journal = JournalInfoRetrieval.getJournal(as400Connect.connection(), schema);
 			log.info("journal: " + journal);
 			RetrieveConfig config = new RetrieveConfigBuilder().withAs400(as400Connect).withJournalInfo(journal).withDumpFolder("./bad-journal").withServerFiltering(true).withIncludeFiles(includes).build();
-			RetrieveJournal rj = new RetrieveJournal(config);
+			RetrieveJournal rj = new RetrieveJournal(config, journalInfoRetrieval);
 
 			JournalPosition p = new JournalPosition(first.start(), first.info().name(), first.info().library(), false); 
 			long start = System.currentTimeMillis();

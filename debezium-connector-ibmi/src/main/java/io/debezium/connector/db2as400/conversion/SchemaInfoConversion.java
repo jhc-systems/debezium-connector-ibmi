@@ -64,24 +64,26 @@ public class SchemaInfoConversion {
         TableEditor editor = Table.editor();
         TableId id = new TableId(database, schema, tableName);
         editor.tableId(id);
-        List<Structure> structure = tableInfo.getStructure();
-        if (tableInfo != null && structure != null) {
-            for (Structure col : structure) {
-                ColumnEditor ceditor = Column.editor();
-                ceditor.jdbcType(col.getJdcbType());
-                ceditor.type(col.getType());
-                ceditor.length(col.getLength());
-                ceditor.scale(col.getPrecision());
-                ceditor.name(col.getName());
-                ceditor.autoIncremented(col.isAutoinc());
-                ceditor.optional(col.isOptional());
-                ceditor.position(col.getPosition());
-
-                editor.addColumn(ceditor.create());
-            }
+        if (tableInfo != null) {
+	        List<Structure> structure = tableInfo.getStructure();
+	        if (structure != null) {
+	            for (Structure col : structure) {
+	                ColumnEditor ceditor = Column.editor();
+	                ceditor.jdbcType(col.getJdcbType());
+	                ceditor.type(col.getType());
+	                ceditor.length(col.getLength());
+	                ceditor.scale(col.getPrecision());
+	                ceditor.name(col.getName());
+	                ceditor.autoIncremented(col.isAutoinc());
+	                ceditor.optional(col.isOptional());
+	                ceditor.position(col.getPosition());
+	
+	                editor.addColumn(ceditor.create());
+	            }
+	        }
+	        editor.setPrimaryKeyNames(tableInfo.getPrimaryKeys());
         }
 
-        editor.setPrimaryKeyNames(tableInfo.getPrimaryKeys());
         return editor.create();
     }
 }

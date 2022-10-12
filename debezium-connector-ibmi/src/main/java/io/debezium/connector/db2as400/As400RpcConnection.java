@@ -44,6 +44,7 @@ public class As400RpcConnection implements AutoCloseable, Connect<AS400, IOExcep
     private static SocketProperties socketProperties = new SocketProperties();
     private final LogLimmiting periodic = new LogLimmiting(5 * 60 * 1000);
     private final LogLimmiting infrequent = new LogLimmiting(60 * 60 * 1000);
+    private JournalInfoRetrieval journalInfoRetrieval = new JournalInfoRetrieval();
 
 
     public As400RpcConnection(As400ConnectorConfig config, As400StreamingChangeEventSourceMetrics streamingMetrics, List<FileFilter> includes) {
@@ -58,7 +59,7 @@ public class As400RpcConnection implements AutoCloseable, Connect<AS400, IOExcep
 					.withMaxServerSideEntries(config.getMaxServerSideEntries())
 					.withServerFiltering(true)
 					.withIncludeFiles(includes).build();
-			retrieveJournal = new RetrieveJournal(rconfig);
+			retrieveJournal = new RetrieveJournal(rconfig, journalInfoRetrieval);
         }
         catch (IOException e) {
             log.error("Failed to fetch library", e);
@@ -106,7 +107,7 @@ public class As400RpcConnection implements AutoCloseable, Connect<AS400, IOExcep
 
     public JournalPosition getCurrentPosition() throws RpcException {
         try {
-            JournalPosition position = JournalInfoRetrieval.getCurrentPosition(connection(), journalInfo);
+            JournalPosition position = journalInfoRetrieval.getCurrentPosition(connection(), journalInfo);
 
             return new JournalPosition(position.getOffset(), position.getReciever(), position.getReceiverLibrary(), true);
         }
@@ -146,7 +147,7 @@ public class As400RpcConnection implements AutoCloseable, Connect<AS400, IOExcep
         }
         else {
             // this is bad, we've probably lost data
-            List<DetailedJournalReceiver> receivers = JournalInfoRetrieval.getReceivers(connection(), journalInfo);
+            List<DetailedJournalReceiver> receivers = journalInfoRetrieval.getReceivers(connection(), journalInfo);
             log.error(new StructuredMessage("Failed to fetch journal entries, resetting journal to blank",
                     Map.of("position", position, 
                             "receivers", receivers)));
@@ -158,7 +159,7 @@ public class As400RpcConnection implements AutoCloseable, Connect<AS400, IOExcep
     
     private void logAllReceivers() throws IOException, Exception {
         if (infrequent.shouldLogRateLimted("all-receivers")) {
-            List<DetailedJournalReceiver> receivers = JournalInfoRetrieval.getReceivers(connection(), journalInfo);
+            List<DetailedJournalReceiver> receivers = journalInfoRetrieval.getReceivers(connection(), journalInfo);
             log.info(new StructuredMessage("all receivers", 
                     Map.of("receivers", receivers)));
         }
@@ -182,7 +183,7 @@ public class As400RpcConnection implements AutoCloseable, Connect<AS400, IOExcep
     private void noDataDiagnostics(JournalPosition position) throws Exception, IOException {
         JournalInfo journalNow = JournalInfoRetrieval.getReceiver(connection(), journalInfo);
         if (!isLatestJournal(position, journalNow)) {
-            List<DetailedJournalReceiver> receivers = JournalInfoRetrieval.getReceivers(connection(), journalInfo);
+            List<DetailedJournalReceiver> receivers = journalInfoRetrieval.getReceivers(connection(), journalInfo);
             log.warn(new StructuredMessage("Detected newer receiver but no data received", 
                     Map.of("header", retrieveJournal.headerAsString(),
                             "position", position,
@@ -192,7 +193,7 @@ public class As400RpcConnection implements AutoCloseable, Connect<AS400, IOExcep
         }
         else {
             if (periodic.shouldLogRateLimted("no-data")) {
-                List<DetailedJournalReceiver> receivers = JournalInfoRetrieval.getReceivers(connection(), journalInfo);
+                List<DetailedJournalReceiver> receivers = journalInfoRetrieval.getReceivers(connection(), journalInfo);
                 log.info(new StructuredMessage("We didn't get any data", Map.of("header", retrieveJournal.headerAsString(), "position", position, "receivers", receivers)));
             }
         }
