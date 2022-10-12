@@ -21,8 +21,10 @@ public class JournalInfoMain {
         String schema = connector.getSchema();
         
         JournalInfo ji = JournalInfoRetrieval.getJournal(as400Connect.connection(), schema);
+		JournalInfoRetrieval journalInfoRetrieval = new JournalInfoRetrieval();
 
-        List<DetailedJournalReceiver> jri = JournalInfoRetrieval.getReceivers(as400Connect.connection(), ji);
+
+        List<DetailedJournalReceiver> jri = journalInfoRetrieval.getReceivers(as400Connect.connection(), ji);
         
         log.info(DetailedJournalReceiver.firstInLatestChain(jri).toString());
         
@@ -32,6 +34,6 @@ public class JournalInfoMain {
         JournalInfo jr = JournalInfoRetrieval.getReceiver(as400Connect.connection(), ji);
         log.info("Journal info {}", jr);
         
-        log.info("current position: {}", JournalInfoRetrieval.getCurrentPosition(as400Connect.connection(), ji));
+        log.info("current position: {}", journalInfoRetrieval.getCurrentPosition(as400Connect.connection(), ji));
 	}
 }

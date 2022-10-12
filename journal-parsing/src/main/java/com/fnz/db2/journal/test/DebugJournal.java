@@ -40,7 +40,7 @@ public class DebugJournal {
         byte[] data = Files.readAllBytes(Paths.get("C:\\dev\\kafka\\journal-parsing\\good-journal\\201218-0616-0"));
         JournalInfo journal = JournalInfoRetrieval.getJournal(as400Connect.connection(), schema);
 		RetrieveConfig config = new RetrieveConfigBuilder().withAs400(as400Connect).withJournalInfo(journal).build();
-		RetrieveJournal rnj = new RetrieveJournal(config);
+		RetrieveJournal rnj = new RetrieveJournal(config, new JournalInfoRetrieval());
 
         rnj.setOutputData(data, new FirstHeader(data.length, 0, data.length, OffsetStatus.NO_MORE_DATA, Optional.empty()), new JournalPosition());
         if (rnj.nextEntry() ) {

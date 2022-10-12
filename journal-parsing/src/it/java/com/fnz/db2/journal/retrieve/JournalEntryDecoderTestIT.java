@@ -66,9 +66,9 @@ class JournalEntryDecoderTestIT {
 
 	@Test
 	public void testCharacterTypes() throws Exception {
-
+		JournalInfoRetrieval journalInfoRetrieval = new JournalInfoRetrieval();
 		JournalInfo journal = JournalInfoRetrieval.getJournal(as400Connect.connection(), schema);
-		JournalPosition position = JournalInfoRetrieval.getCurrentPosition(as400Connect.connection(), journal);
+		JournalPosition position = journalInfoRetrieval.getCurrentPosition(as400Connect.connection(), journal);
 
 		Connection con = sqlConnect.connection(); // debezium doesn't close connections
 		try (Statement stmt = con.createStatement()) {
@@ -109,7 +109,7 @@ class JournalEntryDecoderTestIT {
 		}
 
 		RetrieveConfig config = new RetrieveConfigBuilder().withAs400(as400Connect).withJournalInfo(journal).build();
-		RetrieveJournal rj = new RetrieveJournal(config);
+		RetrieveJournal rj = new RetrieveJournal(config, journalInfoRetrieval);
 		
 		
 		SchemaCacheHash schemaHash = new SchemaCacheHash();

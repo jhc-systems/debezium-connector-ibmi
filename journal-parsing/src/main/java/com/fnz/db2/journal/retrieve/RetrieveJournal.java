@@ -64,9 +64,11 @@ public class RetrieveJournal {
 	private int offset = -1;
 	private JournalPosition position;
 	private long totalTransferred = 0;
+	private JournalInfoRetrieval journalInfoRetrieval;
 	
-	public RetrieveJournal(RetrieveConfig config) {
+	public RetrieveJournal(RetrieveConfig config, JournalInfoRetrieval journalRetrieval) {
 		this.config = config;
+		this.journalInfoRetrieval = journalRetrieval;
 		builder.withJournal(config.journalInfo().receiver, config.journalInfo().receiverLibrary); 
 	}
 
@@ -201,7 +203,7 @@ public class RetrieveJournal {
 		if (startValid) {
 			DetailedJournalReceiver currentPosition = cachedCurrentPosition;
 			if (cachedCurrentPosition == null || maxPosition.compareTo(cachedCurrentPosition.end()) >= 0 ) {
-				currentPosition = JournalInfoRetrieval.getCurrentDetailedJournalReceiver(as400, config.journalInfo());
+				currentPosition = journalInfoRetrieval.getCurrentDetailedJournalReceiver(as400, config.journalInfo());
 				cachedCurrentPosition = currentPosition;
 				// can't go beyond current journal end
 				if (maxPosition.compareTo(currentPosition.end()) >= 0) {
@@ -215,11 +217,11 @@ public class RetrieveJournal {
 	        	return Optional.of(new PositionRange(start, end));
 	        }
 		}
-		Optional<PositionRange> cached = findInReceivers(start, maxPosition, startValid, cachedReceivers);
-		if (cached.isPresent())
-			return cached;
+		Optional<PositionRange> fromCache = findInReceivers(start, maxPosition, startValid, cachedReceivers);
+		if (fromCache.isPresent())
+			return fromCache;
 		
-		List<DetailedJournalReceiver> receivers = JournalInfoRetrieval.getReceivers(as400, config.journalInfo());
+		List<DetailedJournalReceiver> receivers = journalInfoRetrieval.getReceivers(as400, config.journalInfo());
 		cachedReceivers = receivers;
 		return findInReceivers(start, maxPosition, startValid, receivers);
 	}

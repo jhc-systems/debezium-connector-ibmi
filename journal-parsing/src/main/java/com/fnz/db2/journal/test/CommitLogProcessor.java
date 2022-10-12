@@ -46,8 +46,9 @@ public class CommitLogProcessor {
 	    String schema = connector.getSchema();
 	    
 		JournalPosition nextPosition = new JournalPosition((BigInteger)null, null, null, false);
+		JournalInfoRetrieval journalInfoRetrieval = new JournalInfoRetrieval();
 
-        JournalInfo journalLib = JournalInfoRetrieval.getJournal(as400Connect.connection(), schema);
+        JournalInfo journalLib = journalInfoRetrieval.getJournal(as400Connect.connection(), schema);
 
         String offset =  System.getenv("ISERIES_OFFSET");
         String receiver =  System.getenv("ISERIES_RECEIVER");
@@ -66,7 +67,7 @@ public class CommitLogProcessor {
 		fileDecoder = new JdbcFileDecoder(sqlConnect, database, schemaCache);
 		JournalPosition lastPosition = null;
 		
-        JournalPosition endPosition = JournalInfoRetrieval.getCurrentPosition(as400Connect.connection(), journalLib);
+        JournalPosition endPosition = journalInfoRetrieval.getCurrentPosition(as400Connect.connection(), journalLib);
 		log.info("end position is: {}", endPosition);
 		
 		long startTime = System.currentTimeMillis();
@@ -75,8 +76,15 @@ public class CommitLogProcessor {
 		try (PrintWriter pw = new PrintWriter(new File("exceptions.txt"))) {
 			JournalInfo journal = JournalInfoRetrieval.getJournal(as400Connect.connection(), schema);
 			log.info("journal: " + journal);
-			RetrieveConfig config = new RetrieveConfigBuilder().withAs400(as400Connect).withJournalInfo(journal).withDumpFolder("./bad-journal").withServerFiltering(true).withIncludeFiles(includes).build();
-			RetrieveJournal rj = new RetrieveJournal(config);
+			RetrieveConfig config = new RetrieveConfigBuilder()
+					.withAs400(as400Connect)
+					.withJournalInfo(journal)
+					.withDumpFolder("./bad-journal")
+					.withServerFiltering(false)
+					.withIncludeFiles(includes)
+					.withMaxServerSideEntries(10)
+					.build();
+			RetrieveJournal rj = new RetrieveJournal(config, journalInfoRetrieval);
 
 			do {
 				lastPosition = new JournalPosition(nextPosition);
@@ -135,10 +143,12 @@ public class CommitLogProcessor {
 					default:
 						break;
 				}
+				
 			}
-			
-			
+
             EntryHeader eh = r.getEntryHeader();
+			System.out.println(eh.getSequenceNumber());
+			
             if (eh != null)
                 log.info("last offset was " + eh.getSequenceNumber()+"."+eh.getReceiver()+"."+ eh.getReceiverLibrary());
             
