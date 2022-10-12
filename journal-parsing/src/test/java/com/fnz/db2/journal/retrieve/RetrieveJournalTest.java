@@ -1,7 +1,8 @@
 package com.fnz.db2.journal.retrieve;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -12,14 +13,23 @@ import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
 import com.fnz.db2.journal.retrieve.RetrievalCriteria.JournalCode;
+import com.fnz.db2.journal.retrieve.RetrieveJournal.PositionRange;
 import com.fnz.db2.journal.retrieve.rnrn0200.DetailedJournalReceiver;
 import com.fnz.db2.journal.retrieve.rnrn0200.JournalReceiverInfo;
 import com.fnz.db2.journal.retrieve.rnrn0200.JournalStatus;
+import com.ibm.as400.access.AS400;
 
 public class RetrieveJournalTest {
 
 	private RetrieveJournal createTestSubject() {
-		return new RetrieveJournal(new RetrieveConfig(null, new JournalInfo("receiver", "lib"), 65535, true, new JournalCode[0], new ArrayList<FileFilter>(), RetrieveConfig.DEFAULT_MAX_SERVER_SIDE_ENTRIES, null));
+		JournalInfoRetrieval journalInfoRetrieval = new JournalInfoRetrieval();
+		return createTestSubject(journalInfoRetrieval);
+	}
+	
+	private RetrieveJournal createTestSubject(JournalInfoRetrieval journalInfoRetrieval) {
+		return new RetrieveJournal(new RetrieveConfig(null, 
+				new JournalInfo("receiver", "lib"), 65535, true, new JournalCode[0], new ArrayList<FileFilter>(), RetrieveConfig.DEFAULT_MAX_SERVER_SIDE_ENTRIES, null),
+				journalInfoRetrieval);
 	}
 
 	@Test
@@ -67,7 +77,6 @@ public class RetrieveJournalTest {
 			BigInteger start = BigInteger.valueOf(i*size + 1);
 			BigInteger end = BigInteger.valueOf((i+1)*size);
 			DetailedJournalReceiver j = new DetailedJournalReceiver(new JournalReceiverInfo("name"+i, "lib", new Date(), JournalStatus.Attached, Optional.<Integer>empty()), start, end, "next", "nextDual", 100, 10000);
-			System.out.println(j);
 			receivers.add(j);
 		}
 		BigInteger startOffset = BigInteger.valueOf(RetrieveConfig.DEFAULT_MAX_SERVER_SIDE_ENTRIES*2);
@@ -92,4 +101,80 @@ public class RetrieveJournalTest {
 		}
 		return receivers;
 	}
+	
+	@Test
+	public void testFindRange_EndPastCurrentJournal() throws Exception {
+		BigInteger end = BigInteger.valueOf(RetrieveConfig.DEFAULT_MAX_SERVER_SIDE_ENTRIES/200);
+		JournalInfoRetrieval journalInfoRetrieval = new JournalInfoRetrieval() {
+			@Override
+			public DetailedJournalReceiver getCurrentDetailedJournalReceiver(AS400 as400, JournalInfo journalLib) throws Exception {
+				return new DetailedJournalReceiver(
+						new JournalReceiverInfo("latest", "lib", new Date(), JournalStatus.Attached, Optional.empty()),
+						BigInteger.ZERO,
+						end, // less than RetrieveConfig.DEFAULT_MAX_SERVER_SIDE_ENTRIES
+						"", "",
+						0l, 0l);
+			}
+		};
+		RetrieveJournal testSubject = createTestSubject(journalInfoRetrieval);
+		JournalPosition start = new JournalPosition(BigInteger.valueOf(1), "rec", "lib", true);
+		Optional<PositionRange> r = testSubject.findRange(null, start);
+		assertEquals(r, Optional.of(new PositionRange(start, 
+				new JournalPosition(end, "latest", "lib", true))));
+	}
+	
+	@Test
+	public void testFindRange_WithinCurrentJournal() throws Exception {
+		BigInteger end = BigInteger.valueOf(RetrieveConfig.DEFAULT_MAX_SERVER_SIDE_ENTRIES+200);
+		JournalInfoRetrieval journalInfoRetrieval = new JournalInfoRetrieval() {
+			@Override
+			public DetailedJournalReceiver getCurrentDetailedJournalReceiver(AS400 as400, JournalInfo journalLib) throws Exception {
+				return new DetailedJournalReceiver(
+						new JournalReceiverInfo("latest", "lib", new Date(), JournalStatus.Attached, Optional.empty()),
+						BigInteger.ZERO,
+						end,
+						"", "",
+						0l, 0l);
+			}
+		};
+		RetrieveJournal testSubject = createTestSubject(journalInfoRetrieval);
+		JournalPosition start = new JournalPosition(BigInteger.valueOf(1), "rec", "lib", true);
+		Optional<PositionRange> r = testSubject.findRange(null, start);
+		assertEquals(r, Optional.of(new PositionRange(start, 
+				new JournalPosition(start.getOffset().add(BigInteger.valueOf(RetrieveConfig.DEFAULT_MAX_SERVER_SIDE_ENTRIES)), "latest", "lib", true))));
+	}
+	
+	@Test
+	public void testFindRange_WithinJournalList() throws Exception {
+		JournalInfoRetrieval journalInfoRetrieval = new JournalInfoRetrieval() {
+			@Override
+			public DetailedJournalReceiver getCurrentDetailedJournalReceiver(AS400 as400, JournalInfo journalLib) throws Exception {
+				return new DetailedJournalReceiver(
+						new JournalReceiverInfo("latest", "lib", new Date(), JournalStatus.Attached, Optional.empty()),
+						BigInteger.valueOf(RetrieveConfig.DEFAULT_MAX_SERVER_SIDE_ENTRIES*10+1),
+						BigInteger.valueOf(RetrieveConfig.DEFAULT_MAX_SERVER_SIDE_ENTRIES*11),
+						"", "",
+						0l, 0l);
+			}
+			
+			@Override
+			public List<DetailedJournalReceiver> getReceivers(AS400 as400, JournalInfo journalLib) throws Exception {
+				List<DetailedJournalReceiver> l = new ArrayList();
+				for (int i=0; i<10; i++) {
+					l.add(new DetailedJournalReceiver(
+							new JournalReceiverInfo("receiver"+i, "lib", new Date(), JournalStatus.Attached, Optional.empty()),
+							BigInteger.valueOf(i*RetrieveConfig.DEFAULT_MAX_SERVER_SIDE_ENTRIES + 1),
+							BigInteger.valueOf((i+1)*RetrieveConfig.DEFAULT_MAX_SERVER_SIDE_ENTRIES),
+							"", "",
+							0l, 0l));
+				}
+				return l;
+			}
+		};
+		RetrieveJournal testSubject = createTestSubject(journalInfoRetrieval);
+		JournalPosition start = new JournalPosition(BigInteger.valueOf(RetrieveConfig.DEFAULT_MAX_SERVER_SIDE_ENTRIES*5), "rec", "lib", true);
+		Optional<PositionRange> r = testSubject.findRange(null, start);
+		assertEquals(r, Optional.of(new PositionRange(start, 
+				new JournalPosition(start.getOffset().add(BigInteger.valueOf(RetrieveConfig.DEFAULT_MAX_SERVER_SIDE_ENTRIES)), "receiver5", "lib", true))));
+	}	
 }

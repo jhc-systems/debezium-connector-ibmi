@@ -49,10 +49,10 @@ public class JournalFilterTimeout {
 			}
 		}
 
-		List<DetailedJournalReceiver> receivers = JournalInfoRetrieval.getReceivers(as400Connect.connection(), journalLib);
+		JournalInfoRetrieval journalInfoRetrieval = new JournalInfoRetrieval();
+		List<DetailedJournalReceiver> receivers = journalInfoRetrieval.getReceivers(as400Connect.connection(), journalLib);
 		DetailedJournalReceiver first = receivers.stream().min((x, y) -> x.start().compareTo(y.start())).get();
-		
-        JournalPosition endPosition = JournalInfoRetrieval.getCurrentPosition(as400Connect.connection(), journalLib);
+        JournalPosition endPosition = journalInfoRetrieval.getCurrentPosition(as400Connect.connection(), journalLib);
 		log.info("start {} end {}", first, endPosition);
 		
 		
@@ -61,7 +61,7 @@ public class JournalFilterTimeout {
 			JournalInfo journal = JournalInfoRetrieval.getJournal(as400Connect.connection(), schema);
 			log.info("journal: " + journal);
 			RetrieveConfig config = new RetrieveConfigBuilder().withAs400(as400Connect).withJournalInfo(journal).withDumpFolder("./bad-journal").withServerFiltering(true).withIncludeFiles(includes).build();
-			RetrieveJournal rj = new RetrieveJournal(config);
+			RetrieveJournal rj = new RetrieveJournal(config, journalInfoRetrieval);
 
 			JournalPosition p = new JournalPosition(first.start(), first.info().name(), first.info().library(), false); 
 			long start = System.currentTimeMillis();
