@@ -40,13 +40,16 @@ public class JournalInfoRetrieval {
     private static final int KEY_HEADER_LENGTH = 20;
 	static final Logger log = LoggerFactory.getLogger(JournalInfoRetrieval.class);
 	
-	public static JournalPosition getCurrentPosition(AS400 as400, JournalInfo journalLib) throws Exception {
+	public JournalInfoRetrieval() {
+	}
+	
+	public JournalPosition getCurrentPosition(AS400 as400, JournalInfo journalLib) throws Exception {
 		JournalInfo ji = JournalInfoRetrieval.getReceiver(as400, journalLib);
 		BigInteger offset = getOffset(as400, ji).end();
 		return new JournalPosition(offset, ji.receiver, ji.receiverLibrary, false);
 	}
 	
-	public static DetailedJournalReceiver getCurrentDetailedJournalReceiver(AS400 as400, JournalInfo journalLib) throws Exception {
+	public DetailedJournalReceiver getCurrentDetailedJournalReceiver(AS400 as400, JournalInfo journalLib) throws Exception {
 		JournalInfo ji = JournalInfoRetrieval.getReceiver(as400, journalLib);
 		return getOffset(as400, ji);
 	}
@@ -135,7 +138,7 @@ public class JournalInfoRetrieval {
 	 * @return
 	 * @throws Exception
 	 */
-	public static List<DetailedJournalReceiver> getReceivers(AS400 as400, JournalInfo journalLib) throws Exception {
+	public List<DetailedJournalReceiver> getReceivers(AS400 as400, JournalInfo journalLib) throws Exception {
 		int rcvLen = 32768;
 		String jrnLib = padRight(journalLib.receiver, 10) + padRight(journalLib.receiverLibrary, 10);
 		String format = "RJRN0200";
