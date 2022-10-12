@@ -85,7 +85,7 @@ public class RetrieveJournal {
         offset = -1;
         entryHeader = null;
         header = null;
-
+        
         this.position = retrievePosition;
 		this.entryHeader = null;
 		log.debug("Fetch journal at postion {}", retrievePosition);
@@ -100,7 +100,11 @@ public class RetrieveJournal {
         Optional<JournalPosition> latestJournalPosition = Optional.empty();
 		Optional<PositionRange> range = findRange(config.as400().connection(), retrievePosition);
 		if (range.isEmpty()) {
-			builder.withFromStart();
+			if (retrievePosition.isOffsetSet()) {
+				builder.withStartingSequence(retrievePosition.getOffset());
+			} else {
+				builder.withFromStart();
+			}
 			builder.withReceivers("*CURCHAIN");
 			builder.withEnd();
 		} else {
@@ -133,9 +137,9 @@ public class RetrieveJournal {
 				header.nextPosition().ifPresent(offset -> {
 	                retrievePosition.setPosition(offset); 
 	            });
-			} 
+			}
 			if (!hasData()) {
-			    log.debug("moving on to current position");
+			    log.debug("moving on to current position {}", latestJournalPosition);
 			    latestJournalPosition.ifPresent(l -> {
 				    header = header.withCurrentJournalPosition(l);
 				    retrievePosition.setPosition(l);
@@ -196,9 +200,15 @@ public class RetrieveJournal {
         boolean startValid = start.isOffsetSet() && !start.getOffset().equals(BigInteger.ZERO);
 		if (startValid) {
 			DetailedJournalReceiver currentPosition = cachedCurrentPosition;
-			if (cachedCurrentPosition == null || cachedCurrentPosition.end().compareTo(maxPosition) < 0 ) {
+			if (cachedCurrentPosition == null || maxPosition.compareTo(cachedCurrentPosition.end()) >= 0 ) {
 				currentPosition = JournalInfoRetrieval.getCurrentDetailedJournalReceiver(as400, config.journalInfo());
 				cachedCurrentPosition = currentPosition;
+				// can't go beyond current journal end
+				if (maxPosition.compareTo(currentPosition.end()) >= 0) {
+					maxPosition = currentPosition.end();
+					JournalPosition end = new JournalPosition(maxPosition, currentPosition.info().name(), currentPosition.info().library(), true);
+					return Optional.of(new PositionRange(start, end));
+				}
 			}
 	        if (withinRange(maxPosition, currentPosition.start(), currentPosition.end())) {
 	        	JournalPosition end = new JournalPosition(maxPosition, currentPosition.info().name(), currentPosition.info().library(), true);
