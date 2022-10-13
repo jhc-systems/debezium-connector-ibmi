@@ -218,8 +218,9 @@ public class RetrieveJournal {
 	        }
 		}
 		Optional<PositionRange> fromCache = findInReceivers(start, maxPosition, startValid, cachedReceivers);
-		if (fromCache.isPresent())
+		if (fromCache.isPresent()) {
 			return fromCache;
+		}
 		
 		List<DetailedJournalReceiver> receivers = journalInfoRetrieval.getReceivers(as400, config.journalInfo());
 		cachedReceivers = receivers;
@@ -229,6 +230,10 @@ public class RetrieveJournal {
 
 	private Optional<PositionRange> findInReceivers(JournalPosition start, BigInteger maxPosition, boolean startValid,
 			List<DetailedJournalReceiver> receivers) {
+		if (receivers.isEmpty()) {
+			return Optional.empty();
+		}
+		
 		if (!startValid) {
 			Optional<DetailedJournalReceiver> first = DetailedJournalReceiver.firstInLatestChain(receivers);
 			Optional<JournalPosition> startOpt = first.map(x -> new JournalPosition(x.start(), x.info().name(), x.info().library(), false));
@@ -238,6 +243,11 @@ public class RetrieveJournal {
 			} else {
 				return Optional.empty();
 			}
+		}
+		// limit max position to current journal end
+		BigInteger endPosition = receivers.stream().map(x -> x.end()).max((f,s) -> f.compareTo(s)).get();
+		if (maxPosition.compareTo(endPosition) > 0) {
+			maxPosition = endPosition;
 		}
 		Optional<JournalPosition> end = journalAtMaxOffset(maxPosition, receivers);
 		if (end.isPresent())

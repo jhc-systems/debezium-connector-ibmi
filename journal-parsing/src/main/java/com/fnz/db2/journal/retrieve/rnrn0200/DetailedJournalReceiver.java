@@ -25,7 +25,7 @@ public record DetailedJournalReceiver(
 		Optional<DetailedJournalReceiver> firstInChain = lastDisjointNamed.map(x -> {
 			DetailedJournalReceiver first = x.dr;
 			while (x.tail != null) {
-				if (!x.dr.info.chain().equals(x.tail.dr.info.chain())) {
+				if (!isSameChain(x)) {
 					first = x.tail.dr;
 				}
 				x = x.tail;
@@ -34,6 +34,10 @@ public record DetailedJournalReceiver(
 		});
 		
 		return firstInChain;
+	}
+
+	private static boolean isSameChain(ReceiverChain x) {
+		return x.dr.info.chain().equals(x.tail.dr.info.chain()) || (x.dr.info.chain().isEmpty() && x.tail.dr.info.chain().isEmpty());
 	}
 	
 	// find last
