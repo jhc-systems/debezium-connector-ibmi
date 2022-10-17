@@ -148,10 +148,9 @@ public class As400RpcConnection implements AutoCloseable, Connect<AS400, IOExcep
         else {
             // this is bad, we've probably lost data
             List<DetailedJournalReceiver> receivers = journalInfoRetrieval.getReceivers(connection(), journalInfo);
-            log.error(new StructuredMessage("Failed to fetch journal entries, resetting journal to blank",
+            log.error(new StructuredMessage("Failed to fetch journal entries, will retry",
                     Map.of("position", position, 
                             "receivers", receivers)));
-            offsetCtx.setPosition(new JournalPosition());
         }
 
         return success && retrieveJournal.futureDataAvailable();
