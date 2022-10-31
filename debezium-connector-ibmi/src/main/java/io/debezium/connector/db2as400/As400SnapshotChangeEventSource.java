@@ -18,6 +18,7 @@ import org.slf4j.LoggerFactory;
 import com.fnz.db2.journal.retrieve.JournalPosition;
 
 import io.debezium.pipeline.EventDispatcher;
+import io.debezium.pipeline.source.snapshot.incremental.SignalBasedIncrementalSnapshotContext;
 import io.debezium.pipeline.source.spi.SnapshotProgressListener;
 import io.debezium.pipeline.spi.SnapshotResult;
 import io.debezium.relational.RelationalSnapshotChangeEventSource;
@@ -116,7 +117,7 @@ public class As400SnapshotChangeEventSource extends RelationalSnapshotChangeEven
         JournalPosition position = rpcConnection.getCurrentPosition();
         // set last entry to processed so we don't process it again
         position.setProcessed(true);
-        snapshotContext.offset = new As400OffsetContext(connectorConfig, position);
+        snapshotContext.offset = new As400OffsetContext(connectorConfig, position, new SignalBasedIncrementalSnapshotContext<>());
     }
 
     @Override

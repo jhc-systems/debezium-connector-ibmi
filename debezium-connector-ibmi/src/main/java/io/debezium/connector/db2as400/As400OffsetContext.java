@@ -20,9 +20,11 @@ import com.fnz.db2.journal.retrieve.JournalPosition;
 
 import io.debezium.config.Field;
 import io.debezium.connector.SnapshotRecord;
+import io.debezium.pipeline.source.snapshot.incremental.IncrementalSnapshotContext;
 import io.debezium.pipeline.spi.OffsetContext;
 import io.debezium.pipeline.txmetadata.TransactionContext;
 import io.debezium.relational.RelationalDatabaseConnectorConfig;
+import io.debezium.relational.TableId;
 import io.debezium.schema.DataCollectionId;
 import io.debezium.util.Collect;
 
@@ -50,26 +52,29 @@ public class As400OffsetContext implements OffsetContext {
     private String inclueTables;
     private boolean hasNewTables = false;
     private volatile boolean snapshotComplete = false;
-
-    public As400OffsetContext(As400ConnectorConfig connectorConfig) {
+    private final IncrementalSnapshotContext<TableId> incrementalSnapshotContext;
+    
+    public As400OffsetContext(As400ConnectorConfig connectorConfig, IncrementalSnapshotContext<TableId> incrementalSnapshotContext) {
         super();
         partition = Collections.singletonMap(SERVER_PARTITION_KEY, connectorConfig.getLogicalName());
         this.position = connectorConfig.getOffset();
         this.connectorConfig = connectorConfig;
         sourceInfo = new SourceInfo(connectorConfig);
         inclueTables = connectorConfig.tableIncludeList();
+        this.incrementalSnapshotContext = incrementalSnapshotContext;
     }
 
-    public As400OffsetContext(As400ConnectorConfig connectorConfig, JournalPosition position) {
+    public As400OffsetContext(As400ConnectorConfig connectorConfig, JournalPosition position, IncrementalSnapshotContext<TableId> incrementalSnapshotContext) {
         super();
         partition = Collections.singletonMap(SERVER_PARTITION_KEY, connectorConfig.getLogicalName());
         this.position = position;
         this.connectorConfig = connectorConfig;
         sourceInfo = new SourceInfo(connectorConfig);
         inclueTables = connectorConfig.tableIncludeList();
+        this.incrementalSnapshotContext = incrementalSnapshotContext;
     }
 
-    public As400OffsetContext(As400ConnectorConfig connectorConfig, JournalPosition position, String includeTables, boolean snapshotComplete) {
+    public As400OffsetContext(As400ConnectorConfig connectorConfig, JournalPosition position, String includeTables, boolean snapshotComplete, IncrementalSnapshotContext<TableId> incrementalSnapshotContext) {
         super();
         partition = Collections.singletonMap(SERVER_PARTITION_KEY, connectorConfig.getLogicalName());
         this.position = position;
@@ -77,6 +82,7 @@ public class As400OffsetContext implements OffsetContext {
         sourceInfo = new SourceInfo(connectorConfig);
         this.inclueTables = includeTables;
         this.snapshotComplete = snapshotComplete;
+        this.incrementalSnapshotContext = incrementalSnapshotContext;
     }
 
     public void setPosition(JournalPosition newPosition) {
@@ -177,13 +183,23 @@ public class As400OffsetContext implements OffsetContext {
     public String getIncludeTables() {
         return inclueTables;
     }
+    
+    @Override
+    public IncrementalSnapshotContext<?> getIncrementalSnapshotContext() {
+        return incrementalSnapshotContext;
+    }
 
     public static class Loader implements OffsetContext.Loader<As400OffsetContext> {
 
         private final As400ConnectorConfig connectorConfig;
+        private final IncrementalSnapshotContext<TableId> incrementalSnapshotContext;
 
-        public Loader(As400ConnectorConfig connectorConfig) {
+
+
+        public Loader(As400ConnectorConfig connectorConfig, IncrementalSnapshotContext<TableId> incrementalSnapshotContext) {
             this.connectorConfig = connectorConfig;
+            this.incrementalSnapshotContext = incrementalSnapshotContext;
+
         }
 
         @Override
@@ -203,7 +219,7 @@ public class As400OffsetContext implements OffsetContext {
             	BigInteger offset = new BigInteger(offsetStr);
                 position = new JournalPosition(offset, receiver, schema, processed);
             }
-            return new As400OffsetContext(connectorConfig, position, inclueTables, snapshotComplete);
+            return new As400OffsetContext(connectorConfig, position, inclueTables, snapshotComplete, incrementalSnapshotContext);
         }
     }
 

@@ -27,9 +27,13 @@ import io.debezium.relational.Tables.TableFilter;
 //TODO  can we deliver HistorizedRelationalDatabaseConnectorConfig or should it be RelationalDatabaseConnectorConfig 
 public class As400ConnectorConfig extends RelationalDatabaseConnectorConfig {
     private static TableIdToStringMapper tableToString = x -> {
-        StringBuilder sb = new StringBuilder(x.schema());
-        sb.append(".").append(x.table());
-        return sb.toString();
+    	if (null == x.schema()) {
+    		return x.table();
+    	} else {
+	        StringBuilder sb = new StringBuilder(x.schema());
+	        sb.append(".").append(x.table());
+	        return sb.toString();
+    	}
     };
 
     private final SnapshotMode snapshotMode;
