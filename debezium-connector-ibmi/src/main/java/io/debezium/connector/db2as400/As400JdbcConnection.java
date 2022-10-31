@@ -25,6 +25,7 @@ import com.fnz.db2.journal.retrieve.FileFilter;
 import com.ibm.as400.access.AS400JDBCDriver;
 
 import io.debezium.config.Configuration;
+import io.debezium.config.Field;
 import io.debezium.jdbc.JdbcConfiguration;
 import io.debezium.jdbc.JdbcConnection;
 import io.debezium.relational.Column;
@@ -36,7 +37,7 @@ import io.debezium.relational.Tables.TableFilter;
 public class As400JdbcConnection extends JdbcConnection implements Connect<Connection, SQLException> {
     private static final Logger log = LoggerFactory.getLogger(As400JdbcConnection.class);
     private static final String URL_PATTERN = "jdbc:as400://${" + JdbcConfiguration.HOSTNAME + "}/${"
-            + JdbcConfiguration.DATABASE + "};thread used=false;date format=iso;keep alive = true";
+            + JdbcConfiguration.DATABASE + "}";
     private final JdbcConfiguration config;
 
     private static final String GET_DATABASE_NAME = "SELECT CURRENT_SERVER FROM SYSIBM.SYSDUMMY1";
@@ -51,9 +52,17 @@ public class As400JdbcConnection extends JdbcConnection implements Connect<Conne
     private final Map<String, Optional<String>> longToSystemName = new HashMap<>();
 
     private final String realDatabaseName;
+    
+    private static Field[] fields = new Field[] {
+    		// setting, display name, description, default
+    		Field.create("thread used", "thread used", "use threads for fetching/receiving data setting this to 'true' typically doesn't end well", false),
+    		Field.create("date format", "date format", "default date format is 2 digit date 1940->2039 set this to 'iso' or make sure you only have dates in this range, performance is ambysmal if you don't not to mention lots of missing data", "iso"),
+    		Field.create("keep alive", "keep alive", "send heart beat to keep the connection alive", true),
+    		Field.create("prompt", "prompt", "do you want a GUI prompt for the password if the password is wrong", false) 
+	};
 
     private static final ConnectionFactory FACTORY = JdbcConnection.patternBasedFactory(URL_PATTERN,
-            AS400JDBCDriver.class.getName(), As400JdbcConnection.class.getClassLoader());
+            AS400JDBCDriver.class.getName(), As400JdbcConnection.class.getClassLoader(), fields);
 
     public As400JdbcConnection(JdbcConfiguration config) {
         super(config, FACTORY, "'", "'");
