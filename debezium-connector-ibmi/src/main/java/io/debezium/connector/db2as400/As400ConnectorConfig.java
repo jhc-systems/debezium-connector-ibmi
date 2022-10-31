@@ -84,6 +84,12 @@ public class As400ConnectorConfig extends RelationalDatabaseConnectorConfig {
      */
     public static final Field MAX_SERVER_SIDE_ENTRIES = Field.create("max_entries", "max server side entries", "Maximum number of journal entries to process server side when filtering", RetrieveConfig.DEFAULT_MAX_SERVER_SIDE_ENTRIES);
 
+    public static final long DEFAULT_MAX_JOURNAL_TIMEOUT = 60000;
+    /**
+     * Maximum number of journal entries to process server side
+     */
+    public static final Field MAX_RETRIEVAL_TIMEOUT = Field.create("max_journal_timeout", "max time to fetch the journal entries", "Maximum time to fetch the journal entries in ms", DEFAULT_MAX_JOURNAL_TIMEOUT);
+
 
     public As400ConnectorConfig(Configuration config) {
         super(config, config.getString(JdbcConfiguration.HOSTNAME), new SystemTablesPredicate(),
@@ -136,6 +142,10 @@ public class As400ConnectorConfig extends RelationalDatabaseConnectorConfig {
     
     public Integer getMaxServerSideEntries() {
         return config.getInteger(MAX_SERVER_SIDE_ENTRIES);
+    }
+    
+    public Integer getMaxRetrievalTimeout() {
+        return config.getInteger(MAX_RETRIEVAL_TIMEOUT);
     }
 
     public JournalPosition getOffset() {

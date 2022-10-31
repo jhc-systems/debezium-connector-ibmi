@@ -45,7 +45,6 @@ import io.debezium.util.Metronome;
  * </p>
  */
 public class As400StreamingChangeEventSource implements StreamingChangeEventSource<As400Partition, As400OffsetContext> {
-    private static final int MAX_STUCK_THREAD = 60000;
     private static final String NO_TRANSACTION_ID = "00000000000000000000";
     private JdbcFileDecoder fileDecoder;
     private long connectionTime = -1;
@@ -112,7 +111,7 @@ public class As400StreamingChangeEventSource implements StreamingChangeEventSour
     public void execute(ChangeEventSourceContext context, As400Partition partition, As400OffsetContext offsetContext) throws InterruptedException {
         final Metronome metronome = Metronome.sleeper(pollInterval, clock);
         int retries = 0;
-        WatchDog watchDog = new WatchDog(Thread.currentThread(), MAX_STUCK_THREAD);
+        WatchDog watchDog = new WatchDog(Thread.currentThread(), connectorConfig.getMaxRetrievalTimeout());
         watchDog.start();
         try {
 	        while (context.isRunning()) {
