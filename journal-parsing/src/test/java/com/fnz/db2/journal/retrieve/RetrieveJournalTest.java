@@ -29,8 +29,7 @@ public class RetrieveJournalTest {
 	private RetrieveJournal createTestSubject(JournalInfoRetrieval journalInfoRetrieval) {
 		return new RetrieveJournal(new RetrieveConfig(null, 
 				new JournalInfo("receiver", "lib"), 65535, true, new JournalCode[0], 
-				new ArrayList<FileFilter>(), RetrieveConfig.DEFAULT_MAX_JOURNAL_TIMEOUT,
-				RetrieveConfig.DEFAULT_MAX_SERVER_SIDE_ENTRIES, null),
+				new ArrayList<FileFilter>(), RetrieveConfig.DEFAULT_MAX_SERVER_SIDE_ENTRIES, null),
 				journalInfoRetrieval);
 	}
 
