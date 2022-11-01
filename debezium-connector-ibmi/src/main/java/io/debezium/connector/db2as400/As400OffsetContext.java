@@ -23,7 +23,7 @@ import io.debezium.connector.SnapshotRecord;
 import io.debezium.pipeline.spi.OffsetContext;
 import io.debezium.pipeline.txmetadata.TransactionContext;
 import io.debezium.relational.RelationalDatabaseConnectorConfig;
-import io.debezium.schema.DataCollectionId;
+import io.debezium.spi.schema.DataCollectionId;
 import io.debezium.util.Collect;
 
 public class As400OffsetContext implements OffsetContext {
@@ -142,11 +142,6 @@ public class As400OffsetContext implements OffsetContext {
     }
 
     @Override
-    public void markLastSnapshotRecord() {
-        sourceInfo.setSnapshot(SnapshotRecord.LAST);
-    }
-
-    @Override
     public void preSnapshotStart() {
         snapshotComplete = false;
         sourceInfo.setSnapshot(SnapshotRecord.TRUE);
@@ -222,4 +217,8 @@ public class As400OffsetContext implements OffsetContext {
         return "As400OffsetContext [position=" + position + "]";
     }
 
+	@Override
+	public void markSnapshotRecord(SnapshotRecord record) {
+		sourceInfo.setSnapshot(record);
+	}
 }

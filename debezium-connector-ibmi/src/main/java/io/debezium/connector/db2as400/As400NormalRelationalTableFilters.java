@@ -14,7 +14,7 @@ import io.debezium.relational.Tables.TableFilter;
 public class As400NormalRelationalTableFilters extends RelationalTableFilters {
 
     public As400NormalRelationalTableFilters(Configuration config, TableFilter systemTablesFilter, TableIdToStringMapper tableIdMapper) {
-        super(config, systemTablesFilter, tableIdMapper);
+        super(config, systemTablesFilter, tableIdMapper, false);
     }
 
     // make eligible the same as the data collection
