@@ -23,6 +23,8 @@ import io.debezium.relational.RelationalTableFilters;
 import io.debezium.relational.Selectors.TableIdToStringMapper;
 import io.debezium.relational.TableId;
 import io.debezium.relational.Tables.TableFilter;
+import io.debezium.schema.DefaultTopicNamingStrategy;
+import org.apache.kafka.common.config.ConfigDef.Type;
 
 //TODO  can we deliver HistorizedRelationalDatabaseConnectorConfig or should it be RelationalDatabaseConnectorConfig 
 public class As400ConnectorConfig extends RelationalDatabaseConnectorConfig {
@@ -90,10 +92,18 @@ public class As400ConnectorConfig extends RelationalDatabaseConnectorConfig {
      */
     public static final Field MAX_RETRIEVAL_TIMEOUT = Field.create("max_journal_timeout", "max time to fetch the journal entries", "Maximum time to fetch the journal entries in ms", DEFAULT_MAX_JOURNAL_TIMEOUT);
 
+    public static final Field TOPIC_NAMING_STRATEGY = Field.create("topic.naming.strategy")
+            .withDisplayName("Topic naming strategy class")
+            .withType(Type.CLASS)
+            .withWidth(Width.MEDIUM)
+            .withImportance(Importance.MEDIUM)
+            .withDescription("The name of the TopicNamingStrategy class that should be used to determine the topic name " +
+                    "for data change, schema change, transaction, heartbeat event etc.")
+            .withDefault(DefaultTopicNamingStrategy.class.getName());
 
     public As400ConnectorConfig(Configuration config) {
-        super(config, config.getString(JdbcConfiguration.HOSTNAME), new SystemTablesPredicate(),
-                tableToString, 1, ColumnFilterMode.SCHEMA);
+        super(config, new SystemTablesPredicate(),
+                tableToString, 1, ColumnFilterMode.SCHEMA, false);
         this.config = config;
         this.snapshotMode = SnapshotMode.parse(config.getString(SNAPSHOT_MODE), SNAPSHOT_MODE.defaultValueAsString());
         this.tableFilters = new As400NormalRelationalTableFilters(config, new SystemTablesPredicate(), tableToString);
@@ -181,7 +191,7 @@ public class As400ConnectorConfig extends RelationalDatabaseConnectorConfig {
 
     public static Field.Set ALL_FIELDS = Field.setOf(JdbcConfiguration.HOSTNAME, USER, PASSWORD, SCHEMA, BUFFER_SIZE,
             RelationalDatabaseConnectorConfig.SNAPSHOT_SELECT_STATEMENT_OVERRIDES_BY_TABLE, KEEP_ALIVE, THREAD_USED, SOCKET_TIMEOUT,
-            MAX_SERVER_SIDE_ENTRIES);
+            MAX_SERVER_SIDE_ENTRIES, TOPIC_NAMING_STRATEGY);
 
     public static ConfigDef configDef() {
         ConfigDef c = RelationalDatabaseConnectorConfig.CONFIG_DEFINITION.edit()
