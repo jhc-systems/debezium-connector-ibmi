@@ -9,6 +9,7 @@ import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -321,5 +322,11 @@ public class As400JdbcConnection extends JdbcConnection implements Connect<Conne
         }
 
         return Optional.empty();
+    }
+    
+    @Override
+    public Optional<Timestamp> getCurrentTimestamp() throws SQLException {
+        return queryAndMap("SELECT CURRENT TIMESTAMP FROM SYSIBM.SYSDUMMY1",
+                rs -> rs.next() ? Optional.of(rs.getTimestamp(1)) : Optional.empty());
     }
 }
