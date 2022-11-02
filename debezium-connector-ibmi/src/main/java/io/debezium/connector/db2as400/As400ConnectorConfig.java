@@ -7,6 +7,7 @@ package io.debezium.connector.db2as400;
 
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.common.config.ConfigDef.Importance;
+import org.apache.kafka.common.config.ConfigDef.Type;
 import org.apache.kafka.common.config.ConfigDef.Width;
 
 import com.fnz.db2.journal.retrieve.JournalPosition;
@@ -23,8 +24,6 @@ import io.debezium.relational.RelationalTableFilters;
 import io.debezium.relational.Selectors.TableIdToStringMapper;
 import io.debezium.relational.TableId;
 import io.debezium.relational.Tables.TableFilter;
-import io.debezium.schema.DefaultTopicNamingStrategy;
-import org.apache.kafka.common.config.ConfigDef.Type;
 
 //TODO  can we deliver HistorizedRelationalDatabaseConnectorConfig or should it be RelationalDatabaseConnectorConfig 
 public class As400ConnectorConfig extends RelationalDatabaseConnectorConfig {
@@ -99,7 +98,7 @@ public class As400ConnectorConfig extends RelationalDatabaseConnectorConfig {
             .withImportance(Importance.MEDIUM)
             .withDescription("The name of the TopicNamingStrategy class that should be used to determine the topic name " +
                     "for data change, schema change, transaction, heartbeat event etc.")
-            .withDefault(DefaultTopicNamingStrategy.class.getName());
+            .withDefault(NoPrefixNamingScheme.class.getName());
 
     public As400ConnectorConfig(Configuration config) {
         super(config, new SystemTablesPredicate(),
