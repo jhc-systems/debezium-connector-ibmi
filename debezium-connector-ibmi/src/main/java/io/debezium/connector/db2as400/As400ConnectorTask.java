@@ -52,8 +52,9 @@ public class As400ConnectorTask extends BaseSourceTask<As400Partition, As400Offs
     protected ChangeEventSourceCoordinator<As400Partition, As400OffsetContext> start(Configuration config) {
         log.warn("starting connector task {}", version());
         config = addDefaultHeartbeatToConfig(config);
+        config = addDefaultPrefixToConfig(config);
         final As400ConnectorConfig connectorConfig = new As400ConnectorConfig(config);
-        final TopicNamingStrategy<TableId> topicNamingStrategy = connectorConfig.getTopicNamingStrategy(As400ConnectorConfig.TOPIC_NAMING_STRATEGY);
+        final TopicNamingStrategy<TableId> topicNamingStrategy = connectorConfig.getTopicNamingStrategy(As400ConnectorConfig.TOPIC_NAMING_STRATEGY, true);
 
         ReplacementOccurred logOnce = new ReplacementOccurred() {
             @Override
@@ -147,6 +148,14 @@ public class As400ConnectorTask extends BaseSourceTask<As400Partition, As400Offs
         int heartbeat = config.getInteger("heartbeat.interval.ms", 0);
         if (heartbeat == 0) {
             config = Configuration.copy(config).with("heartbeat.interval.ms", 60000).build();
+        }
+        return config;
+    }
+    
+    private Configuration addDefaultPrefixToConfig(Configuration config) {
+        String prefix = config.getString("topic.prefix", "");
+        if (prefix.isEmpty()) {
+            config = Configuration.copy(config).with("topic.prefix", "as400").build();
         }
         return config;
     }
