@@ -98,7 +98,7 @@ public class As400ConnectorConfig extends RelationalDatabaseConnectorConfig {
             .withImportance(Importance.MEDIUM)
             .withDescription("The name of the TopicNamingStrategy class that should be used to determine the topic name " +
                     "for data change, schema change, transaction, heartbeat event etc.")
-            .withDefault(NoPrefixNamingScheme.class.getName());
+            .withDefault(HostnamePrefixNamingScheme.class.getName());
 
     public As400ConnectorConfig(Configuration config) {
         super(config, new SystemTablesPredicate(),

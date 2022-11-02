@@ -25,6 +25,7 @@ import io.debezium.connector.common.BaseSourceTask;
 import io.debezium.connector.common.CdcSourceTaskContext;
 import io.debezium.connector.db2as400.metrics.As400ChangeEventSourceMetricsFactory;
 import io.debezium.connector.db2as400.metrics.As400StreamingChangeEventSourceMetrics;
+import io.debezium.jdbc.JdbcConfiguration;
 import io.debezium.pipeline.ChangeEventSourceCoordinator;
 import io.debezium.pipeline.DataChangeEvent;
 import io.debezium.pipeline.ErrorHandler;
@@ -155,7 +156,7 @@ public class As400ConnectorTask extends BaseSourceTask<As400Partition, As400Offs
     private Configuration addDefaultPrefixToConfig(Configuration config) {
         String prefix = config.getString("topic.prefix", "");
         if (prefix.isEmpty()) {
-            config = Configuration.copy(config).with("topic.prefix", "as400").build();
+            config = Configuration.copy(config).with("topic.prefix", config.getString(JdbcConfiguration.HOSTNAME)).build();
         }
         return config;
     }

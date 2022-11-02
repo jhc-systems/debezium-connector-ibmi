@@ -1,5 +1,6 @@
 package io.debezium.connector.db2as400;
 
+import java.util.List;
 import java.util.Properties;
 
 import org.apache.kafka.connect.errors.ConnectException;
@@ -15,17 +16,17 @@ import io.debezium.spi.schema.DataCollectionId;
 import io.debezium.util.BoundedConcurrentHashMap;
 import io.debezium.util.Collect;
 
-public class NoPrefixNamingScheme extends AbstractTopicNamingStrategy<DataCollectionId> {
+public class HostnamePrefixNamingScheme extends AbstractTopicNamingStrategy<DataCollectionId> {
 
     private final boolean multiPartitionMode;
 
-    public NoPrefixNamingScheme(Properties props) {
+    public HostnamePrefixNamingScheme(Properties props) {
         super(props);
         this.multiPartitionMode = props.get(CommonConnectorConfig.MULTI_PARTITION_MODE) == null ? false
                 : Boolean.parseBoolean(props.get(CommonConnectorConfig.MULTI_PARTITION_MODE).toString());
     }
 
-    public NoPrefixNamingScheme(Properties props, boolean multiPartitionMode) {
+    public HostnamePrefixNamingScheme(Properties props, boolean multiPartitionMode) {
         super(props);
         this.multiPartitionMode = multiPartitionMode;
     }
@@ -38,14 +39,14 @@ public class NoPrefixNamingScheme extends AbstractTopicNamingStrategy<DataCollec
         return new SchemaTopicNamingStrategy(config.getConfig().asProperties(), multiPartitionMode);
     }
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(NoPrefixNamingScheme.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(HostnamePrefixNamingScheme.class);
 
     
     @Override
     public void configure(Properties props) {
         Configuration config = Configuration.from(props);
         final Field.Set configFields = Field.setOf(
-        		// excluding CommonConnectorConfig.TOPIC_PREFIX
+        		CommonConnectorConfig.TOPIC_PREFIX,
                 TOPIC_DELIMITER,
                 TOPIC_CACHE_SIZE,
                 TOPIC_TRANSACTION,
@@ -70,10 +71,12 @@ public class NoPrefixNamingScheme extends AbstractTopicNamingStrategy<DataCollec
     public String dataChangeTopic(DataCollectionId id) {
         String topicName;
         if (multiPartitionMode) {
-            topicName = mkString(Collect.arrayListOf("", id.parts()), delimiter);
+        	List<String> parts = id.parts();
+            topicName = mkString(Collect.arrayListOf(prefix, parts.subList(1, parts.size())), delimiter);
         }
         else {
-            topicName = mkString(Collect.arrayListOf("", id.schemaParts()), delimiter);
+        	List<String> parts = id.schemaParts();
+            topicName = mkString(Collect.arrayListOf(prefix, parts.subList(1, parts.size())), delimiter);
         }
         return topicNames.computeIfAbsent(id, t -> sanitizedTopicName(topicName));
     }
