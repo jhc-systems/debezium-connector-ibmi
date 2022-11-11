@@ -110,12 +110,12 @@ public class JournalInfoRetrieval {
 	 * @throws Exception
 	 */
 	public static JournalInfo getReceiver(AS400 as400, JournalInfo journalLib) throws Exception {
-		int rcvLen = 32768;
+		int rcvLen = 4096;
 		String jrnLib = padRight(journalLib.receiver, 10) + padRight(journalLib.receiverLibrary, 10);
 		String format = "RJRN0200";
 		ProgramParameter[] parameters = new ProgramParameter[] {
 				new ProgramParameter(ProgramParameter.PASS_BY_REFERENCE, rcvLen),
-				new ProgramParameter(ProgramParameter.PASS_BY_REFERENCE, AS400_BIN4.toBytes(rcvLen)),
+				new ProgramParameter(ProgramParameter.PASS_BY_REFERENCE, AS400_BIN4.toBytes(rcvLen/4096)),
 				new ProgramParameter(ProgramParameter.PASS_BY_REFERENCE, AS400_TEXT_20.toBytes(jrnLib)),
 				new ProgramParameter(ProgramParameter.PASS_BY_REFERENCE, AS400_TEXT_8.toBytes(format)),
 				new ProgramParameter(ProgramParameter.PASS_BY_REFERENCE, EMPTY_AS400_TEXT),
@@ -130,6 +130,25 @@ public class JournalInfoRetrieval {
 		});
 	}
 	
+	private byte[] bufferSizeRequired(AS400 as400, JournalInfo journalLib, int bufSize) throws Exception {
+		String jrnLib = padRight(journalLib.receiver, 10) + padRight(journalLib.receiverLibrary, 10);
+		String format = "RJRN0200";
+
+		JournalRetrievalCriteria criteria = new JournalRetrievalCriteria();
+		byte[] toRetrieve = new AS400Structure(criteria.getStructure()).toBytes(criteria.getObject());
+		ProgramParameter[] parameters = new ProgramParameter[] {
+				new ProgramParameter(ProgramParameter.PASS_BY_REFERENCE, bufSize),
+				new ProgramParameter(ProgramParameter.PASS_BY_REFERENCE, AS400_BIN4.toBytes(bufSize/4096)),
+				new ProgramParameter(ProgramParameter.PASS_BY_REFERENCE, AS400_TEXT_20.toBytes(jrnLib)),
+				new ProgramParameter(ProgramParameter.PASS_BY_REFERENCE, AS400_TEXT_8.toBytes(format)),
+				new ProgramParameter(ProgramParameter.PASS_BY_REFERENCE, toRetrieve),
+				new ProgramParameter(ProgramParameter.PASS_BY_REFERENCE, AS400_BIN4.toBytes(0))
+		};
+		return callServiceProgram(as400, "/QSYS.LIB/QJOURNAL.SRVPGM", "QjoRetrieveJournalInformation", parameters, (byte[] data) -> {
+			return data;
+		});
+	}
+	
 	/**
 	 * @see https://www.ibm.com/support/knowledgecenter/ssw_ibm_i_74/apis/QJORJRNI.htm
 	 * @param as400
@@ -139,50 +158,38 @@ public class JournalInfoRetrieval {
 	 * @throws Exception
 	 */
 	public List<DetailedJournalReceiver> getReceivers(AS400 as400, JournalInfo journalLib) throws Exception {
-		int rcvLen = 32768;
-		String jrnLib = padRight(journalLib.receiver, 10) + padRight(journalLib.receiverLibrary, 10);
-		String format = "RJRN0200";
-		
-		JournalRetrievalCriteria criteria = new JournalRetrievalCriteria();
-		byte[] toRetrieve = new AS400Structure(criteria.getStructure()).toBytes(criteria.getObject());
-		
-		ProgramParameter[] parameters = new ProgramParameter[] {
-				new ProgramParameter(ProgramParameter.PASS_BY_REFERENCE, rcvLen),
-				new ProgramParameter(ProgramParameter.PASS_BY_REFERENCE, AS400_BIN4.toBytes(rcvLen)),
-				new ProgramParameter(ProgramParameter.PASS_BY_REFERENCE, AS400_TEXT_20.toBytes(jrnLib)),
-				new ProgramParameter(ProgramParameter.PASS_BY_REFERENCE, AS400_TEXT_8.toBytes(format)),
-				new ProgramParameter(ProgramParameter.PASS_BY_REFERENCE, toRetrieve),
-				new ProgramParameter(ProgramParameter.PASS_BY_REFERENCE, AS400_BIN4.toBytes(0))
-		};
+		int defaultSize = 32768;
+		byte[] data = bufferSizeRequired(as400, journalLib, 32768);
+		int actualSizeRequired = decodeInt(data, 4) * 4096; // bytes available - value  returned for rjrn0200 is 4k pages
+		if ( actualSizeRequired > defaultSize) { 
+			data = bufferSizeRequired(as400, journalLib, actualSizeRequired);
+		}		
 
-		return callServiceProgram(as400, "/QSYS.LIB/QJOURNAL.SRVPGM", "QjoRetrieveJournalInformation", parameters, (byte[] data) -> {
-			Integer keyOffset = decodeInt(data, 8) + 4;
-			Integer totalKeys = decodeInt(data, keyOffset);
-			KeyDecoder keyDecoder = new KeyDecoder();
-			
-			List<DetailedJournalReceiver> l = new ArrayList<>();
+		Integer keyOffset = decodeInt(data, 8) + 4;
+		Integer totalKeys = decodeInt(data, keyOffset);
+		KeyDecoder keyDecoder = new KeyDecoder();
+		
+		List<DetailedJournalReceiver> l = new ArrayList<>();
 
-			for (int k=0; k<totalKeys; k++) {
-				KeyHeader kheader = keyDecoder.decode(data,  keyOffset + k * KEY_HEADER_LENGTH);
-				if (kheader.getKey() == 1) {
+		for (int k=0; k<totalKeys; k++) {
+			KeyHeader kheader = keyDecoder.decode(data,  keyOffset + k * KEY_HEADER_LENGTH);
+			if (kheader.getKey() == 1) {
+				
+				ReceiverDecoder dec = new ReceiverDecoder();
+				for (int i=0; i<kheader.getNumberOfEntries(); i++) {
+					int kioffset = keyOffset + kheader.getOffset() + kheader.getLengthOfHeader() + i*kheader.getLengthOfKeyInfo();
 					
-					ReceiverDecoder dec = new ReceiverDecoder();
+					JournalReceiverInfo r = dec.decode(data, kioffset);
+					DetailedJournalReceiver details = getOffset(as400, r);
 					
-					for (int i=0; i<kheader.getNumberOfEntries(); i++) {
-						int kioffset = keyOffset + kheader.getOffset() + kheader.getLengthOfHeader() + i*kheader.getLengthOfKeyInfo();
-						
-						JournalReceiverInfo r = dec.decode(data, kioffset);
-						DetailedJournalReceiver details = getOffset(as400, r);
-						
-						l.add(details);
-					}
+					l.add(details);
 				}
 			}
-			
-			l.sort((DetailedJournalReceiver f, DetailedJournalReceiver s) -> f.info().attachTime().compareTo(s.info().attachTime()));
-			
-			return l;
-		});
+		}
+		
+		l.sort((DetailedJournalReceiver f, DetailedJournalReceiver s) -> f.info().attachTime().compareTo(s.info().attachTime()));
+		
+		return l;
 	}
 
 	static DetailedJournalReceiver getOffset(AS400 as400, JournalInfo info) throws Exception {
