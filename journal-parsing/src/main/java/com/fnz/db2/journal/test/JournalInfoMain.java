@@ -35,5 +35,7 @@ public class JournalInfoMain {
         log.info("Journal info {}", jr);
         
         log.info("current position: {}", journalInfoRetrieval.getCurrentPosition(as400Connect.connection(), ji));
+        
+        System.out.println(jri.size());
 	}
 }
