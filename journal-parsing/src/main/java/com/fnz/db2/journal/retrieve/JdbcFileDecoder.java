@@ -38,7 +38,7 @@ import com.ibm.as400.access.AS400Time;
 import com.ibm.as400.access.AS400Timestamp;
 import com.ibm.as400.access.AS400ZonedDecimal;
 
-public class JdbcFileDecoder implements JournalEntryDeocder<Object[]> {
+public class JdbcFileDecoder extends JournalFileEntryDecoder {
 
     private static final AS400Float8 AS400_FLOAT8 = new AS400Float8();
     private static final AS400Float4 AS400_FLOAT4 = new AS400Float4();
@@ -51,8 +51,6 @@ public class JdbcFileDecoder implements JournalEntryDeocder<Object[]> {
     private static final AS400Bin2 AS400_BIN2 = new AS400Bin2();
     private static final String GET_DATABASE_NAME = "SELECT CURRENT_SERVER FROM SYSIBM.SYSDUMMY1"; 
     private static final String UNIQUE_KEYS = "SELECT DBKFLD FROM QSYS.QADBKATR WHERE dbklib=? AND dbkfil=? ORDER BY DBKORD ASC";
-    private static final Logger log = LoggerFactory.getLogger(JdbcFileDecoder.class);
-    
     
 	private final Connect<Connection, SQLException> jdbcConnect;
 	private final String databaseName;
@@ -76,7 +74,7 @@ public class JdbcFileDecoder implements JournalEntryDeocder<Object[]> {
 	private static AS400Text LENGTH_DECODER = new AS400Text(5);
 	private static Object[] EMPTY = new Object[] {};
 	@Override
-	public Object[] decode(EntryHeader entryHeader, byte[] data, int offset) throws Exception {
+	public Object[] decodeFile(EntryHeader entryHeader, byte[] data, int offset) throws Exception {
 		Optional<TableInfo> tableInfoOpt = getRecordFormat(entryHeader.getFile(), entryHeader.getLibrary());
 		
 		return tableInfoOpt.map(tableInfo -> {

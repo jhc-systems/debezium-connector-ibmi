@@ -138,7 +138,7 @@ public class CommitLogProcessor {
                         break;
 					case AFTER_IMAGE:
 					    log.debug("update row new values lib: {} file: {} member: {}", lib, file, member);
-//				        dumpTable(eheader, r, file, lib, member);
+				        dumpTable(eheader, r, file, lib, member);
 						break;
 					default:
 						break;
@@ -201,7 +201,9 @@ public class CommitLogProcessor {
 						int i=0;
 						for(Object f: fields) {
 							String value = "No value found";
-							if (f instanceof byte[]) {
+							if (f == null) {
+								value = "null";
+							} else if (f instanceof byte[]) {
 								byte[] data = (byte[])f;
 								StringBuilder sb = new StringBuilder(data.length * 2);
 								for(byte b: data)
