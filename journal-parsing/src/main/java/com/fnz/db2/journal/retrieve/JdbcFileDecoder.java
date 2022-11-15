@@ -14,9 +14,6 @@ import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.fnz.db2.journal.data.types.AS400VarBin;
 import com.fnz.db2.journal.data.types.AS400VarChar;
 import com.fnz.db2.journal.data.types.AS400Xml;
