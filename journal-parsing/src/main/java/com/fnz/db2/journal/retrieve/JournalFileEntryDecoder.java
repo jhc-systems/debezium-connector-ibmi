@@ -41,11 +41,16 @@ public abstract class JournalFileEntryDecoder implements JournalEntryDeocder<Obj
 	private boolean[] getNullFieldIndicators(byte[] data, int nullEntryOffset, int offset) {		
 		boolean[] isNull = null;
 	    if (nullEntryOffset != 0) {
-		    int length = (int)NullIndicatorLengthDecoder.toLong(data, offset  + nullEntryOffset);
+	    	long l = NullIndicatorLengthDecoder.toLong(data, offset  + nullEntryOffset);
+	    	if (l > Integer.MAX_VALUE) {
+	    		log.error("null indicator length unreasonably large {}", l);
+	    		return null;
+	    	}
+		    int length = (int)l;
 		    isNull = new boolean[length];
-		    for (int i=0; i<length; i++) {
+		    for (int i = 0; i < length; i++) {
 		    	// BCD bottom 4 bits
-		    	isNull[i] = (data[offset  + nullEntryOffset + 4 + i]&15) == 1;
+		    	isNull[i] = (data[offset  + nullEntryOffset + 4 + i] & 15) == 1; // 1 = is null, 0 = not null, 9 = default value returned
 		    }
 	    }
 	    return isNull;
