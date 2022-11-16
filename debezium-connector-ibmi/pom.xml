@@ -237,8 +237,7 @@
 		<dependency>
 			<groupId>io.zipkin.contrib.brave</groupId>
 			<artifactId>brave-kafka-interceptor</artifactId>
-			<classifier>JHC</classifier>
-			<version>0.5.5-JHC</version>
+			<version>0.6.0</version>
 			<scope>runtime</scope>
 		</dependency>
 
