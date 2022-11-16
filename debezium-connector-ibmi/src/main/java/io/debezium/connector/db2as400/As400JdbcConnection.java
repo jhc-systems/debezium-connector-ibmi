@@ -9,6 +9,7 @@ import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -40,7 +41,7 @@ public class As400JdbcConnection extends JdbcConnection implements Connect<Conne
             + JdbcConfiguration.DATABASE + "}";
     private final JdbcConfiguration config;
 
-    private static final String GET_DATABASE_NAME = "SELECT CURRENT_SERVER FROM SYSIBM.SYSDUMMY1";
+    private static final String GET_DATABASE_NAME = "values ( CURRENT_SERVER )";
     private static final String GET_SYSTEM_TABLE_NAME = "select trim(system_table_name) from qsys2.systables where system_table_schema=? AND table_name=?";
     private static final String GET_ALL_SYSTEM_TABLE_NAME = "select trim(system_table_name), trim(table_name) from qsys2.systables where system_table_schema=?";
 
@@ -321,5 +322,11 @@ public class As400JdbcConnection extends JdbcConnection implements Connect<Conne
         }
 
         return Optional.empty();
+    }
+    
+    @Override
+    public Optional<Timestamp> getCurrentTimestamp() throws SQLException {
+        return queryAndMap("values ( CURRENT TIMESTAMP )",
+                rs -> rs.next() ? Optional.of(rs.getTimestamp(1)) : Optional.empty());
     }
 }

@@ -228,7 +228,7 @@ public class As400StreamingChangeEventSource implements StreamingChangeEventSour
                         txc.beginTransaction(txId);
                         txMap.put(txId, txc);
                         log.debug("start transaction id {} tx {} table {}", nextOffset, txId, tableId);
-                        dispatcher.dispatchTransactionStartedEvent(partition, txId, offsetContext);
+                        dispatcher.dispatchTransactionStartedEvent(partition, txId, offsetContext, eheader.getTimestamp().toInstant());
                     }
                         break;
                     case END_COMMIT: {
@@ -239,7 +239,7 @@ public class As400StreamingChangeEventSource implements StreamingChangeEventSour
                         log.debug("commit transaction id {} tx {} table {}", nextOffset, txId, tableId);
                         if (txc != null) {
                             txc.endTransaction();
-                            dispatcher.dispatchTransactionCommittedEvent(partition, offsetContext);
+                            dispatcher.dispatchTransactionCommittedEvent(partition, offsetContext, eheader.getTimestamp().toInstant());
                         }
                     }
                         break;
