@@ -128,6 +128,7 @@
                     <updatePomFile>true</updatePomFile>
                     <flattenMode>resolveCiFriendliesOnly</flattenMode>
                 </configuration>
+                <inherited>false</inherited>
                 <executions>
                     <execution>
                         <id>flatten</id>
