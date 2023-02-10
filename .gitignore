@@ -2,3 +2,5 @@ target/
 .settings/
 .classpath
 .project
+connector-health/.flattened-pom.xml
+kafka-smt-collection/.flattened-pom.xml
