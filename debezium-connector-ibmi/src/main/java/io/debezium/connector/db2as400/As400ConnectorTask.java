@@ -25,13 +25,14 @@ import io.debezium.connector.common.BaseSourceTask;
 import io.debezium.connector.common.CdcSourceTaskContext;
 import io.debezium.connector.db2as400.metrics.As400ChangeEventSourceMetricsFactory;
 import io.debezium.connector.db2as400.metrics.As400StreamingChangeEventSourceMetrics;
+import io.debezium.jdbc.JdbcConfiguration;
 import io.debezium.pipeline.ChangeEventSourceCoordinator;
 import io.debezium.pipeline.DataChangeEvent;
 import io.debezium.pipeline.ErrorHandler;
 import io.debezium.pipeline.EventDispatcher;
 import io.debezium.pipeline.spi.Offsets;
 import io.debezium.relational.TableId;
-import io.debezium.schema.TopicSelector;
+import io.debezium.spi.topic.TopicNamingStrategy;
 import io.debezium.util.Clock;
 import io.debezium.util.SchemaNameAdjuster;
 import io.debezium.util.SchemaNameAdjuster.ReplacementOccurred;
@@ -47,16 +48,14 @@ public class As400ConnectorTask extends BaseSourceTask<As400Partition, As400Offs
         return Module.version();
     }
 
-    public static TopicSelector<TableId> defaultTopicSelector(As400ConnectorConfig connectorConfig) {
-        return TopicSelector.defaultSelector(connectorConfig,
-                (tableId, prefix, delimiter) -> String.join(delimiter, prefix, tableId.schema(), tableId.table()));
-    }
 
     @Override
     protected ChangeEventSourceCoordinator<As400Partition, As400OffsetContext> start(Configuration config) {
         log.warn("starting connector task {}", version());
         config = addDefaultHeartbeatToConfig(config);
+        config = addDefaultPrefixToConfig(config);
         final As400ConnectorConfig connectorConfig = new As400ConnectorConfig(config);
+        final TopicNamingStrategy<TableId> topicNamingStrategy = connectorConfig.getTopicNamingStrategy(As400ConnectorConfig.TOPIC_NAMING_STRATEGY, true);
 
         ReplacementOccurred logOnce = new ReplacementOccurred() {
             @Override
@@ -91,9 +90,7 @@ public class As400ConnectorTask extends BaseSourceTask<As400Partition, As400Offs
 
         As400JdbcConnection jdbcConnection = new As400JdbcConnection(connectorConfig.getJdbcConfiguration());
 
-        TopicSelector<TableId> topicSelector = defaultTopicSelector(connectorConfig);
-
-        this.schema = new As400DatabaseSchema(connectorConfig, jdbcConnection, topicSelector, schemaNameAdjuster);
+        this.schema = new As400DatabaseSchema(connectorConfig, jdbcConnection, topicNamingStrategy, schemaNameAdjuster);
 
         As400EventMetadataProvider metadataProvider = new As400EventMetadataProvider();
 
@@ -121,7 +118,7 @@ public class As400ConnectorTask extends BaseSourceTask<As400Partition, As400Offs
 
         final EventDispatcher<As400Partition, TableId> dispatcher = new EventDispatcher<>(
                 connectorConfig, // CommonConnectorConfig
-                topicSelector, // TopicSelector
+                topicNamingStrategy, // TopicSelector
                 schema, // DatabaseSchema
                 queue, // ChangeEventQueue
                 newConfig.getTableFilters().dataCollectionFilter(), // DataCollectionFilter
@@ -152,6 +149,14 @@ public class As400ConnectorTask extends BaseSourceTask<As400Partition, As400Offs
         int heartbeat = config.getInteger("heartbeat.interval.ms", 0);
         if (heartbeat == 0) {
             config = Configuration.copy(config).with("heartbeat.interval.ms", 60000).build();
+        }
+        return config;
+    }
+    
+    private Configuration addDefaultPrefixToConfig(Configuration config) {
+        String prefix = config.getString("topic.prefix", "");
+        if (prefix.isEmpty()) {
+            config = Configuration.copy(config).with("topic.prefix", config.getString(JdbcConfiguration.HOSTNAME)).build();
         }
         return config;
     }
