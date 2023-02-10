@@ -17,7 +17,7 @@ public class As400AdditionalRelationalTableFilters extends RelationalTableFilter
     private TableFilter addTableFilter;
 
     public As400AdditionalRelationalTableFilters(Configuration config, TableFilter systemTablesFilter, TableIdToStringMapper tableIdMapper, String additionalTables) {
-        super(config, systemTablesFilter, tableIdMapper);
+        super(config, systemTablesFilter, tableIdMapper, false);
 
         this.addTableFilter = Selectors.tableSelector().includeTables(additionalTables, x -> x.schema() + "." + x.table()).build()::test;
     }

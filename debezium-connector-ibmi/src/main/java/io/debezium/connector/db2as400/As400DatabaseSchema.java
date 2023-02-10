@@ -20,7 +20,7 @@ import io.debezium.relational.RelationalDatabaseSchema;
 import io.debezium.relational.Table;
 import io.debezium.relational.TableId;
 import io.debezium.relational.TableSchemaBuilder;
-import io.debezium.schema.TopicSelector;
+import io.debezium.spi.topic.TopicNamingStrategy;
 import io.debezium.util.SchemaNameAdjuster;
 
 public class As400DatabaseSchema extends RelationalDatabaseSchema implements SchemaCacheIF {
@@ -30,9 +30,10 @@ public class As400DatabaseSchema extends RelationalDatabaseSchema implements Sch
     private final Map<String, TableInfo> map = new HashMap<>();
     private final As400JdbcConnection jdbcConnection;
 
-    public As400DatabaseSchema(As400ConnectorConfig config, As400JdbcConnection jdbcConnection,
-                               TopicSelector<TableId> topicSelector,
-                               SchemaNameAdjuster schemaNameAdjuster) {
+    public As400DatabaseSchema(As400ConnectorConfig config, 
+    		As400JdbcConnection jdbcConnection,
+			TopicNamingStrategy<TableId> topicSelector,
+            SchemaNameAdjuster schemaNameAdjuster) {
         super(config,
                 topicSelector,
                 config.getTableFilters().dataCollectionFilter(),

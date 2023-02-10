@@ -7,6 +7,7 @@ package io.debezium.connector.db2as400;
 
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.common.config.ConfigDef.Importance;
+import org.apache.kafka.common.config.ConfigDef.Type;
 import org.apache.kafka.common.config.ConfigDef.Width;
 
 import com.fnz.db2.journal.retrieve.JournalPosition;
@@ -90,10 +91,18 @@ public class As400ConnectorConfig extends RelationalDatabaseConnectorConfig {
      */
     public static final Field MAX_RETRIEVAL_TIMEOUT = Field.create("max_journal_timeout", "max time to fetch the journal entries", "Maximum time to fetch the journal entries in ms", DEFAULT_MAX_JOURNAL_TIMEOUT);
 
+    public static final Field TOPIC_NAMING_STRATEGY = Field.create("topic.naming.strategy")
+            .withDisplayName("Topic naming strategy class")
+            .withType(Type.CLASS)
+            .withWidth(Width.MEDIUM)
+            .withImportance(Importance.MEDIUM)
+            .withDescription("The name of the TopicNamingStrategy class that should be used to determine the topic name " +
+                    "for data change, schema change, transaction, heartbeat event etc.")
+            .withDefault(HostnamePrefixNamingScheme.class.getName());
 
     public As400ConnectorConfig(Configuration config) {
-        super(config, config.getString(JdbcConfiguration.HOSTNAME), new SystemTablesPredicate(),
-                tableToString, 1, ColumnFilterMode.SCHEMA);
+        super(config, new SystemTablesPredicate(),
+                tableToString, 1, ColumnFilterMode.SCHEMA, false);
         this.config = config;
         this.snapshotMode = SnapshotMode.parse(config.getString(SNAPSHOT_MODE), SNAPSHOT_MODE.defaultValueAsString());
         this.tableFilters = new As400NormalRelationalTableFilters(config, new SystemTablesPredicate(), tableToString);
@@ -181,7 +190,7 @@ public class As400ConnectorConfig extends RelationalDatabaseConnectorConfig {
 
     public static Field.Set ALL_FIELDS = Field.setOf(JdbcConfiguration.HOSTNAME, USER, PASSWORD, SCHEMA, BUFFER_SIZE,
             RelationalDatabaseConnectorConfig.SNAPSHOT_SELECT_STATEMENT_OVERRIDES_BY_TABLE, KEEP_ALIVE, THREAD_USED, SOCKET_TIMEOUT,
-            MAX_SERVER_SIDE_ENTRIES);
+            MAX_SERVER_SIDE_ENTRIES, TOPIC_NAMING_STRATEGY);
 
     public static ConfigDef configDef() {
         ConfigDef c = RelationalDatabaseConnectorConfig.CONFIG_DEFINITION.edit()

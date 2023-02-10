@@ -11,14 +11,14 @@
 
 	<properties>
 		<confluent.platform.version>7.1.1</confluent.platform.version>
-		<kafka.version>3.1.0</kafka.version>
-		<version.jetty>9.4.43.v20210629</version.jetty>
+		<kafka.version>3.3.1</kafka.version>
+		<version.jetty>9.4.48.v20220622</version.jetty>
 
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
 		<repository.project>fnz-poa-development</repository.project>
 		<changelist>-SNAPSHOT</changelist>
-		<debezium.version>1.9.2.Final</debezium.version>
+		<debezium.version>2.0.0.Final</debezium.version>
 	</properties>
 
 	<dependencyManagement>
@@ -237,8 +237,7 @@
 		<dependency>
 			<groupId>io.zipkin.contrib.brave</groupId>
 			<artifactId>brave-kafka-interceptor</artifactId>
-			<classifier>JHC</classifier>
-			<version>0.5.5-JHC</version>
+			<version>0.6.0</version>
 			<scope>runtime</scope>
 		</dependency>
 

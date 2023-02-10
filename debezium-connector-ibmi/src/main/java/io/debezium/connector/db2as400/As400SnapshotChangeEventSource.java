@@ -5,6 +5,7 @@
  */
 package io.debezium.connector.db2as400;
 
+import java.time.Instant;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -170,17 +171,16 @@ public class As400SnapshotChangeEventSource extends RelationalSnapshotChangeEven
     }
 
     @Override
-    protected SchemaChangeEvent getCreateTableEvent(RelationalSnapshotContext<As400Partition, As400OffsetContext> snapshotContext, Table table)
-            throws Exception {
-        return new SchemaChangeEvent(
-                snapshotContext.partition.getSourcePartition(),
-                snapshotContext.offset.getOffset(),
-                snapshotContext.offset.getSourceInfo(),
+    protected SchemaChangeEvent getCreateTableEvent(RelationalSnapshotContext<As400Partition, As400OffsetContext> snapshotContext, Table table) {
+        return SchemaChangeEvent.of(
+        		SchemaChangeEventType.CREATE,
+        		snapshotContext.partition, 
+                snapshotContext.offset,
                 snapshotContext.catalogName,
                 table.id().schema(),
                 null,
                 table,
-                SchemaChangeEventType.CREATE, true);
+                true);
     }
 
     @Override
