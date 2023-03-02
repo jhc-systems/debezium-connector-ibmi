@@ -3,7 +3,6 @@ package com.fnz.db2.journal.test;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.math.BigInteger;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -15,7 +14,6 @@ import org.slf4j.LoggerFactory;
 
 import com.fnz.db2.journal.retrieve.Connect;
 import com.fnz.db2.journal.retrieve.FileFilter;
-import com.fnz.db2.journal.retrieve.JdbcFileDecoder;
 import com.fnz.db2.journal.retrieve.JournalInfo;
 import com.fnz.db2.journal.retrieve.JournalInfoRetrieval;
 import com.fnz.db2.journal.retrieve.JournalPosition;
