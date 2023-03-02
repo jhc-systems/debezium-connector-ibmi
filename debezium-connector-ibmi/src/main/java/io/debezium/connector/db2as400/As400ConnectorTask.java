@@ -55,6 +55,7 @@ public class As400ConnectorTask extends BaseSourceTask<As400Partition, As400Offs
         config = addDefaultHeartbeatToConfig(config);
         config = addDefaultPrefixToConfig(config);
         final As400ConnectorConfig connectorConfig = new As400ConnectorConfig(config);
+        @SuppressWarnings("unchecked")
         final TopicNamingStrategy<TableId> topicNamingStrategy = connectorConfig.getTopicNamingStrategy(As400ConnectorConfig.TOPIC_NAMING_STRATEGY, true);
 
         ReplacementOccurred logOnce = new ReplacementOccurred() {

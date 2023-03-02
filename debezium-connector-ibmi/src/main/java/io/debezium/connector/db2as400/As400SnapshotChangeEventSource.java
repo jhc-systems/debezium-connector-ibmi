@@ -5,7 +5,6 @@
  */
 package io.debezium.connector.db2as400;
 
-import java.time.Instant;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;

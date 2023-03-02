@@ -12,7 +12,6 @@ import org.slf4j.LoggerFactory;
 
 import com.fnz.db2.journal.data.types.Diagnostics;
 import com.fnz.db2.journal.retrieve.Connect;
-import com.fnz.db2.journal.retrieve.JdbcFileDecoder;
 import com.fnz.db2.journal.retrieve.JournalInfo;
 import com.fnz.db2.journal.retrieve.JournalInfoRetrieval;
 import com.fnz.db2.journal.retrieve.JournalPosition;
@@ -21,7 +20,6 @@ import com.fnz.db2.journal.retrieve.JournalRecordDecoder;
 import com.fnz.db2.journal.retrieve.RetrieveConfig;
 import com.fnz.db2.journal.retrieve.RetrieveConfigBuilder;
 import com.fnz.db2.journal.retrieve.RetrieveJournal;
-import com.fnz.db2.journal.retrieve.SchemaCacheHash;
 import com.fnz.db2.journal.retrieve.rjne0200.EntryHeader;
 import com.fnz.db2.journal.retrieve.rjne0200.FirstHeader;
 import com.fnz.db2.journal.retrieve.rjne0200.OffsetStatus;
