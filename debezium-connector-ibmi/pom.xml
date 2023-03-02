@@ -10,7 +10,7 @@
 	<packaging>jar</packaging>
 
 	<properties>
-		<confluent.platform.version>7.1.1</confluent.platform.version>
+		<confluent.platform.version>7.3.0</confluent.platform.version>
 		<kafka.version>3.3.1</kafka.version>
 		<version.jetty>9.4.48.v20220622</version.jetty>
 
@@ -166,10 +166,6 @@
 			<groupId>org.reflections</groupId>
 			<artifactId>reflections</artifactId>
 			<scope>runtime</scope>
-		</dependency>
-		<dependency>
-			<groupId>io.debezium</groupId>
-			<artifactId>debezium-core</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.kafka</groupId>
