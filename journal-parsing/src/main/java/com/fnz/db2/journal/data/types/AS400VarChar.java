@@ -11,11 +11,18 @@ public class AS400VarChar implements AS400DataType {
     private final int maxLenght;
 	private final static String defaultValue = "";
 	private int actualLength;
+	private final int ccsid;
 
 	public AS400VarChar(int maxLenght) {
 		this.maxLenght = maxLenght;
+		ccsid = -1;
 	}
 
+	public AS400VarChar(int maxLenght, int ccsid) {
+		this.maxLenght = maxLenght;
+		this.ccsid = ccsid;
+	}
+	
 	@Override
 	public int getByteLength() {
 		return maxLenght + 2;
@@ -59,7 +66,8 @@ public class AS400VarChar implements AS400DataType {
 	@Override
 	public Object toObject(byte[] data, int offset) {
 		actualLength = (Short)AS400_BIN2.toObject(data, offset);
-		String text = (String)new AS400Text(actualLength).toObject(data, offset + 2);
+		AS400Text txt = (ccsid > 0) ? new AS400Text(actualLength, ccsid) : new AS400Text(actualLength);
+		String text = (String)txt.toObject(data, offset + 2);
 		return text;
 	}
 

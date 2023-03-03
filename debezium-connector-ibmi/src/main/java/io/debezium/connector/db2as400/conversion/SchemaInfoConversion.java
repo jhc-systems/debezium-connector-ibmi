@@ -25,9 +25,14 @@ import io.debezium.relational.TableId;
  * @author sillencem
  *
  */
-public class SchemaInfoConversion {
+public class SchemaInfoConversion {	
+	private final JdbcFileDecoder fileDecoder;
+	
+	public SchemaInfoConversion(JdbcFileDecoder fileDecoder) {
+		this.fileDecoder = fileDecoder;
+	}
 
-    public static TableInfo table2TableInfo(Table table) {
+    public TableInfo table2TableInfo(Table table) {
         List<Structure> structures = table2Structure(table);
         AS400Structure as400Structure = table2As400Structure(table);
         List<String> primaryKeys = new ArrayList<>(table.primaryKeyColumnNames());
@@ -47,11 +52,12 @@ public class SchemaInfoConversion {
         return structures;
     }
 
-    public static AS400Structure table2As400Structure(Table table) {
+    public AS400Structure table2As400Structure(Table table) {
+    	TableId id = table.id();
         List<AS400DataType> as400structure = new ArrayList<>();
         if (table != null && table.columns() != null) {
             for (Column c : table.columns()) {
-                AS400DataType as400dt = JdbcFileDecoder.toDataType(c.name(), c.typeName(), c.length(), c.scale().orElse(0));
+                AS400DataType as400dt = fileDecoder.toDataType(id.schema(), id.table(), c.name(), c.typeName(), c.length(), c.scale().orElse(0));
                 as400structure.add(as400dt);
             }
         }
