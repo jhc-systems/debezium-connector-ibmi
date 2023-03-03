@@ -5,6 +5,8 @@
  */
 package io.debezium.connector.db2as400;
 
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -12,7 +14,11 @@ import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.fnz.db2.journal.retrieve.Connect;
+import com.fnz.db2.journal.retrieve.JdbcFileDecoder;
 import com.fnz.db2.journal.retrieve.SchemaCacheIF;
+import com.fnz.db2.journal.retrieve.SchemaCacheIF.TableInfo;
+import com.fnz.db2.journal.retrieve.rjne0200.EntryHeader;
 
 import io.debezium.connector.db2as400.conversion.As400DefaultValueConverter;
 import io.debezium.connector.db2as400.conversion.SchemaInfoConversion;
@@ -29,7 +35,9 @@ public class As400DatabaseSchema extends RelationalDatabaseSchema implements Sch
     private final As400ConnectorConfig config;
     private final Map<String, TableInfo> map = new HashMap<>();
     private final As400JdbcConnection jdbcConnection;
-
+    private final SchemaInfoConversion schemaInfoConversion;
+	private final JdbcFileDecoder fileDecoder;
+    
     public As400DatabaseSchema(As400ConnectorConfig config, 
     		As400JdbcConnection jdbcConnection,
 			TopicNamingStrategy<TableId> topicSelector,
@@ -51,10 +59,29 @@ public class As400DatabaseSchema extends RelationalDatabaseSchema implements Sch
 
         this.config = config;
         this.jdbcConnection = jdbcConnection;
+		fileDecoder = new JdbcFileDecoder(jdbcConnection, jdbcConnection.getRealDatabaseName(), this, config.getForcedCcsid());
+
+        schemaInfoConversion = new SchemaInfoConversion(fileDecoder);
+    }
+    
+    public JdbcFileDecoder getFileDecoder() {
+    	return fileDecoder;
     }
 
+	public void clearCache(String systemTableName, String schema) {
+		fileDecoder.clearCache(systemTableName, schema);
+	}
+	
+	public Optional<TableInfo> getRecordFormat(String systemTableName, String schema) {
+		Optional<TableInfo> oti = fileDecoder.getRecordFormat(systemTableName, schema);
+		oti.stream().forEach(ti -> {
+			store(jdbcConnection.getRealDatabaseName(), schema, systemTableName, ti);
+		});
+		return oti;
+	}
+	
     public void addSchema(Table table) {
-        TableInfo tableInfo = SchemaInfoConversion.table2TableInfo(table);
+        TableInfo tableInfo = schemaInfoConversion.table2TableInfo(table);
         TableId id = table.id();
         // store in the short name
         // used directly by the decoder

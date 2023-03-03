@@ -195,9 +195,6 @@ public class RetrieveJournal {
 	DetailedJournalReceiver cachedCurrentPosition = null;
 	
 	Optional<PositionRange> findRange(AS400 as400, JournalPosition start) throws Exception {
-        if (!shouldLimitRange()) {
-        	return Optional.empty();
-        }
 		BigInteger maxPosition = start.getOffset().add(BigInteger.valueOf(config.maxServerSideEntries()));
         boolean startValid = start.isOffsetSet() && !start.getOffset().equals(BigInteger.ZERO);
 		if (startValid) {

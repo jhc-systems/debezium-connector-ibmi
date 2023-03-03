@@ -52,12 +52,14 @@ public class JdbcFileDecoder extends JournalFileEntryDecoder {
 	private final Connect<Connection, SQLException> jdbcConnect;
 	private final String databaseName;
 	private final SchemaCacheIF schemaCache;
+	private final int forcedCcsid;
 	
-	public JdbcFileDecoder(Connect<Connection, SQLException> con, String database, SchemaCacheIF schemaCache) {
+	public JdbcFileDecoder(Connect<Connection, SQLException> con, String database, SchemaCacheIF schemaCache, Integer forcedCcsid) {
 		super();
 		this.jdbcConnect = con;
 		this.schemaCache = schemaCache;
         this.databaseName = database;
+        this.forcedCcsid = (forcedCcsid == null) ? -1: forcedCcsid ;
 	}
 
 	/* https://www.ibm.com/support/knowledgecenter/ssw_ibm_i_74/apis/QJORJRNE.htm
@@ -149,7 +151,7 @@ public class JdbcFileDecoder extends JournalFileEntryDecoder {
 
 					jdbcStructure.add(
 							new Structure(name, type, jdcbType, length, precision, optional, position, autoInc));
-					AS400DataType dataType = toDataType(name, type, length, precision);
+					AS400DataType dataType = toDataType(schema, longTableName, name, type, length, precision);
 
 					as400structure.add(dataType);
 				}
@@ -239,23 +241,88 @@ public class JdbcFileDecoder extends JournalFileEntryDecoder {
     }
 	
     static final Pattern BIT_DATA = Pattern.compile("CHAR \\(([(0-9]*)\\) FOR BIT DATA");
+    static final Pattern VAR_BIT_DATA = Pattern.compile("VARCHAR \\(([(0-9]*)\\) FOR BIT DATA");
     
-	public static AS400DataType toDataType(String name, String type, int length, Integer precision) {
+    private static final String GET_CCSID = "select table_name, system_table_name, column_name, system_column_name, ccsid FROM qsys2.SYSCOLUMNS where table_schema=? and (system_table_name = ? or table_name = ?)";
+	private final Map<String, Integer> ccsidMap = new HashMap<>();
+	
+    public Integer getCcsid(String schema, String table, String columnName) {
+    	if (forcedCcsid != -1) {
+    		return forcedCcsid;
+    	}
+    	
+    	String canonicalName = String.format("%s.%s.%s", schema, table, columnName);
+    	if (ccsidMap.containsKey(canonicalName)) {
+    		return ccsidMap.get(canonicalName);
+    	}
+    	
+		try {
+			fetchAllCcsidForTable(schema, table);
+			
+			return ccsidMap.get(canonicalName);
+		} catch (SQLException e) {
+			log.error("failed to fetch ccsid", e);
+			return -1;
+		}
+    }
+    
+    private void fetchAllCcsidForTable(String schema, String table) throws SQLException {
+		Connection con = jdbcConnect.connection();
+    	try (PreparedStatement ps = con.prepareStatement(GET_CCSID)) {
+    		ps.setString(1, schema.toUpperCase());
+    		ps.setString(2, table.toUpperCase());
+    		ps.setString(3, table.toUpperCase());
+    		try (ResultSet rs = ps.executeQuery()) {
+    			while (rs.next()) {
+					String longTableName = StringHelpers.safeTrim(rs.getString(1));
+					String shortTableName = StringHelpers.safeTrim(rs.getString(2));
+					String longcolumn = StringHelpers.safeTrim(rs.getString(3));
+					String shortcolumn = StringHelpers.safeTrim(rs.getString(4));
+					Object ccsidObj = rs.getObject(5);
+					String canonicalLongName = String.format("%s.%s.%s", schema, longTableName, longcolumn);
+					String canonicalShortName = String.format("%s.%s.%s", schema, shortTableName, shortcolumn);
+					int ccsid = (ccsidObj == null) ? -1 : (Integer)ccsidObj;
+					
+		            ccsidMap.put(canonicalLongName, ccsid);
+		            ccsidMap.put(canonicalShortName, ccsid);
+	    		}
+	    	}
+    	}
+    }
+    
+    AS400Text getText(int length, int ccsid) {
+    	if (forcedCcsid != -1) {
+    		return new AS400Text(length, forcedCcsid);
+    	} else if (ccsid != -1) {
+    		return new AS400Text(length, ccsid);
+    	}
+    	return new AS400Text(length);
+    }
+
+    AS400VarChar getVarText(int length, Integer ccsid) {
+    	if (forcedCcsid != -1) {
+    		return new AS400VarChar(length, ccsid);
+    	}
+    	return new AS400VarChar(length);
+    }
+	public AS400DataType toDataType(String schema, String table, String columnName, String type, int length, Integer precision) {
 		switch (type) {
 			case "DECIMAL":
 				return new AS400PackedDecimal(length, precision);
-			case "CHAR () FOR BIT DATA": // password fields
-				return new AS400Text(length);
+			case "CHAR () FOR BIT DATA": // password fields - treat as binary
+				return new AS400ByteArray(length);
+			case "VARCHAR () FOR BIT DATA": // password fields - treat as binary
+				return new AS400VarBin(length);
 			case "CHAR": 
-				return new AS400Text(length);
+				return getText(length, getCcsid(schema, table, columnName));
 			case "NCHAR": 
-				return new AS400Text(length);
+				return getText(length, getCcsid(schema, table, columnName));
 			case "NVARCHAR": 
-				return new AS400VarChar(length);
+				return getVarText(length, getCcsid(schema, table, columnName));
 			case "TIMESTAMP":
 				return AS400_TIMESTAMP;
 			case "VARCHAR":
-				return new AS400VarChar(length);
+				return getVarText(length, getCcsid(schema, table, columnName));
 			case "NUMERIC":
 				return new AS400ZonedDecimal(length, precision);
 			case "DATE":
@@ -278,20 +345,32 @@ public class JdbcFileDecoder extends JournalFileEntryDecoder {
 				return new AS400VarBin(length);
 			case "XML":
 				return AS400_XML;
-//			case "CLOB":
-//				return new AS400Clob(as400);
+//			case "CLOB": 
+//				return new AS400Clob(as400); 
 			default:
-				Matcher matcher = BIT_DATA.matcher(type);
-				if (matcher.matches()) {
-					String size = matcher.group(1);
-					if (size.isEmpty())
-						return new AS400Text(length);
-					else {
-						int l = Integer.parseInt(size);
-						return new AS400Text(l);
-					}
+				Optional<Integer> varLength = bitDataLengthFromRegex(type, length, VAR_BIT_DATA);
+				if (varLength.isPresent()) {
+					return new AS400VarBin(varLength.get());
+				}
+				Optional<Integer> fixedLenght = bitDataLengthFromRegex(type, length, BIT_DATA);
+				if (fixedLenght.isPresent()) {
+					return new AS400ByteArray(fixedLenght.get());
 				}
 		}
-		throw new IllegalArgumentException(String.format("Unsupported type %s for column %s", type, name));
+		throw new IllegalArgumentException(String.format("Unsupported type %s for column %s", type, columnName));
+	}
+
+	private  Optional<Integer> bitDataLengthFromRegex(String type, int length, Pattern regex) {
+		Matcher matcher = regex.matcher(type); //  - treat as binary
+		if (matcher.matches()) {
+			String size = matcher.group(1);
+			if (size.isEmpty())
+				return  Optional.of(length);
+			else {
+				int l = Integer.parseInt(size);
+				return Optional.of(l);
+			}
+		}
+		return Optional.empty();		
 	}
 }

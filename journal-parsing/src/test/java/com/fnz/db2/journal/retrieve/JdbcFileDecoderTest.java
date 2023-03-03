@@ -8,16 +8,19 @@ import com.ibm.as400.access.AS400DataType;
 
 public class JdbcFileDecoderTest {
 
-	private JdbcFileDecoder createTestSubject() {
-		return new JdbcFileDecoder(null, null, new SchemaCacheHash());
-	}
 
 	@Test
 	public void testToDataType() throws Exception {
-		AS400DataType passwordNoLength = JdbcFileDecoder.toDataType("password", "CHAR () FOR BIT DATA", 10, 0);
-		assertEquals(9, passwordNoLength.getInstanceType());
-		AS400DataType passwordLength = JdbcFileDecoder.toDataType("password", "CHAR (20) FOR BIT DATA", 10, 0);
-		assertEquals(9, passwordLength.getInstanceType());
+		JdbcFileDecoder decoder = new JdbcFileDecoder(null, null, new SchemaCacheHash(), -1);;
+		AS400DataType passwordNoLength = decoder.toDataType("schem", "table", "password", "CHAR () FOR BIT DATA", 10, 0);
+		assertEquals(AS400DataType.TYPE_BYTE_ARRAY, passwordNoLength.getInstanceType());
+		AS400DataType passwordLength = decoder.toDataType("schem", "table", "password", "CHAR (20) FOR BIT DATA", 10, 0);
+		assertEquals(AS400DataType.TYPE_BYTE_ARRAY, passwordLength.getInstanceType());
+		assertEquals(20, passwordLength.getByteLength());
+		AS400DataType varPasswordNoLength = decoder.toDataType("schem", "table", "password", "VARCHAR () FOR BIT DATA", 10, 0);
+		assertEquals(-1, varPasswordNoLength.getInstanceType());
+		AS400DataType varPasswordLength = decoder.toDataType("schem", "table", "password", "VARCHAR (20) FOR BIT DATA", 10, 0);
+		assertEquals(-1, varPasswordLength.getInstanceType());
 		assertEquals(20, passwordLength.getByteLength());
 	}
 }
