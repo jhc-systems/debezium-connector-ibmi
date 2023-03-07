@@ -52,9 +52,11 @@ public class As400JdbcConnection extends JdbcConnection implements Connect<Conne
     private static final String GET_ALL_SYSTEM_TABLE_NAME = "select trim(system_table_name), trim(table_name) from qsys2.systables where system_table_schema=?";
 
     private static final String GET_TABLE_NAME = "select trim(table_name) from qsys2.systables where system_table_schema=? AND system_table_name=?";
-    private static final String GET_INDEXES = "SELECT c.column_name FROM qsys.QADBKATR k "
-            + "INNER JOIN qsys2.SYSCOLUMNS c on c.table_schema=k.dbklib and c.system_table_name=k.dbkfil AND c.system_column_name=k.DBKFLD "
-            + "WHERE k.dbklib=? AND k.dbkfil=? ORDER BY k.DBKPOS ASC ";
+    private static final String GET_INDEXES = """
+    		SELECT c.column_name FROM qsys.QADBKATR k 
+            INNER JOIN qsys2.SYSCOLUMNS c on c.table_schema=k.dbklib and c.system_table_name=k.dbkfil AND c.system_column_name=k.DBKFLD 
+            WHERE k.dbklib=? AND k.dbkfil=? ORDER BY k.DBKPOS ASC 
+           """;
     
     private static final String GET_LONG_COLUMN_NAMES = "select trim(system_column_name), trim(column_name) from qsys2.syscolumns where system_table_schema=? AND system_table_name=?";
     private final Map<String, String> systemToLongTableName = new HashMap<>();
@@ -124,121 +126,6 @@ public class As400JdbcConnection extends JdbcConnection implements Connect<Conne
 
     public String getRealDatabaseName() {
         return realDatabaseName;
-    }
-    
-	public String getLongColumnName(final String schema, final String table, final String column) {
-		String columnKey = String.format("%s.%s.%s", schema, table, column);
-		if (systemToLongColumnName.containsKey(columnKey)) {
-			String longName = systemToLongColumnName.get(columnKey);
-			return longName;
-		}
-
-		populateColumnNameCache(schema, table);
-		
-		if (systemToLongColumnName.containsKey(columnKey)) {
-			String longName = systemToLongColumnName.get(columnKey);
-			return longName;
-		}
-		return column;
-	}
-	
-	public String getShortColumnName(final String schema, final String table, final String column) {
-		String columnKey = String.format("%s.%s.%s", schema, table, column);
-		if (longToSystemColumnName.containsKey(columnKey)) {
-			String shortName = longToSystemColumnName.get(columnKey);
-			return shortName;
-		}
-
-		populateColumnNameCache(schema, table);
-		
-		if (longToSystemColumnName.containsKey(columnKey)) {
-			String shortName = longToSystemColumnName.get(columnKey);
-			return shortName;
-		}
-		return column;
-	}
-
-	private int populateColumnNameCache(final String schema, final String table) {
-		try {
-			return prepareQueryAndMap(GET_LONG_COLUMN_NAMES, call -> {
-				call.setString(1, schema);
-				call.setString(2, table);
-			}, rs -> {
-				int count = 0;
-				while (rs.next()) {
-					String shortColumnName = rs.getString(1);
-					String longColumnName = rs.getString(2);
-					String shortColumnKey = String.format("%s.%s.%s", schema, table, shortColumnName);
-					systemToLongColumnName.put(shortColumnKey, longColumnName);
-					String longColumnKey = String.format("%s.%s.%s", schema, table, longColumnName);
-					longToSystemColumnName.put(longColumnKey, shortColumnName);
-				}
-				return count;
-
-			});
-		} catch (IllegalStateException | SQLException e) {
-			log.error("failure fetching long names for schema", e);
-		}
-		return -1;
-	}
-    
-    // translate both table names and column names
-    public Table shortToLongTable(Table table) {
-    	TableEditor e = Table.editor();
-    	TableId shortId = table.id();
-		String longTableName = getLongName(shortId.schema(), shortId.table());
-		TableId longId = new TableId(shortId.catalog(), shortId.schema(), longTableName); 
-    	e.tableId(longId);
-    	for (Column c: table.columns()) {
-			ColumnEditor ce = Column.editor();
-			ce.name(getLongColumnName(shortId.schema(), shortId.table(), c.name()));
-            ce.type(c.typeName());
-            ce.length(c.length());
-            c.scale().map( scale -> ce.scale(scale));
-            ce.optional(c.isOptional());
-            ce.position(c.position());
-            ce.autoIncremented(c.isAutoIncremented());
-            ce.generated(c.isGenerated());
-            ce.nativeType(c.nativeType());
-            ce.jdbcType(c.jdbcType());
-			e.addColumn(ce.create());
-    	}
-    	
-    	List<String> longKeys = table.primaryKeyColumnNames().stream().map(name -> 
-    		getLongColumnName(shortId.schema(), shortId.table(), name)).collect(Collectors.toList());
-		e.setPrimaryKeyNames(longKeys);
-    	
-    	return e.create();
-    }
-    
-    // translate both table names and column names
-    public Optional<Table> longToShortTable(Table table) {
-    	TableEditor e = Table.editor();
-    	TableId longId = table.id();
-		Optional<String> systemTableNameOpt = getSystemName(longId.schema(), longId.table());
-		return systemTableNameOpt.map(systemTableName -> {
-			TableId systemId = new TableId(longId.catalog(), longId.schema(), systemTableName); 
-	    	e.tableId(systemId);
-	    	for (Column c: table.columns()) {
-				ColumnEditor ce = Column.editor();
-				ce.name(getShortColumnName(longId.schema(), longId.table(), c.name()));
-	            ce.type(c.typeName());
-	            ce.length(c.length());
-	            c.scale().map( scale -> ce.scale(scale));
-	            ce.optional(c.isOptional());
-	            ce.position(c.position());
-	            ce.autoIncremented(c.isAutoIncremented());
-	            ce.generated(c.isGenerated());
-	            ce.nativeType(c.nativeType());
-	            ce.jdbcType(c.jdbcType());
-				e.addColumn(ce.create());
-	    	}
-	    	
-	    	List<String> longKeys = table.primaryKeyColumnNames().stream().map(name -> 
-	    	getShortColumnName(longId.schema(), longId.table(), name)).collect(Collectors.toList());
-			e.setPrimaryKeyNames(longKeys);
-			return e.create();
-		});
     }
 
     private String retrieveRealDatabaseName() {
