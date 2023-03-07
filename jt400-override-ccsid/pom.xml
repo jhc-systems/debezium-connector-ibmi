@@ -20,7 +20,6 @@
 	  <dependency>
 		  <groupId>net.sf.jt400</groupId>
 		  <artifactId>jt400-jdk9</artifactId>
-		  <version>${jt400.version}</version>
 		</dependency>
 		
 		<dependency>

@@ -103,6 +103,13 @@ Optional:
 ```
 the above help with connections that can be blocked (firewalled) or dropped due to vpn issues
 
+## CCSID
+
+Unusually we have the incorrect CCSID on all our tables and the data is forced into the tables with the wrong encoding
+
+This issue should really be corrected and the data translated but with thousands of tables and many clients all configured incorrectly this is a huge job with significant risk. Instead we have an additional setting forced_ccsid which will use this ccsid irrespective of the ccsid configured on the table of columns - this is for the entire system and all tables.
+
+
 ## The list of connectors
 
 `curl -i -X GET -H "Accept:application/json" -H "Content-Type:application/json" http://localhost:8083/connectors/`

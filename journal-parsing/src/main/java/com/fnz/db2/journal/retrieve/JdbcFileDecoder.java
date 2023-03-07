@@ -47,7 +47,7 @@ public class JdbcFileDecoder extends JournalFileEntryDecoder {
     private static final AS400Bin4 AS400_BIN4 = new AS400Bin4();
     private static final AS400Bin2 AS400_BIN2 = new AS400Bin2();
     private static final String GET_DATABASE_NAME = "values ( CURRENT_SERVER )"; 
-    private static final String UNIQUE_KEYS = "SELECT DBKFLD FROM QSYS.QADBKATR WHERE dbklib=? AND dbkfil=? ORDER BY DBKORD ASC";
+    private static final String UNIQUE_KEYS = "SELECT DBKFLD FROM QSYS.QADBKATR WHERE dbklib=? AND dbkfil=? ORDER BY DBKORD ASC"; // find the short name for keys
     
 	private final Connect<Connection, SQLException> jdbcConnect;
 	private final String databaseName;
