@@ -75,37 +75,19 @@ public class As400DatabaseSchema extends RelationalDatabaseSchema implements Sch
 		return oti;
 	}
 	
-    // via the create table journal entry (short names)
-    public void addSystemSchema(Table table) {
+    public void addSchema(Table table) {
         TableId id = table.id();
-        final Optional<String> systemTableNameOpt = jdbcConnection.getSystemName(id.schema(), id.table());
         // save for decoding
+        final Optional<String> systemTableNameOpt = jdbcConnection.getSystemName(id.schema(), id.table());
         systemTableNameOpt.map(systemTableName -> {
             TableInfo tableInfo = schemaInfoConversion.table2TableInfo(table);
-    		map.put(id.catalog() + id.schema() + systemTableName, tableInfo);
-    		return map.put(id.catalog() + id.schema() + id.table(), tableInfo);
+    		return map.put(id.catalog() + id.schema() + systemTableName, tableInfo);
 		});
 
-        Table longTable = jdbcConnection.shortToLongTable(table);
-        // save for serialisation
-        tables().overwriteTable(longTable);
-        this.buildAndRegisterSchema(longTable);
+        forwardSchema(table);
     }
     
-    public void addLongSchema(Table table) {
-        TableId id = table.id();
-        // save for decoding
-        final Optional<String> systemTableNameOpt = jdbcConnection.getSystemName(id.schema(), id.table());
-        systemTableNameOpt.flatMap(systemTableName -> {
-        	Optional<Table> shortTableOpt = jdbcConnection.longToShortTable(table);
-        	return shortTableOpt.map(shortTable -> {
-	            TableInfo tableInfo = schemaInfoConversion.table2TableInfo(shortTable);
-	    		map.put(id.catalog() + id.schema() + systemTableName, tableInfo);
-	    		return map.put(id.catalog() + id.schema() + id.table(), tableInfo);
-    		});
-		});
-
-        // save for serialisation
+    public void forwardSchema(Table table) {
         tables().overwriteTable(table);
         this.buildAndRegisterSchema(table);
     }
@@ -120,7 +102,7 @@ public class As400DatabaseSchema extends RelationalDatabaseSchema implements Sch
         map.put(database + schema + tableName, tableInfo);
 
         Table table = SchemaInfoConversion.tableInfo2Table(database, schema, tableName, tableInfo);
-        addSystemSchema(table);
+        forwardSchema(table);
     }
 
     @Override

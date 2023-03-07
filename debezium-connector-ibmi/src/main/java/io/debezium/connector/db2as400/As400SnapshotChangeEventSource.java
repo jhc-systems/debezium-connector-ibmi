@@ -159,7 +159,7 @@ public class As400SnapshotChangeEventSource extends RelationalSnapshotChangeEven
                 log.error("table schema not found for {}", id, new Exception("missing table definition"));
             }
             else {
-                schema.addLongSchema(table);
+                schema.addSchema(table);
             }
         }
     }
