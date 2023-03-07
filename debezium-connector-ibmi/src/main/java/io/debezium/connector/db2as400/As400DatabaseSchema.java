@@ -5,8 +5,6 @@
  */
 package io.debezium.connector.db2as400;
 
-import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -14,11 +12,8 @@ import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.fnz.db2.journal.retrieve.Connect;
 import com.fnz.db2.journal.retrieve.JdbcFileDecoder;
 import com.fnz.db2.journal.retrieve.SchemaCacheIF;
-import com.fnz.db2.journal.retrieve.SchemaCacheIF.TableInfo;
-import com.fnz.db2.journal.retrieve.rjne0200.EntryHeader;
 
 import io.debezium.connector.db2as400.conversion.As400DefaultValueConverter;
 import io.debezium.connector.db2as400.conversion.SchemaInfoConversion;
@@ -80,17 +75,37 @@ public class As400DatabaseSchema extends RelationalDatabaseSchema implements Sch
 		return oti;
 	}
 	
-    public void addSchema(Table table) {
-        TableInfo tableInfo = schemaInfoConversion.table2TableInfo(table);
+    // via the create table journal entry (short names)
+    public void addSystemSchema(Table table) {
         TableId id = table.id();
-        // store in the short name
-        // used directly by the decoder
         final Optional<String> systemTableNameOpt = jdbcConnection.getSystemName(id.schema(), id.table());
-        systemTableNameOpt.map(systemTableName -> map.put(id.catalog() + id.schema() + systemTableName, tableInfo));
+        // save for decoding
+        systemTableNameOpt.map(systemTableName -> {
+            TableInfo tableInfo = schemaInfoConversion.table2TableInfo(table);
+    		map.put(id.catalog() + id.schema() + systemTableName, tableInfo);
+    		return map.put(id.catalog() + id.schema() + id.table(), tableInfo);
+		});
 
-        // and store the long name
-        // use for serialisation
-        map.put(id.catalog() + id.schema() + id.table(), tableInfo);
+        Table longTable = jdbcConnection.shortToLongTable(table);
+        // save for serialisation
+        tables().overwriteTable(longTable);
+        this.buildAndRegisterSchema(longTable);
+    }
+    
+    public void addLongSchema(Table table) {
+        TableId id = table.id();
+        // save for decoding
+        final Optional<String> systemTableNameOpt = jdbcConnection.getSystemName(id.schema(), id.table());
+        systemTableNameOpt.flatMap(systemTableName -> {
+        	Optional<Table> shortTableOpt = jdbcConnection.longToShortTable(table);
+        	return shortTableOpt.map(shortTable -> {
+	            TableInfo tableInfo = schemaInfoConversion.table2TableInfo(shortTable);
+	    		map.put(id.catalog() + id.schema() + systemTableName, tableInfo);
+	    		return map.put(id.catalog() + id.schema() + id.table(), tableInfo);
+    		});
+		});
+
+        // save for serialisation
         tables().overwriteTable(table);
         this.buildAndRegisterSchema(table);
     }
@@ -100,11 +115,12 @@ public class As400DatabaseSchema extends RelationalDatabaseSchema implements Sch
     }
 
     @Override
+    // implements SchemaCacheIF.store - system name tables/column names
     public void store(String database, String schema, String tableName, TableInfo tableInfo) {
         map.put(database + schema + tableName, tableInfo);
 
         Table table = SchemaInfoConversion.tableInfo2Table(database, schema, tableName, tableInfo);
-        addSchema(table);
+        addSystemSchema(table);
     }
 
     @Override

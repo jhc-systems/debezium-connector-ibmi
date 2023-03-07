@@ -214,10 +214,6 @@
 		<dependency>
 			<groupId>io.confluent</groupId>
 			<artifactId>kafka-connect-protobuf-converter</artifactId>
-			<version>${confluent.platform.version}</version>
-			<!-- 6.2 should support decimal when it's released -->
-			<!-- releases here https://packages.confluent.io/maven/io/confluent/kafka-connect-protobuf-converter/ -->
-			<!-- issue https://github.com/confluentinc/schema-registry/issues/1735 -->
 			<exclusions>
 				<exclusion>
 					<groupId>com.google.api.grpc</groupId>
