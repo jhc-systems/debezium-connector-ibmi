@@ -25,7 +25,6 @@ import com.fnz.db2.journal.retrieve.SchemaCacheIF.TableInfo;
 import com.fnz.db2.journal.retrieve.rjne0200.EntryHeader;
 import com.fnz.db2.journal.test.TestConnector;
 import com.ibm.as400.access.AS400;
-import com.ibm.as400.access.AS400ByteArray;
 import com.ibm.as400.access.AS400Text;
 
 

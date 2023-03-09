@@ -3,7 +3,11 @@
 
 Override the ccsid and force the character encoding
 
-really you should not need this and just set the right encoding on the tables sadly if you have a large legacy code base and a large number of customers who have this incorrectly configured that correct solution might be costly and risky
+Incorrect setting of the QCCSID https://www.ibm.com/support/pages/what-impact-changing-qccsid-shipped-65535-another-ccsid can result in the wrong encoding of data in tables
+If this is set to 65535 (binary the default), it indicates that jobs will have no CCSID, and no conversion will be performed.
+
+Really you should not need this and just set the right encoding for QCCSID and on the tables. 
+Sadly if you have a large legacy code base and a large number of customers who have this incorrectly configured that correct solution might be costly and bring significant risks
 
 Note the original AS400JDBCDriver has a static block that on class load registers the driver so it's really important to unregister it before registering the new driver the static methods in AS400JDBCDriverRegistration do this for you
 

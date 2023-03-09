@@ -20,10 +20,8 @@ import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.fnz.db2.journal.retrieve.JdbcFileDecoder;
 import com.fnz.db2.journal.retrieve.JournalEntryType;
 import com.fnz.db2.journal.retrieve.JournalPosition;
-import com.fnz.db2.journal.retrieve.SchemaCacheIF;
 import com.fnz.db2.journal.retrieve.exception.FatalException;
 import com.fnz.db2.journal.retrieve.exception.InvalidPositionException;
 
