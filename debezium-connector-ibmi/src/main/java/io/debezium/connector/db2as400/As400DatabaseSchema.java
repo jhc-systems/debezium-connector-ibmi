@@ -75,13 +75,15 @@ public class As400DatabaseSchema extends RelationalDatabaseSchema implements Sch
 		return oti;
 	}
 	
+    // assume always long name - only called from snapshotting
     public void addSchema(Table table) {
         TableId id = table.id();
+
         // save for decoding
         final Optional<String> systemTableNameOpt = jdbcConnection.getSystemName(id.schema(), id.table());
         systemTableNameOpt.map(systemTableName -> {
             TableInfo tableInfo = schemaInfoConversion.table2TableInfo(table);
-    		return map.put(id.catalog() + id.schema() + systemTableName, tableInfo);
+    		return map.put(toKey(id.catalog(), id.schema(), systemTableName), tableInfo);
 		});
 
         forwardSchema(table);
@@ -98,21 +100,28 @@ public class As400DatabaseSchema extends RelationalDatabaseSchema implements Sch
 
     @Override
     // implements SchemaCacheIF.store - system name tables/column names
+    // assume always short name - only called from the journal
     public void store(String database, String schema, String tableName, TableInfo tableInfo) {
-        map.put(database + schema + tableName, tableInfo);
+        map.put(toKey(database, schema, tableName), tableInfo);
 
         Table table = SchemaInfoConversion.tableInfo2Table(database, schema, tableName, tableInfo);
         forwardSchema(table);
     }
 
+
     @Override
+    // assume always short name - only called from the journal
     public TableInfo retrieve(String database, String schema, String tableName) {
-        return map.get(database + schema + tableName);
+        return map.get(toKey(database, schema, tableName));
     }
 
     @Override
+    // assume always short name - only called from the journal
     public void clearCache(String database, String schema, String tableName) {
-        map.remove(database + schema + tableName);
+        map.remove(toKey(database, schema, tableName));
     }
 
+	private String toKey(String database, String schema, String tableName) {
+		return String.format("%s.%s.%s", database, schema, tableName);
+	}
 }
