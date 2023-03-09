@@ -5,8 +5,6 @@
  */
 package io.debezium.connector.db2as400;
 
-import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -14,11 +12,8 @@ import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.fnz.db2.journal.retrieve.Connect;
 import com.fnz.db2.journal.retrieve.JdbcFileDecoder;
 import com.fnz.db2.journal.retrieve.SchemaCacheIF;
-import com.fnz.db2.journal.retrieve.SchemaCacheIF.TableInfo;
-import com.fnz.db2.journal.retrieve.rjne0200.EntryHeader;
 
 import io.debezium.connector.db2as400.conversion.As400DefaultValueConverter;
 import io.debezium.connector.db2as400.conversion.SchemaInfoConversion;
@@ -80,17 +75,21 @@ public class As400DatabaseSchema extends RelationalDatabaseSchema implements Sch
 		return oti;
 	}
 	
+    // assume always long name - only called from snapshotting
     public void addSchema(Table table) {
-        TableInfo tableInfo = schemaInfoConversion.table2TableInfo(table);
         TableId id = table.id();
-        // store in the short name
-        // used directly by the decoder
-        final Optional<String> systemTableNameOpt = jdbcConnection.getSystemName(id.schema(), id.table());
-        systemTableNameOpt.map(systemTableName -> map.put(id.catalog() + id.schema() + systemTableName, tableInfo));
 
-        // and store the long name
-        // use for serialisation
-        map.put(id.catalog() + id.schema() + id.table(), tableInfo);
+        // save for decoding
+        final Optional<String> systemTableNameOpt = jdbcConnection.getSystemName(id.schema(), id.table());
+        systemTableNameOpt.map(systemTableName -> {
+            TableInfo tableInfo = schemaInfoConversion.table2TableInfo(table);
+    		return map.put(toKey(id.catalog(), id.schema(), systemTableName), tableInfo);
+		});
+
+        forwardSchema(table);
+    }
+    
+    public void forwardSchema(Table table) {
         tables().overwriteTable(table);
         this.buildAndRegisterSchema(table);
     }
@@ -100,21 +99,29 @@ public class As400DatabaseSchema extends RelationalDatabaseSchema implements Sch
     }
 
     @Override
+    // implements SchemaCacheIF.store - system name tables/column names
+    // assume always short name - only called from the journal
     public void store(String database, String schema, String tableName, TableInfo tableInfo) {
-        map.put(database + schema + tableName, tableInfo);
+        map.put(toKey(database, schema, tableName), tableInfo);
 
         Table table = SchemaInfoConversion.tableInfo2Table(database, schema, tableName, tableInfo);
-        addSchema(table);
+        forwardSchema(table);
     }
 
+
     @Override
+    // assume always short name - only called from the journal
     public TableInfo retrieve(String database, String schema, String tableName) {
-        return map.get(database + schema + tableName);
+        return map.get(toKey(database, schema, tableName));
     }
 
     @Override
+    // assume always short name - only called from the journal
     public void clearCache(String database, String schema, String tableName) {
-        map.remove(database + schema + tableName);
+        map.remove(toKey(database, schema, tableName));
     }
 
+	private String toKey(String database, String schema, String tableName) {
+		return String.format("%s.%s.%s", database, schema, tableName);
+	}
 }

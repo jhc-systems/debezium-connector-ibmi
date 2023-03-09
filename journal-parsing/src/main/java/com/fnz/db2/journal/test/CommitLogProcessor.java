@@ -48,7 +48,7 @@ public class CommitLogProcessor {
 		JournalPosition nextPosition = new JournalPosition((BigInteger)null, null, null, false);
 		JournalInfoRetrieval journalInfoRetrieval = new JournalInfoRetrieval();
 
-        JournalInfo journalLib = journalInfoRetrieval.getJournal(as400Connect.connection(), schema);
+        JournalInfo journalLib = JournalInfoRetrieval.getJournal(as400Connect.connection(), schema);
 
         String offset =  System.getenv("ISERIES_OFFSET");
         String receiver =  System.getenv("ISERIES_RECEIVER");
