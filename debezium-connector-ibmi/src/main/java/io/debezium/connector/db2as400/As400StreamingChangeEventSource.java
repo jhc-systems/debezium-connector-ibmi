@@ -46,7 +46,6 @@ import io.debezium.util.Metronome;
  */
 public class As400StreamingChangeEventSource implements StreamingChangeEventSource<As400Partition, As400OffsetContext> {
     private static final String NO_TRANSACTION_ID = "00000000000000000000";
-    private JdbcFileDecoder fileDecoder;
     private long connectionTime = -1;
     private long MIN_DISCONNECT_TIME_MS = 30000;
 
@@ -87,7 +86,6 @@ public class As400StreamingChangeEventSource implements StreamingChangeEventSour
         this.schema = schema;
         this.pollInterval = connectorConfig.getPollInterval();
         this.database = jdbcConnection.getRealDatabaseName();
-        this.fileDecoder = new JdbcFileDecoder(jdbcConnection, database, (SchemaCacheIF) schema);
     }
 
     private void cacheBefore(TableId tableId, Timestamp date, Object[] dataBefore) {
@@ -246,14 +244,14 @@ public class As400StreamingChangeEventSource implements StreamingChangeEventSour
                     case FILE_CHANGE:
                     case FILE_CREATED: {
                         // table has changed - reload schema
-                        fileDecoder.clearCache(tableId.table(), tableId.schema());
-                        fileDecoder.getRecordFormat(tableId.table(), tableId.schema());
+                    	schema.clearCache(tableId.table(), tableId.schema());
+                    	schema.getRecordFormat(tableId.table(), tableId.schema());
                     }
                         break;
                     case BEFORE_IMAGE: {
                         // before image
                         tableId.schema();
-                        Object[] dataBefore = r.decode(fileDecoder);
+                        Object[] dataBefore = r.decode(schema.getFileDecoder());
 
                         cacheBefore(tableId, eheader.getTimestamp(), dataBefore);
                     }
@@ -262,7 +260,7 @@ public class As400StreamingChangeEventSource implements StreamingChangeEventSour
                         // after image
                         // before image is meant to have been immediately before
                         Object[] dataBefore = getBefore(tableId, eheader.getTimestamp());
-                        Object[] dataNext = r.decode(fileDecoder);
+                        Object[] dataNext = r.decode(schema.getFileDecoder());
 
                         offsetContext.setSourceTime(eheader.getTimestamp());
 
@@ -279,7 +277,7 @@ public class As400StreamingChangeEventSource implements StreamingChangeEventSour
                     case ADD_ROW1:
                     case ADD_ROW2: {
                         // record added
-                        Object[] dataNext = r.decode(fileDecoder);
+                        Object[] dataNext = r.decode(schema.getFileDecoder());
                         offsetContext.setSourceTime(eheader.getTimestamp());
 
                         String txId = eheader.getCommitCycle().toString();
@@ -297,7 +295,7 @@ public class As400StreamingChangeEventSource implements StreamingChangeEventSour
                     case DELETE_ROW1:
                     case DELETE_ROW2: {
                         // record deleted
-                        Object[] dataBefore = r.decode(fileDecoder);
+                        Object[] dataBefore = r.decode(schema.getFileDecoder());
 
                         offsetContext.setSourceTime(eheader.getTimestamp());
 

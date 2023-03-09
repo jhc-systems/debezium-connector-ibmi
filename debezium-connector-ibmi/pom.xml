@@ -51,6 +51,11 @@
 			<version>${project.version}</version>
 			<scope>runtime</scope>
 		</dependency>
+		<dependency>
+			<groupId>com.fnz.debezium.ibmi</groupId>
+			<artifactId>jt400-override-ccsid</artifactId>			
+			<version>${project.version}</version>
+		</dependency>
 
 		<dependency>
 			<groupId>org.apache.logging.log4j</groupId>

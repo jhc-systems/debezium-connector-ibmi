@@ -64,7 +64,7 @@ public class CommitLogProcessor {
 		}
 
 		String database = JdbcFileDecoder.getDatabaseName(sqlConnect.connection());
-		fileDecoder = new JdbcFileDecoder(sqlConnect, database, schemaCache);
+		fileDecoder = new JdbcFileDecoder(sqlConnect, database, schemaCache, -1);
 		JournalPosition lastPosition = null;
 		
         JournalPosition endPosition = journalInfoRetrieval.getCurrentPosition(as400Connect.connection(), journalLib);

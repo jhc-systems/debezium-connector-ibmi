@@ -23,7 +23,8 @@ import org.slf4j.LoggerFactory;
 
 import com.fnz.db2.journal.retrieve.Connect;
 import com.fnz.db2.journal.retrieve.FileFilter;
-import com.ibm.as400.access.AS400JDBCDriver;
+import com.ibm.as400.access.AS400JDBCDriverForcedCcsid;
+import com.ibm.as400.access.AS400JDBCDriverRegistration;
 
 import io.debezium.config.Configuration;
 import io.debezium.config.Field;
@@ -40,6 +41,8 @@ public class As400JdbcConnection extends JdbcConnection implements Connect<Conne
     private static final String URL_PATTERN = "jdbc:as400://${" + JdbcConfiguration.HOSTNAME + "}/${"
             + JdbcConfiguration.DATABASE + "}";
     private final JdbcConfiguration config;
+    private final int forcedCcsid;
+    private boolean registered = false;
 
     private static final String GET_DATABASE_NAME = "values ( CURRENT_SERVER )";
     private static final String GET_SYSTEM_TABLE_NAME = "select trim(system_table_name) from qsys2.systables where system_table_schema=? AND table_name=?";
@@ -60,14 +63,16 @@ public class As400JdbcConnection extends JdbcConnection implements Connect<Conne
     		Field.create("date format", "date format", "default date format is 2 digit date 1940->2039 set this to 'iso' or make sure you only have dates in this range, performance is ambysmal if you don't not to mention lots of missing data", "iso"),
     		Field.create("keep alive", "keep alive", "send heart beat to keep the connection alive", true),
     		Field.create("prompt", "prompt", "do you want a GUI prompt for the password if the password is wrong", false),
-    		Field.create("errors", "full error reporting", "jdbc level of detail to include options are: 'basic', or 'full'", "full")
+    		Field.create("errors", "full error reporting", "jdbc level of detail to include options are: 'basic', or 'full'", "full"),
+    		Field.create("forced_ccsid", "force_ccsid",  "ignore all the information on your system and tables and use this encoding anyway", -1)
 	};
 
     private static final ConnectionFactory FACTORY = JdbcConnection.patternBasedFactory(URL_PATTERN,
-            AS400JDBCDriver.class.getName(), As400JdbcConnection.class.getClassLoader(), fields);
+            AS400JDBCDriverForcedCcsid.class.getName(), As400JdbcConnection.class.getClassLoader(), fields);
 
     public As400JdbcConnection(JdbcConfiguration config) {
         super(config, FACTORY, "'", "'");
+        this.forcedCcsid = config.getInteger(As400ConnectorConfig.FORCE_CCSID);
         this.config = config;
         realDatabaseName = retrieveRealDatabaseName();
         log.debug("connection:" + this.connectionString(URL_PATTERN));
@@ -270,6 +275,11 @@ public class As400JdbcConnection extends JdbcConnection implements Connect<Conne
 
     @Override
     public synchronized Connection connection() throws SQLException {
+        if (forcedCcsid > 0 && !registered) {
+        	AS400JDBCDriverRegistration.registerCcsidDriver();
+			registered = true;
+        }
+
         Connection conn = super.connection(true);
         if (!conn.isValid(3)) {
             log.info("connection dead closing");
@@ -286,7 +296,6 @@ public class As400JdbcConnection extends JdbcConnection implements Connect<Conne
         }
         return conn;
     }
-
     
     @Override
     protected Optional<ColumnEditor> readTableColumn(ResultSet columnMetadata, TableId tableId, ColumnNameFilter columnFilter) throws SQLException {
