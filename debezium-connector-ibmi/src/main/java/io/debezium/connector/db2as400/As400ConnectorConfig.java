@@ -79,6 +79,12 @@ public class As400ConnectorConfig extends RelationalDatabaseConnectorConfig {
      * The timeout to use for sockets
      */
     public static final Field SOCKET_TIMEOUT = Field.create("socket timeout", "socket timeout in milliseconds", "socket timeout", 0);
+    
+    /**
+     * If the ccsid is wrong on your tables and that is the least of your problems - just correct the CCSID before using this or as a last resort...
+     * This applies to all tables - everything
+     */
+    public static final Field FORCE_CCSID = Field.create("forced_ccsid", "forced ccsid", "ignore all the information on your system and tables and use this encoding anyway", -1);
 
     /**
      * Maximum number of journal entries to process server side
@@ -156,6 +162,11 @@ public class As400ConnectorConfig extends RelationalDatabaseConnectorConfig {
     public Integer getMaxRetrievalTimeout() {
         return config.getInteger(MAX_RETRIEVAL_TIMEOUT);
     }
+    
+
+    public Integer getForcedCcsid() {
+        return config.getInteger(FORCE_CCSID);
+    }
 
     public JournalPosition getOffset() {
         String receiver = config.getString(As400OffsetContext.RECEIVER);
@@ -190,14 +201,14 @@ public class As400ConnectorConfig extends RelationalDatabaseConnectorConfig {
 
     public static Field.Set ALL_FIELDS = Field.setOf(JdbcConfiguration.HOSTNAME, USER, PASSWORD, SCHEMA, BUFFER_SIZE,
             RelationalDatabaseConnectorConfig.SNAPSHOT_SELECT_STATEMENT_OVERRIDES_BY_TABLE, KEEP_ALIVE, THREAD_USED, SOCKET_TIMEOUT,
-            MAX_SERVER_SIDE_ENTRIES, TOPIC_NAMING_STRATEGY);
+            MAX_SERVER_SIDE_ENTRIES, TOPIC_NAMING_STRATEGY, FORCE_CCSID);
 
     public static ConfigDef configDef() {
         ConfigDef c = RelationalDatabaseConnectorConfig.CONFIG_DEFINITION.edit()
                 .name("ibmi")
                 .type(
                         JdbcConfiguration.HOSTNAME, USER, PASSWORD, SCHEMA, BUFFER_SIZE,
-                        KEEP_ALIVE, THREAD_USED, SOCKET_TIMEOUT)
+                        KEEP_ALIVE, THREAD_USED, SOCKET_TIMEOUT, FORCE_CCSID)
                 .connector()
                 .events(
                         As400OffsetContext.EVENT_SEQUENCE_FIELD,

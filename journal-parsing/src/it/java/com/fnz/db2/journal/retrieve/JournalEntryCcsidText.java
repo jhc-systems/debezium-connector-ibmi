@@ -31,8 +31,10 @@ import com.ibm.as400.access.AS400Text;
 
 // this file is utf-8
 
-class JournalEntryDecoderTestIT {
-    private static final Logger log = LoggerFactory.getLogger(JournalEntryDecoderTestIT.class);
+class JournalEntryCcsidText {
+    private static final String SPECIAL_CHARACTERS = "£$[^~?¢";
+
+	private static final Logger log = LoggerFactory.getLogger(JournalEntryCcsidText.class);
 
 	static Connect<AS400, IOException> as400Connect;
 	static Connect<Connection, SQLException> sqlConnect;
@@ -45,11 +47,11 @@ class JournalEntryDecoderTestIT {
         as400Connect = connector.getAs400();
         sqlConnect = connector.getJdbc();
         
-		setupSchema();
+        setupSchemaAndTable();
 	}
 
 	@Test
-	public void testCharacterTypes() throws Exception {
+	public void testCcsid() throws Exception {
 		JournalInfoRetrieval journalInfoRetrieval = new JournalInfoRetrieval();
 		JournalInfo journal = JournalInfoRetrieval.getJournal(as400Connect.connection(), schema);
 		JournalPosition position = journalInfoRetrieval.getCurrentPosition(as400Connect.connection(), journal);
@@ -81,22 +83,16 @@ class JournalEntryDecoderTestIT {
 				switch (journalEntryType) {
     				case ADD_ROW2, ADD_ROW1:
     					System.out.println(eheader.getObjectName() + " : " + eheader.getLibrary());
-    					if ("CHARTYPES".equals(eheader.getFile()) && "MSTYPE1".equals(eheader.getLibrary())) {
+    					if ("CCSID".equals(eheader.getFile()) && "MSTYPE1".equals(eheader.getLibrary())) {
 	    					Object[] values = rj.decode(fileDecoder);
 	    					AS400Text conv = new AS400Text(10, 37);
-	    					TableInfo ti = schemaHash.retrieve(database, schema, "CHARTYPES");
+	    					TableInfo ti = schemaHash.retrieve(database, schema, "CCSID");
 	    					System.out.println("found add for table " + eheader.getFile());
 	    					assertNotNull(ti);
 	    					List<Structure> structures = ti.getStructure();
 	    					Map<String, Object> map = toValues(structures, values);
-	    					assertEquals("fixed", ((String)map.get("FCHAR")).trim());
-	    					assertEquals("var", ((String)map.get("VCHAR")).trim());
-	    //						assertThat(((String)map.get("FGRAPH")).trim(), is(equalTo("Paßstraße")));
-	    //						assertThat(((String)map.get("VGRAPH")).trim(), is(equalTo("Maſʒſtab")));
-	    					System.out.println(bytesToHex(conv.toBytes("abcdefghij")));
-	    					System.out.println(bytesToHex(((byte[])map.get("FBIN"))));
-	    					assertArrayEquals(conv.toBytes("abcdefghij"), ((byte[])map.get("FBIN")), "fixed binary");
-	    					assertArrayEquals(conv.toBytes("klnmopqrst"), ((byte[])map.get("VBIN")), "var binary");
+	    					assertEquals(SPECIAL_CHARACTERS, ((String)map.get("UK")).trim());
+	    					assertEquals(SPECIAL_CHARACTERS, ((String)map.get("US")).trim());
 	    
 	    					foundInsert = true;
     					}
@@ -114,47 +110,14 @@ class JournalEntryDecoderTestIT {
 
 		assertEquals(true, foundInsert, "insert journal entry found");
 	}
-
-	private void insertData() throws SQLException {
-		Connection con = sqlConnect.connection(); // debezium doesn't close connections
-		try (Statement stmt = con.createStatement()) {
-
-
-			// bin is ebidic a385a2a3 not ascii 74657374
-			int added = stmt.executeUpdate("INSERT INTO MSTYPE1.CHARTYPES (fchar, vchar, "
-//					+ "fgraph, vgraph, "
-					+ "fbin, vbin) "
-					+ "VALUES ('fixed', 'var',"
-//					+ " 'Paßstraße', 'Maſʒſtab', "
-					+ "CAST('abcdefghij' AS BINARY(10)) , CAST('klnmopqrst' AS VARBINARY(10)))");
-			
-			assertEquals(1, added, "inserted one row");
-
-			// verify we can find the data using sql
-			try (ResultSet rs = stmt
-					.executeQuery("select fchar, vchar, "
-//							+ "fgraph, vgraph, "
-							+ "fbin, vbin from MSTYPE1.CHARTYPES")) {
-				AS400Text conv = new AS400Text(10, 37);
-				if (rs.next()) {
-					assertEquals("fixed", rs.getString("fchar").trim());
-					assertEquals("var", rs.getString("vchar").trim());
-//					assertThat(rs.getString("fgraph").trim(), is(equalTo("Paßstraße")));
-//					assertThat(rs.getString("vgraph").trim(), is(equalTo("Maſʒſtab")));
-					assertArrayEquals(conv.toBytes("abcdefghij"), rs.getBytes("fbin"));
-					assertArrayEquals(conv.toBytes("klnmopqrst"), rs.getBytes("vbin"));
-				} else {
-					fail("should find a result");
-				}
-			}
-		}
-	}
-
-	private static void setupSchema() throws SQLException {
+	
+	private static void setupSchemaAndTable() throws SQLException {
 		Connection con = sqlConnect.connection(); // debezium doesn't close connections
 		try (Statement stmt = con.createStatement()) {
 			createSchema(stmt);
 			createEmptyTable(stmt);
+
+			log.debug("create schema");
 		}
 	}
 
@@ -169,22 +132,48 @@ class JournalEntryDecoderTestIT {
 				}
 			}
 		}
-
-		log.debug("create schema");
 	}
+	
+	private void insertData() throws SQLException {
+		Connection con = sqlConnect.connection(); // debezium doesn't close connections
+		try (Statement stmt = con.createStatement()) {
+
+			// bin is ebidic a385a2a3 not ascii 74657374
+			int added = stmt.executeUpdate("INSERT INTO MSTYPE1.ccsid (uk, us) values ('£$[^~?¢', '£$[^~?¢')");
+			
+			assertEquals(1, added, "inserted one row");
+
+			// verify we can find the data using sql
+			try (ResultSet rs = stmt
+					.executeQuery("select uk, us from MSTYPE1.ccsid")) {
+				AS400Text ukconv = new AS400Text(10, 285);
+				AS400Text usconv = new AS400Text(10, 37);
+				if (rs.next()) {
+					assertEquals(SPECIAL_CHARACTERS, rs.getString("uk").trim());
+					assertEquals(SPECIAL_CHARACTERS, rs.getString("us").trim());
+					assertArrayEquals(ukconv.toBytes(SPECIAL_CHARACTERS), rs.getBytes("uk"));
+					assertArrayEquals(usconv.toBytes(SPECIAL_CHARACTERS), rs.getBytes("us"));
+					
+					System.out.println(bytesToHex(rs.getBytes("uk")));
+					System.out.println(bytesToHex( rs.getBytes("us")));
+				} else {
+					fail("should find a result");
+				}
+			}
+		}
+	}
+
 	private static void createEmptyTable(Statement stmt) throws SQLException {
 		try {
-			stmt.executeUpdate("drop TABLE MSTYPE1.CHARTYPES");
+			stmt.executeUpdate("drop TABLE MSTYPE1.ccsid");
 		} catch (SQLException e) {
 			// ignore we don't care if it doesn't exist yet
 		}
 
 		stmt.executeUpdate(
-				"CREATE OR replace TABLE MSTYPE1.CHARTYPES (  " + "fchar CHAR(12), vchar VARCHAR(11),    "
-//							+ "fgraph GRAPHIC(10) CCSID 13488,  vgraph VARGRAPHIC(10) CCSID 13488,  "
-						+ "fbin binary(10),  vbin varbinary(10)  )");
+				"CREATE OR replace TABLE MSTYPE1.ccsid (uk char(10) ccsid 285, us char(10) ccsid 37)");
 
-		stmt.executeUpdate("delete from MSTYPE1.CHARTYPES");
+		stmt.executeUpdate("delete from MSTYPE1.ccsid");
 	}
 	
 	private static final byte[] HEX_ARRAY = "0123456789ABCDEF".getBytes(StandardCharsets.US_ASCII);
