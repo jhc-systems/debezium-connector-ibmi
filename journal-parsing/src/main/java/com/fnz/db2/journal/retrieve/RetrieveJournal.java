@@ -112,9 +112,17 @@ public class RetrieveJournal {
 		} else {
 			PositionRange r = range.get();
 			builder.withStartingSequence(r.start.getOffset());
-			builder.withReceivers("*CURCHAIN");
+			/*
+			 *  Restrictions 
+    			If the sequence number is reset in the range of the receivers specified, the first occurrence of starting sequence number or ending sequence number is used if these key fields are specified.
+
+				Starting journal receiver name.
+				Note: For journal receivers with reset sequence numbers in the chain, the QjoRetrieveJournalEntries API may return the same journal entries for repeated API calls. To avoid receiving the same journal entries, change the starting journal receiver name field to indicate the next receiver in the chain after the initial call to the API.
+			 */
+			builder.withReceivers(r.start.getReciever(), r.start.getReceiverLibrary(), r.end.getReciever(), r.end.getReceiverLibrary());
 			builder.withEnd(r.end.getOffset());
 			
+			builder.withEnd();
 			if (retrievePosition.equals(r.end)) { // we are already at the end
 				header = new FirstHeader(0, 0, 0, OffsetStatus.NO_MORE_DATA, Optional.of(r.end));
 				return true;
@@ -351,7 +359,7 @@ public class RetrieveJournal {
 	private void updateOffsetFromContinuation() {
 		// after we hit the end use the continuation header for the next offset
 		header.nextPosition().ifPresent(offset -> {
-		    log.debug("Setting confinuation offset {}", offset);
+		    log.debug("Setting continuation offset {}", offset);
 			position.setPosition(offset); 
 		});
 	}
@@ -546,12 +554,12 @@ public class RetrieveJournal {
 		public ProgramParameter[] build() {
 			byte[] criteriaData = new AS400Structure(criteria.getStructure()).toBytes(criteria.getObject());
 			return new ProgramParameter[] { 
-					new ProgramParameter(ProgramParameter.PASS_BY_REFERENCE, bufferLength),
-					new ProgramParameter(ProgramParameter.PASS_BY_REFERENCE, bufferLengthData),
-					new ProgramParameter(ProgramParameter.PASS_BY_REFERENCE, journalData),
-					new ProgramParameter(ProgramParameter.PASS_BY_REFERENCE, formatNameData),
-					new ProgramParameter(ProgramParameter.PASS_BY_REFERENCE, criteriaData),
-					new ProgramParameter(ProgramParameter.PASS_BY_REFERENCE, errorCodeData) };
+					new ProgramParameter(ProgramParameter.PASS_BY_REFERENCE, bufferLength),		// 1 	Receiver variable
+					new ProgramParameter(ProgramParameter.PASS_BY_REFERENCE, bufferLengthData),	// 2 	Length of receiver variable
+					new ProgramParameter(ProgramParameter.PASS_BY_REFERENCE, journalData),		// 3 	Qualified journal name	
+					new ProgramParameter(ProgramParameter.PASS_BY_REFERENCE, formatNameData),	// 4 	Format name
+					new ProgramParameter(ProgramParameter.PASS_BY_REFERENCE, criteriaData),		// 5 	Journal entries to retrieve
+					new ProgramParameter(ProgramParameter.PASS_BY_REFERENCE, errorCodeData) };	// 6 	Error code
 		}
 	}
 

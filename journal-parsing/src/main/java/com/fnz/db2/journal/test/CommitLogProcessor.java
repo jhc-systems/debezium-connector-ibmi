@@ -82,7 +82,7 @@ public class CommitLogProcessor {
 					.withDumpFolder("./bad-journal")
 					.withServerFiltering(false)
 					.withIncludeFiles(includes)
-					.withMaxServerSideEntries(10)
+					.withMaxServerSideEntries(100)
 					.build();
 			RetrieveJournal rj = new RetrieveJournal(config, journalInfoRetrieval);
 
@@ -124,6 +124,8 @@ public class CommitLogProcessor {
                 String lib = eheader.getLibrary();
                 String member = eheader.getMember();
 
+                log.debug("time {} receiver {} offset {} lib: {} file: {} member: {}", eheader.getTimestamp(), eheader.getReceiver(), eheader.getEndOffset(), lib, file, member);
+                
 				switch (entryType) {
 					case DELETE_ROW1, DELETE_ROW2:
     			        log.debug("deleted lib: {} file: {} member: {}", lib, file, member);
@@ -147,10 +149,10 @@ public class CommitLogProcessor {
 			}
 
             EntryHeader eh = r.getEntryHeader();
-			System.out.println(eh.getSequenceNumber());
 			
-            if (eh != null)
-                log.info("last offset was " + eh.getSequenceNumber()+"."+eh.getReceiver()+"."+ eh.getReceiverLibrary());
+            if (eh != null) {
+                log.info("last offset was {}.{}.{}", eh.getSequenceNumber(), eh.getReceiver(), eh.getReceiverLibrary());
+            }
             
             r.getFirstHeader().nextPosition().map(jp -> {
 				log.info("next offset is " + jp.toString());
