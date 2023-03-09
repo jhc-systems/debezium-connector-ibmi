@@ -214,7 +214,7 @@ public class As400StreamingChangeEventSource implements StreamingChangeEventSour
                     return;
                 }
 
-                log.debug("next event: {} type: {} table: {}", eheader.getSequenceNumber(), eheader.getEntryType(), tableId.table());
+                log.debug("next event: {} - {} type: {} table: {}", eheader.getTimestamp(), eheader.getSequenceNumber(), eheader.getEntryType(), tableId.table());
                 switch (journalEntryType) {
                     case START_COMMIT: {
                         // start commit
