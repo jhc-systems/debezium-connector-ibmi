@@ -42,7 +42,7 @@ public class As400JdbcConnection extends JdbcConnection implements Connect<Conne
             + JdbcConfiguration.DATABASE + "}";
     private final JdbcConfiguration config;
     private final int forcedCcsid;
-    private boolean registerd = false;
+    private boolean registered = false;
 
     private static final String GET_DATABASE_NAME = "values ( CURRENT_SERVER )";
     private static final String GET_SYSTEM_TABLE_NAME = "select trim(system_table_name) from qsys2.systables where system_table_schema=? AND table_name=?";
@@ -275,9 +275,9 @@ public class As400JdbcConnection extends JdbcConnection implements Connect<Conne
 
     @Override
     public synchronized Connection connection() throws SQLException {
-        if (forcedCcsid > 0 && !registerd) {
+        if (forcedCcsid > 0 && !registered) {
         	AS400JDBCDriverRegistration.registerCcsidDriver();
-			registerd = true;
+			registered = true;
         }
 
         Connection conn = super.connection(true);
