@@ -101,7 +101,7 @@ public class RetrieveJournal {
 
         Optional<JournalPosition> latestJournalPosition = Optional.empty();
 		Optional<PositionRange> range = findRange(config.as400().connection(), retrievePosition);
-		if (range.isEmpty()) {
+		if (range.isEmpty()) { // this can only be used at the start
 			if (retrievePosition.isOffsetSet()) {
 				builder.withStartingSequence(retrievePosition.getOffset());
 			} else {
@@ -113,11 +113,7 @@ public class RetrieveJournal {
 			PositionRange r = range.get();
 			builder.withStartingSequence(r.start.getOffset());
 			/*
-			 *  Restrictions 
-    			If the sequence number is reset in the range of the receivers specified, the first occurrence of starting sequence number or ending sequence number is used if these key fields are specified.
-
-				Starting journal receiver name.
-				Note: For journal receivers with reset sequence numbers in the chain, the QjoRetrieveJournalEntries API may return the same journal entries for repeated API calls. To avoid receiving the same journal entries, change the starting journal receiver name field to indicate the next receiver in the chain after the initial call to the API.
+			 * Very important if *CURCHAIN or *CURVCHAIN is used then you can end up in a loop to overcome this the start journal must be set explicitly
 			 */
 			builder.withReceivers(r.start.getReciever(), r.start.getReceiverLibrary(), r.end.getReciever(), r.end.getReceiverLibrary());
 			builder.withEnd(r.end.getOffset());
