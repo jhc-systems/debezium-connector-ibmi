@@ -81,6 +81,14 @@ select * from table (Display_Journal(
 ) ) as x;
 ```
 
+or simply:
+
+```
+SELECT entry_timestamp, receiver_name, sequence_number, journal_code, journal_entry_type, object 
+  FROM TABLE (QSYS2.DISPLAY_JOURNAL( 'F63QULDVES', 'FIGJRN')) AS JT 
+  ORDER BY entry_timestamp desc;
+```
+
 # TODO
 
 Improved way of fetching the journal information
@@ -107,6 +115,18 @@ When the library is pointing to the wrong journal, it can be fixed with:
 ```
 STRJRNLIB LIB(<library>) JRN(<journal)
 ```
+
+# gotyas 
+
+From the documentation: https://www.ibm.com/docs/en/i/7.5?topic=ssw_ibm_i_75/apis/QJORJRNE.html 
+
+## Restrictions - at top of page
+If the sequence number is reset in the range of the receivers specified, the first occurrence of starting sequence number or ending sequence number is used if these key fields are specified.
+
+## Starting journal receiver name. - section "Receiver Range Format"
+Note: For journal receivers with reset sequence numbers in the chain, the QjoRetrieveJournalEntries API may return the same journal entries for repeated API calls. To avoid receiving the same journal entries, change the starting journal receiver name field to indicate the next receiver in the chain after the initial call to the API.
+
+So unless the start receiver is set we can end up in a loop, we can't simply use the `*CURCHAIN` to step over the journal entries
 
 # seechange notes
 a CR in development e.g. `CR 076737 / 37` has a schema `O#07673737` the shema isn't journaled so this won't work for CRs that haven't been promoted to holding or quality
