@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Configuration status="warn" packages="io.debezium.connector.db2as400.logging">
+<Configuration status="warn">
 	<Appenders>
 		<Console name="jsonConsole" target="SYSTEM_OUT">
 			<JsonTemplateLayout EventTemplateUri="classpath:GcpLayoutStructured.json" />
@@ -10,6 +10,8 @@
 		<Root level="info">
 			<AppenderRef ref="jsonConsole" />
 		</Root>
+       <Logger name="org.reflections.Reflections" level="error" additivity="false"/>
+       <Logger name="org.apache.kafka.connect.runtime.isolation.DelegatingClassLoader" level="warn" additivity="false"/>
 	</Loggers>
 	
 </Configuration>

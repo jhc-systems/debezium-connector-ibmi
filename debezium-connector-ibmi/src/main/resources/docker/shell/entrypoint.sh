@@ -36,4 +36,4 @@ perl -e 'while (my ($key, $value) = each(%ENV)) {if ($key=~/^DEBEZIUM_/) { $key 
 
 jars=$(echo libs/*jar|tr ' ' ':'):classes:resources
 jmxjar=/app/libs/jmx_prometheus_javaagent-0.16.1.jar
-java $JAVA_OPTIONS  -Djavax.net.ssl.trustStore=/tmp/cacerts -cp $jars -javaagent:${jmxjar}=7071:/app/debezium-jmx-pometheus.yml -Dlog4j2.configurationFile=/app/resources/log4j2.xml org.apache.kafka.connect.cli.ConnectDistributed /tmp/connect-distributed.properties
+java $JAVA_OPTIONS -Djava.util.logging.manager=org.apache.logging.log4j.jul.LogManager -Djavax.net.ssl.trustStore=/tmp/cacerts -cp $jars -javaagent:${jmxjar}=7071:/app/debezium-jmx-pometheus.yml -Dlog4j2.configurationFile=/app/resources/log4j2.xml org.apache.kafka.connect.cli.ConnectDistributed /tmp/connect-distributed.properties
