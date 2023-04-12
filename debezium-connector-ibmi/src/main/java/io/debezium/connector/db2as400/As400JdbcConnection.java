@@ -24,6 +24,7 @@ import org.slf4j.LoggerFactory;
 
 import com.fnz.db2.journal.retrieve.Connect;
 import com.fnz.db2.journal.retrieve.FileFilter;
+import com.fnz.db2.journal.retrieve.RetrieveConfig;
 import com.ibm.as400.access.AS400JDBCDriverForcedCcsid;
 import com.ibm.as400.access.AS400JDBCDriverRegistration;
 
@@ -66,27 +67,44 @@ public class As400JdbcConnection extends JdbcConnection implements Connect<Conne
 
     private final String realDatabaseName;
     
-    private static Field[] fields = new Field[] {
-    		// setting, display name, description, default
-    		Field.create("thread used", "thread used", "use threads for fetching/receiving data setting this to 'true' typically doesn't end well", false),
-    		Field.create("date format", "date format", "default date format is 2 digit date 1940->2039 set this to 'iso' or make sure you only have dates in this range, performance is ambysmal if you don't not to mention lots of missing data", "iso"),
-    		Field.create("keep alive", "keep alive", "send heart beat to keep the connection alive", true),
+    private static Field[] JdbcFields = new Field[] {
+    		
+    		As400ConnectorConfig.FORCE_CCSID, 
+    		As400ConnectorConfig.DATE_FORMAT, 
+    		As400ConnectorConfig.DB_ERRORS, 
+    		As400ConnectorConfig.THREAD_USED,
+    		As400ConnectorConfig.KEEP_ALIVE,
+    		
+    		// don't pop up a GUI prompt
     		Field.create("prompt", "prompt", "do you want a GUI prompt for the password if the password is wrong", false),
-    		Field.create("errors", "full error reporting", "jdbc level of detail to include options are: 'basic', or 'full'", "full"),
-    		Field.create("forced_ccsid", "force_ccsid",  "ignore all the information on your system and tables and use this encoding anyway", -1)
 	};
 
     private static final ConnectionFactory FACTORY = JdbcConnection.patternBasedFactory(URL_PATTERN,
-            AS400JDBCDriverForcedCcsid.class.getName(), As400JdbcConnection.class.getClassLoader(), fields);
+            AS400JDBCDriverForcedCcsid.class.getName(), As400JdbcConnection.class.getClassLoader(), JdbcFields);
 
     public As400JdbcConnection(JdbcConfiguration config) {
-        super(config, FACTORY, "'", "'");
+        super(withDefaults(config), FACTORY, "'", "'");
         this.forcedCcsid = config.getInteger(As400ConnectorConfig.FORCE_CCSID);
         this.config = config;
         realDatabaseName = retrieveRealDatabaseName();
         log.debug("connection:" + this.connectionString(URL_PATTERN));
     }
 
+    static JdbcConfiguration withDefaults(JdbcConfiguration config) {
+    	Map<String, String> m = new HashMap<>();
+    	for (Field f: JdbcFields) {
+    		if (!config.hasKey(f)) {
+    			m.put(f.name(), f.defaultValueAsString());
+    		}
+    	}
+    	if (m.isEmpty()) {
+    		return config;
+    	}
+    	
+    	return JdbcConfiguration.adapt(config.merge( JdbcConfiguration.adapt(Configuration.from(m))));
+
+    }
+    
     public List<FileFilter> shortIncludes(String schema, String includes) {
         if (includes == null || includes.isBlank()) {
             return Collections.<FileFilter>emptyList();
