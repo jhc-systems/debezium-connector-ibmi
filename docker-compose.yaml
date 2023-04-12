@@ -1,0 +1,148 @@
+version: '3.5'
+#network_mode: "host"
+services:
+
+  mskafka:
+    image: redpandadata/redpanda:v22.3.15
+    container_name: mskafka
+    expose:
+      - 9092
+      - 8081
+    ports:
+      - "127.0.0.1:9092:9092"
+      - "127.0.0.1:8081:8081"
+    restart: on-failure
+    networks:
+      - kafkastreams-network
+    command:
+      - redpanda
+      - start
+      - --kafka-addr internal://0.0.0.0:9092,external://0.0.0.0:19092
+      # Address the broker advertises to clients that connect to the Kafka API.
+      # Use the internal addresses to connect to the Redpanda brokers'
+      # from inside the same Docker network.
+      # Use the external addresses to connect to the Redpanda brokers'
+      # from outside the Docker network.
+      - --advertise-kafka-addr internal://mskafka:9092,external://localhost:19092
+      - --pandaproxy-addr internal://0.0.0.0:8082,external://0.0.0.0:18082
+      # Address the broker advertises to clients that connect to the HTTP Proxy.
+      - --advertise-pandaproxy-addr internal://mskafka:8082,external://localhost:18082
+      - --schema-registry-addr internal://0.0.0.0:8081,external://0.0.0.0:18081
+      # Redpanda brokers use the RPC API to communicate with eachother internally.
+      - --rpc-addr mskafka:33145
+      - --advertise-rpc-addr mskafka:33145
+      # Tells Seastar (the framework Redpanda uses under the hood) to use 1 core on the system.
+      - --smp 1
+      # The amount of memory to make available to Redpanda.
+      - --memory 1G
+      # Mode dev-container uses well-known configuration properties for development in containers.
+      - --mode dev-container
+      # enable logs for debugging.
+      - --default-log-level=debug
+    volumes:
+      - mskafka:/var/lib/redpanda/data
+
+  redpanda-console:
+    container_name: redpanda-console
+    image: docker.redpanda.com/vectorized/console:v2.2.2
+    networks:
+      - kafkastreams-network
+    entrypoint: /bin/sh
+    command: -c 'echo "$$CONSOLE_CONFIG_FILE" > /tmp/config.yml; /app/console'
+    environment:
+      CONFIG_FILEPATH: /tmp/config.yml
+      CONSOLE_CONFIG_FILE: |
+        kafka:
+          brokers: ["mskafka:9092"]
+          schemaRegistry:
+            enabled: true
+            urls: ["http://mskafka:8081"]
+        redpanda:
+          adminApi:
+            enabled: true
+            urls: ["http://mskafka:9644"]
+    ports:
+      - 127.0.0.1:8080:8080
+    depends_on:
+      - mskafka
+
+  # ibmi-connector:
+  #  image: eu.gcr.io/fnz-poa-development/debezium-connector-ibmi:latest-SNAPSHOT
+  #  container_name: ibmi-connector
+  #  environment:
+  #    - DEBEZIUM_BOOTSTRAP_SERVERS=mskafka:9092
+  #    - DEBEZIUM_GROUP_ID=1
+  #    - DEBEZIUM_KEY_CONVERTER=io.confluent.connect.avro.AvroConverter
+  #    - DEBEZIUM_KEY_CONVERTER_SCHEMA_REGISTRY_URL=http://mskafka:8081
+  #    - DEBEZIUM_VALUE_CONVERTER=io.confluent.connect.avro.AvroConverter
+  #    - DEBEZIUM_VALUE_CONVERTER_SCHEMA_REGISTRY_URL=http://mskafka:8081
+  #    - DEBEZIUM_KEY_CONVERTER_SCHEMAS_ENABLE=true
+  #    - DEBEZIUM_VALUE_CONVERTER_SCHEMAS_ENABLE=true
+  #    - DEBEZIUM_OFFSET_STORAGE_TOPIC=ibmi_connector_offsets
+  #    - DEBEZIUM_OFFSET_STORAGE_REPLICATION_FACTOR=1
+  #    - DEBEZIUM_CONFIG_STORAGE_TOPIC=ibmi_connector_configs
+  #    - DEBEZIUM_CONFIG_STORAGE_REPLICATION_FACTOR=1
+  #    - DEBEZIUM_STATUS_STORAGE_TOPIC=ibmi_connector_statuses
+  #    - DEBEZIUM_STATUS_STORAGE_REPLICATION_FACTOR=1
+  #    - DEBEZIUM_OFFSET_FLUSH_INTERVAL_MS=60000
+  #    - DEBEZIUM_REST_HOST_NAME=0.0.0.0
+  #    - DEBEZIUM_REST_PORT=8083
+  #    - DEBEZIUM_REST_ADVERTISED_HOST_NAME=mskafka
+  #    - DEBEZIUM_REST_ADVERTISED_PORT=8083
+  #    - DEBEZIUM_PLUGIN_PATH=/kafka/connect
+  #    - DEBEZIUM_TASK_SHUTDOWN_GRACEFUL_TIMEOUT_MS=10000
+  #    - DEBEZIUM_OFFSET_FLUSH_TIMEOUT_MS=5000
+  #    - DEBEZIUM_INTERNAL_VALUE_CONVERTER=org.apache.kafka.connect.json.JsonConverter
+  #    - DEBEZIUM_INTERNAL_KEY_CONVERTER=org.apache.kafka.connect.json.JsonConverter
+  #    - DEBEZIUM_CONNECTOR_CLIENT_CONFIG_OVERRIDE_POLICY=org.apache.kafka.connect.connector.policy.NoneConnectorClientConfigOverridePolicy
+  #    - PARTITIONS=1
+  #    - REPLICATION_FACTOR=1
+  #    - DEBEZIUM_PRODUCER_INTERCEPTOR_CLASSES=brave.kafka.interceptor.TracingProducerInterceptor
+  #    - DEBEZIUM_CONSUMER_INTERCEPTOR_CLASSES=brave.kafka.interceptor.TracingConsumerInterceptor
+  #    - DEBEZIUM_PRODUCER_ZIPKIN_SENDER_TYPE=KAFKA
+  #    - DEBEZIUM_PRODUCER_ZIPKIN_LOCAL_SERVICE_NAME=debezium-ibmi-local
+  #    - DEBEZIUM_PRODUCER_ZIPKIN_REMOTE_SERVICE_NAME=debezium-ibmi-remote
+  #    - DEBEZIUM_PRODUCER_ZIPKIN_KAFKA_BOOTSTRAP_SERVERS=mskafka:9092
+  #    - DEBEZIUM_PRODUCER_ZIPKIN_SAMPLER_RATE=1
+  #    - DISPLAY=
+  #    - JVM_OPTS=-Djava.awt.headless=true
+  #  expose:
+  #    - 8083
+  #    - 7071
+  #  ports:
+  #    - "127.0.0.1:8083:8083"
+  #    - "127.0.0.1:7071:7071"
+  #  depends_on:
+  #    - "mskafka"
+  #  extra_hosts:
+  #    - "ibmi.domain:10.10.10.10"
+  #  networks:
+  #    - kafkastreams-network
+
+  kafdrop:
+    image: "obsidiandynamics/kafdrop:3.30.0"
+    container_name: kafdrop
+    environment:
+      - KAFKA_BROKERCONNECT=mskafka:9092
+      - SCHEMAREGISTRY_CONNECT=http://mskafka:8081
+      - JVM_OPTS=-Xms64M -Xmx1G
+      - MESSAGE_FORMAT=AVRO
+    expose:
+      - 9000
+    ports:
+      - 127.0.0.1:9000:9000
+    restart: on-failure
+    networks:
+      - kafkastreams-network
+    depends_on:
+      - "mskafka"
+
+networks:
+  kafkastreams-network:
+    name: ks
+
+volumes:
+  ksql-libs:
+  kafka-storage:
+  mskafka: null
+
