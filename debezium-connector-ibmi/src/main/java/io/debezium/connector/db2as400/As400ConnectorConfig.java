@@ -91,6 +91,10 @@ public class As400ConnectorConfig extends RelationalDatabaseConnectorConfig {
      */
     public static final Field MAX_SERVER_SIDE_ENTRIES = Field.create("max_entries", "max server side entries", "Maximum number of journal entries to process server side when filtering", RetrieveConfig.DEFAULT_MAX_SERVER_SIDE_ENTRIES);
 
+    public static final Field DATE_FORMAT= Field.create("date format", "date format", "default date format is 2 digit date 1940->2039 set this to 'iso' or make sure you only have dates in this range, performance is ambysmal if you don't not to mention lots of missing data", "iso");
+
+    public static final Field DB_ERRORS = Field.create("errors", "full error reporting", "jdbc level of detail to include options are: 'basic', or 'full'", "full");
+    
     public static final long DEFAULT_MAX_JOURNAL_TIMEOUT = 60000;
     /**
      * Maximum number of journal entries to process server side
@@ -108,7 +112,7 @@ public class As400ConnectorConfig extends RelationalDatabaseConnectorConfig {
 
     public As400ConnectorConfig(Configuration config) {
         super(config, new SystemTablesPredicate(),
-                tableToString, 1, ColumnFilterMode.SCHEMA, false);
+                tableToString, 1, ColumnFilterMode.SCHEMA, false);        
         this.config = config;
         this.snapshotMode = SnapshotMode.parse(config.getString(SNAPSHOT_MODE), SNAPSHOT_MODE.defaultValueAsString());
         this.tableFilters = new As400NormalRelationalTableFilters(config, new SystemTablesPredicate(), tableToString);
@@ -201,14 +205,14 @@ public class As400ConnectorConfig extends RelationalDatabaseConnectorConfig {
 
     public static Field.Set ALL_FIELDS = Field.setOf(JdbcConfiguration.HOSTNAME, USER, PASSWORD, SCHEMA, BUFFER_SIZE,
             RelationalDatabaseConnectorConfig.SNAPSHOT_SELECT_STATEMENT_OVERRIDES_BY_TABLE, KEEP_ALIVE, THREAD_USED, SOCKET_TIMEOUT,
-            MAX_SERVER_SIDE_ENTRIES, TOPIC_NAMING_STRATEGY, FORCE_CCSID);
+            MAX_SERVER_SIDE_ENTRIES, TOPIC_NAMING_STRATEGY, FORCE_CCSID, DB_ERRORS, DATE_FORMAT);
 
     public static ConfigDef configDef() {
         ConfigDef c = RelationalDatabaseConnectorConfig.CONFIG_DEFINITION.edit()
                 .name("ibmi")
                 .type(
                         JdbcConfiguration.HOSTNAME, USER, PASSWORD, SCHEMA, BUFFER_SIZE,
-                        KEEP_ALIVE, THREAD_USED, SOCKET_TIMEOUT, FORCE_CCSID)
+                        KEEP_ALIVE, THREAD_USED, SOCKET_TIMEOUT, FORCE_CCSID, DB_ERRORS, DATE_FORMAT)
                 .connector()
                 .events(
                         As400OffsetContext.EVENT_SEQUENCE_FIELD,
