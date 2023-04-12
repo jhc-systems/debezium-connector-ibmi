@@ -6,11 +6,16 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.Properties;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import com.fnz.db2.journal.retrieve.Connect;
 import com.ibm.as400.access.AS400;
+import com.ibm.as400.access.AS400JDBCConnectionForcedCcsid;
+import com.ibm.as400.access.AS400JDBCDriverRegistration;
 
 public class TestConnector {
-    
+    private static final Logger log = LogManager.getLogger(TestConnector.class);
     private Connect<AS400, IOException> as400Connect;
     private Connect<Connection, SQLException> sqlConnect;
     private final String schema;
@@ -20,6 +25,7 @@ public class TestConnector {
         String password =  System.getenv("ISERIES_PASSWORD");
         String host =  System.getenv("ISERIES_HOST");
         this.schema =  System.getenv("ISERIES_SCHEMA");
+        String ccsid =  System.getenv("FORCED_CCSID");
         
         
         String url = String.format("jdbc:as400:%s", host);
@@ -27,6 +33,11 @@ public class TestConnector {
         final Properties props = new Properties();
         props.setProperty("user", user);
         props.setProperty("password", password);
+    	if (ccsid != null) {
+    		AS400JDBCDriverRegistration.registerCcsidDriver();
+    		props.setProperty(AS400JDBCConnectionForcedCcsid.FORCED_CCSID, ccsid);
+    		log.info("forced ccsid " + ccsid);
+    	}
 
         this.as400Connect = new Connect<AS400, IOException>() {
             AS400 as400 = new AS400(host, user, password);

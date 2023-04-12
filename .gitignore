@@ -3,4 +3,9 @@ target/
 .classpath
 .project
 connector-health/.flattened-pom.xml
+debezium-connector-ibmi/.flattened-pom.xml
+journal-parsing/.flattened-pom.xml
+jt400-override-ccsid/.flattened-pom.xml
 kafka-smt-collection/.flattened-pom.xml
+structured-logging/.flattened-pom.xml
+.vscode/
