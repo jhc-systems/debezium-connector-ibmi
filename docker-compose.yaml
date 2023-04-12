@@ -66,58 +66,58 @@ services:
     depends_on:
       - mskafka
 
-  # ibmi-connector:
-  #  image: eu.gcr.io/fnz-poa-development/debezium-connector-ibmi:latest-SNAPSHOT
-  #  container_name: ibmi-connector
-  #  environment:
-  #    - DEBEZIUM_BOOTSTRAP_SERVERS=mskafka:9092
-  #    - DEBEZIUM_GROUP_ID=1
-  #    - DEBEZIUM_KEY_CONVERTER=io.confluent.connect.avro.AvroConverter
-  #    - DEBEZIUM_KEY_CONVERTER_SCHEMA_REGISTRY_URL=http://mskafka:8081
-  #    - DEBEZIUM_VALUE_CONVERTER=io.confluent.connect.avro.AvroConverter
-  #    - DEBEZIUM_VALUE_CONVERTER_SCHEMA_REGISTRY_URL=http://mskafka:8081
-  #    - DEBEZIUM_KEY_CONVERTER_SCHEMAS_ENABLE=true
-  #    - DEBEZIUM_VALUE_CONVERTER_SCHEMAS_ENABLE=true
-  #    - DEBEZIUM_OFFSET_STORAGE_TOPIC=ibmi_connector_offsets
-  #    - DEBEZIUM_OFFSET_STORAGE_REPLICATION_FACTOR=1
-  #    - DEBEZIUM_CONFIG_STORAGE_TOPIC=ibmi_connector_configs
-  #    - DEBEZIUM_CONFIG_STORAGE_REPLICATION_FACTOR=1
-  #    - DEBEZIUM_STATUS_STORAGE_TOPIC=ibmi_connector_statuses
-  #    - DEBEZIUM_STATUS_STORAGE_REPLICATION_FACTOR=1
-  #    - DEBEZIUM_OFFSET_FLUSH_INTERVAL_MS=60000
-  #    - DEBEZIUM_REST_HOST_NAME=0.0.0.0
-  #    - DEBEZIUM_REST_PORT=8083
-  #    - DEBEZIUM_REST_ADVERTISED_HOST_NAME=mskafka
-  #    - DEBEZIUM_REST_ADVERTISED_PORT=8083
-  #    - DEBEZIUM_PLUGIN_PATH=/kafka/connect
-  #    - DEBEZIUM_TASK_SHUTDOWN_GRACEFUL_TIMEOUT_MS=10000
-  #    - DEBEZIUM_OFFSET_FLUSH_TIMEOUT_MS=5000
-  #    - DEBEZIUM_INTERNAL_VALUE_CONVERTER=org.apache.kafka.connect.json.JsonConverter
-  #    - DEBEZIUM_INTERNAL_KEY_CONVERTER=org.apache.kafka.connect.json.JsonConverter
-  #    - DEBEZIUM_CONNECTOR_CLIENT_CONFIG_OVERRIDE_POLICY=org.apache.kafka.connect.connector.policy.NoneConnectorClientConfigOverridePolicy
-  #    - PARTITIONS=1
-  #    - REPLICATION_FACTOR=1
-  #    - DEBEZIUM_PRODUCER_INTERCEPTOR_CLASSES=brave.kafka.interceptor.TracingProducerInterceptor
-  #    - DEBEZIUM_CONSUMER_INTERCEPTOR_CLASSES=brave.kafka.interceptor.TracingConsumerInterceptor
-  #    - DEBEZIUM_PRODUCER_ZIPKIN_SENDER_TYPE=KAFKA
-  #    - DEBEZIUM_PRODUCER_ZIPKIN_LOCAL_SERVICE_NAME=debezium-ibmi-local
-  #    - DEBEZIUM_PRODUCER_ZIPKIN_REMOTE_SERVICE_NAME=debezium-ibmi-remote
-  #    - DEBEZIUM_PRODUCER_ZIPKIN_KAFKA_BOOTSTRAP_SERVERS=mskafka:9092
-  #    - DEBEZIUM_PRODUCER_ZIPKIN_SAMPLER_RATE=1
-  #    - DISPLAY=
-  #    - JVM_OPTS=-Djava.awt.headless=true
-  #  expose:
-  #    - 8083
-  #    - 7071
-  #  ports:
-  #    - "127.0.0.1:8083:8083"
-  #    - "127.0.0.1:7071:7071"
-  #  depends_on:
-  #    - "mskafka"
-  #  extra_hosts:
-  #    - "ibmi.domain:10.10.10.10"
-  #  networks:
-  #    - kafkastreams-network
+  ibmi-connector:
+   image: silllencem/debezium-connector-ibmi:latest
+   container_name: ibmi-connector
+   environment:
+     - DEBEZIUM_BOOTSTRAP_SERVERS=mskafka:9092
+     - DEBEZIUM_GROUP_ID=1
+     - DEBEZIUM_KEY_CONVERTER=io.confluent.connect.avro.AvroConverter
+     - DEBEZIUM_KEY_CONVERTER_SCHEMA_REGISTRY_URL=http://mskafka:8081
+     - DEBEZIUM_VALUE_CONVERTER=io.confluent.connect.avro.AvroConverter
+     - DEBEZIUM_VALUE_CONVERTER_SCHEMA_REGISTRY_URL=http://mskafka:8081
+     - DEBEZIUM_KEY_CONVERTER_SCHEMAS_ENABLE=true
+     - DEBEZIUM_VALUE_CONVERTER_SCHEMAS_ENABLE=true
+     - DEBEZIUM_OFFSET_STORAGE_TOPIC=ibmi_connector_offsets
+     - DEBEZIUM_OFFSET_STORAGE_REPLICATION_FACTOR=1
+     - DEBEZIUM_CONFIG_STORAGE_TOPIC=ibmi_connector_configs
+     - DEBEZIUM_CONFIG_STORAGE_REPLICATION_FACTOR=1
+     - DEBEZIUM_STATUS_STORAGE_TOPIC=ibmi_connector_statuses
+     - DEBEZIUM_STATUS_STORAGE_REPLICATION_FACTOR=1
+     - DEBEZIUM_OFFSET_FLUSH_INTERVAL_MS=60000
+     - DEBEZIUM_REST_HOST_NAME=0.0.0.0
+     - DEBEZIUM_REST_PORT=8083
+     - DEBEZIUM_REST_ADVERTISED_HOST_NAME=mskafka
+     - DEBEZIUM_REST_ADVERTISED_PORT=8083
+     - DEBEZIUM_PLUGIN_PATH=/kafka/connect
+     - DEBEZIUM_TASK_SHUTDOWN_GRACEFUL_TIMEOUT_MS=10000
+     - DEBEZIUM_OFFSET_FLUSH_TIMEOUT_MS=5000
+     - DEBEZIUM_INTERNAL_VALUE_CONVERTER=org.apache.kafka.connect.json.JsonConverter
+     - DEBEZIUM_INTERNAL_KEY_CONVERTER=org.apache.kafka.connect.json.JsonConverter
+     - DEBEZIUM_CONNECTOR_CLIENT_CONFIG_OVERRIDE_POLICY=org.apache.kafka.connect.connector.policy.NoneConnectorClientConfigOverridePolicy
+     - PARTITIONS=1
+     - REPLICATION_FACTOR=1
+     - DEBEZIUM_PRODUCER_INTERCEPTOR_CLASSES=brave.kafka.interceptor.TracingProducerInterceptor
+     - DEBEZIUM_CONSUMER_INTERCEPTOR_CLASSES=brave.kafka.interceptor.TracingConsumerInterceptor
+     - DEBEZIUM_PRODUCER_ZIPKIN_SENDER_TYPE=KAFKA
+     - DEBEZIUM_PRODUCER_ZIPKIN_LOCAL_SERVICE_NAME=debezium-ibmi-local
+     - DEBEZIUM_PRODUCER_ZIPKIN_REMOTE_SERVICE_NAME=debezium-ibmi-remote
+     - DEBEZIUM_PRODUCER_ZIPKIN_KAFKA_BOOTSTRAP_SERVERS=mskafka:9092
+     - DEBEZIUM_PRODUCER_ZIPKIN_SAMPLER_RATE=1
+     - DISPLAY=
+     - JVM_OPTS=-Djava.awt.headless=true
+   expose:
+     - 8083
+     - 7071
+   ports:
+     - "127.0.0.1:8083:8083"
+     - "127.0.0.1:7071:7071"
+   depends_on:
+     - "mskafka"
+   extra_hosts:
+     - "ibmi.domain:10.10.10.10"
+   networks:
+     - kafkastreams-network
 
   kafdrop:
     image: "obsidiandynamics/kafdrop:3.30.0"
