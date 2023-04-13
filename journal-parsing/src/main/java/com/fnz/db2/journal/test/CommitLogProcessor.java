@@ -1,9 +1,7 @@
 package com.fnz.db2.journal.test;
 
-import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.math.BigInteger;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -73,44 +71,42 @@ public class CommitLogProcessor {
 		long startTime = System.currentTimeMillis();
 		
 		
-		try (PrintWriter pw = new PrintWriter(new File("exceptions.txt"))) {
-			JournalInfo journal = JournalInfoRetrieval.getJournal(as400Connect.connection(), schema);
-			log.info("journal: " + journal);
-			RetrieveConfig config = new RetrieveConfigBuilder()
-					.withAs400(as400Connect)
-					.withJournalInfo(journal)
-					.withDumpFolder("./bad-journal")
-					.withServerFiltering(false)
-					.withIncludeFiles(includes)
-					.withMaxServerSideEntries(100)
-					.build();
-			RetrieveJournal rj = new RetrieveJournal(config, journalInfoRetrieval);
+		JournalInfo journal = JournalInfoRetrieval.getJournal(as400Connect.connection(), schema);
+		log.info("journal: {}", journal);
+		RetrieveConfig config = new RetrieveConfigBuilder()
+				.withAs400(as400Connect)
+				.withJournalInfo(journal)
+				.withDumpFolder("./bad-journal")
+				.withServerFiltering(true)
+				.withIncludeFiles(includes)
+				.withMaxServerSideEntries(100)
+				.build();
+		RetrieveJournal rj = new RetrieveJournal(config, journalInfoRetrieval);
 
-			do {
-				lastPosition = new JournalPosition(nextPosition);
-				nextPosition = retrieveJorunal(as400Connect, journal, rj, nextPosition, pw);
-				log.info("after : " + nextPosition + " previous " + lastPosition);
-				if (nextPosition.equals(lastPosition)) {
-					log.info("caught up");
-					Thread.sleep(1000);
-				}
-			} while (!nextPosition.equals(lastPosition));
+		do {
+			lastPosition = new JournalPosition(nextPosition);
+			nextPosition = retrieveJorunal(as400Connect, journal, rj, nextPosition);
+			log.info("after : {} previous {}", nextPosition, lastPosition);
+			if (nextPosition.equals(lastPosition)) {
+				log.info("caught up");
+				Thread.sleep(1000);
+			}
+		} while (!nextPosition.equals(lastPosition));
 			
-		}
 		long end = System.currentTimeMillis();
 		
-		log.info("time taken " + (end-startTime)/1000.0);
+		log.info("time taken {}", (end-startTime)/1000.0);
 		
 	}
 
-	private static JournalPosition retrieveJorunal(Connect<AS400, IOException> connector, JournalInfo journal, RetrieveJournal r, JournalPosition position, PrintWriter pw)
+	private static JournalPosition retrieveJorunal(Connect<AS400, IOException> connector, JournalInfo journal, RetrieveJournal r, JournalPosition position)
 			throws Exception {
 
 		boolean success = r.retrieveJournal(position);
-		log.info("success: " + success + " position: " + position);
+		log.info("success: {} position: {}", success, position);
 
 		if (success) {
-			log.info("more journal data: " + r.futureDataAvailable());
+			log.info("more journal data: {}", r.futureDataAvailable());
 			while (r.nextEntry()) {
 				EntryHeader eheader = r.getEntryHeader();
 
@@ -132,7 +128,7 @@ public class CommitLogProcessor {
 						break;
 					case ADD_ROW2,ADD_ROW1:
                         log.debug("add row lib: {} file: {} member: {}", lib, file, member);
-//                        dumpTable(eheader, r, file, lib, member);
+                        dumpTable(eheader, r, file, lib, member);
                         break;
                     case BEFORE_IMAGE:
                         log.debug("update row old values lib: {} file: {} member: {}", lib, file, member);
@@ -155,10 +151,10 @@ public class CommitLogProcessor {
             }
             
             r.getFirstHeader().nextPosition().map(jp -> {
-				log.info("next offset is " + jp.toString());
+				log.info("next offset is {}", jp.toString());
 				return null;
 			});
-			log.info("next offset == " + r.getPosition());
+			log.info("next offset == {}", r.getPosition());
 			
 			
 			position.setPosition(r.getPosition());
@@ -195,7 +191,7 @@ public class CommitLogProcessor {
 				Optional<TableInfo> tableInfoOpt = fileDecoder.getRecordFormat(eheader.getFile(), eheader.getLibrary());
 				tableInfoOpt.map(tableInfo -> {
 					try {
-//					log.info("tableInfo: " + tableInfo);
+					log.info("tableInfo: {}", tableInfo);
 	
 					Object[] fields = rnje.decode(fileDecoder);
 					if (fields != null) {
@@ -205,8 +201,7 @@ public class CommitLogProcessor {
 							String value = "No value found";
 							if (f == null) {
 								value = "null";
-							} else if (f instanceof byte[]) {
-								byte[] data = (byte[])f;
+							} else if (f instanceof byte[] data) {
 								StringBuilder sb = new StringBuilder(data.length * 2);
 								for(byte b: data)
 								      sb.append(String.format("%02x", b));

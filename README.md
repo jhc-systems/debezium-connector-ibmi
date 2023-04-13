@@ -4,6 +4,22 @@ Use the IBM I journal as a source of CDC events see https://bitbucket.org/jhc-sy
 
 # Configuration
 
+## IBMI Permissions
+
+GRTOBJAUT OBJ(<JRNLIB>) OBJTYPE(*LIB) USER(<CDC_USER>) AUT(*EXECUTE)
+GRTOBJAUT OBJ(<JRNLIB>/*ALL) OBJTYPE(*JRNRCV) USER(<CDC_USER>) AUT(*USE)
+GRTOBJAUT OBJ(<JRNLIB>/<JRN>) OBJTYPE(*JRN) USER(<CDC_USER>) AUT(*USE *OBJEXIST)
+ 
+GRTOBJAUT OBJ(<FIGLIB>) OBJTYPE(*LIB) USER(<CDC_USER>) AUT(*EXECUTE)
+GRTOBJAUT OBJ(<FIGLIB>/*ALL) OBJTYPE(*FILE) USER(<CDC_USER>) AUT(*USE)
+ 
+Where:
+ 
+* <JRNLIB> is the library where the journal and receivers reside
+* <JRN> is the journal name
+* <FIGLIB> is the Figaro database library
+* <CDC_USER> is the username of the CDC service account
+
 ## Required
 The following environment variables are mandatory configuration and have no default values
 

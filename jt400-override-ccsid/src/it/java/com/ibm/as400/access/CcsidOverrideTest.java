@@ -16,12 +16,14 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Properties;
+import java.util.logging.Logger;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 public class CcsidOverrideTest {
+	private static final Logger log = Logger.getLogger(CcsidOverrideTest.class.toString());
 
 	private static final int columnCcsid = 37;
 	Charset columnCcsidCP = Charset.forName(String.format("CP%03d", columnCcsid));

@@ -69,15 +69,16 @@ see: https://www.ibm.com/docs/en/i/7.4?topic=services-display-journal-table-func
 select * from table (Display_Journal(
   'F63QULDVES',     'FIGJRN',  -- Journal library and name
   ' ','*CURCHAIN',        -- Receiver library and name
-  CAST('2021-09-29-14.01.15.000000' as TIMESTAMP), -- Starting timestamp
+  CAST('2023-04-06-00.00.00.000000' as TIMESTAMP), -- Starting timestamp
   CAST(null as DECIMAL(21,0)), -- Starting sequence number
-  '',               -- Journal codes
-  '',   0,          -- Journal entries
-  '','',            -- Object library, Object name
-  '','',            -- Object type, Object member
-  '',            -- User
-  '',               -- Job
-  ''                -- Program        
+  '',              -- Journal codes
+  '',              -- Journal entries
+  '',  '',         -- Object library, Object name - library alone OK, name also needs library
+  '*FILE', '*ALL', -- Object type, Object member
+  '',              -- User
+  '',              -- Job
+  '',              -- Program 
+  ''       			-- EOF delay
 ) ) as x;
 ```
 
