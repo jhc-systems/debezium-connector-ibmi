@@ -110,7 +110,7 @@ class JournalEntryCcsidText {
 		assertEquals(true, foundInsert, "insert journal entry found");
 	}
 	
-	private static void setupSchemaAndTable() throws SQLException {
+	public static void setupSchemaAndTable() throws SQLException {
 		Connection con = sqlConnect.connection(); // debezium doesn't close connections
 		try (Statement stmt = con.createStatement()) {
 			createSchema(stmt);

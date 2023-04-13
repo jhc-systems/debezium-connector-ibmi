@@ -1,6 +1,12 @@
 package com.fnz.db2.journal.retrieve;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class StringHelpers {
+	private StringHelpers() { }
+	
+	private static Logger log = LoggerFactory.getLogger(StringHelpers.class);
 	 /**
 	  * After the program run, invoke getReceiver() to get the instance of the Receiver, which will provide the returning result.
 	  * @return
@@ -13,7 +19,10 @@ public class StringHelpers {
 	  * @return
 	  */
 	 public static String padLeft(String s, int n) {
-	     return String.format("%1$" + n + "s", s);  
+		 if (s.length() > n) {
+			 log.error("String '{}' longer than padded length {} truncating", s, n, new IllegalArgumentException("Too long"));
+		 }
+	     return String.format(String.format("%%1$%ds", n), s).substring(0, n);  
 	 }
 	  
 	 /**
@@ -23,12 +32,16 @@ public class StringHelpers {
 	  * @return
 	  */
 	 public static String padRight(String s, int n) {
-	      return String.format("%1$-" + n + "s", s);  
+		 if (s.length() > n) {
+			 log.error("String '{}' longer than padded length {} truncating", s, n, new IllegalArgumentException("Too long"));
+		 }
+		 return String.format(String.format("%%1$-%ds", n), s).substring(0, n);
 	 }
 	 
 	 public static String safeTrim(String s) {
-	     if (s == null)
+	     if (s == null) {
 	         return s;
+	     }
 	     return s.trim();
 	 }
 }
