@@ -12,16 +12,16 @@ Written to add ibmi support to debezium
 debezium-connector-ibmi
 
 
-# No journal entries found check journalling is enabled and set to *BOTH 
+# No journal entries found check journalling is enabled and set to *BOTH
 
 `dspfd FINACC`
 
 ```
-    File is currently journaled . . . . . . . . :            Yes          
-    Current or last journal . . . . . . . . . . :            FIGJRN       
-      Library . . . . . . . . . . . . . . . . . :            F63QULDVES   
-    Journal images  . . . . . . . . . . . . . . : IMAGES     *BOTH        
-    
+    File is currently journaled . . . . . . . . :            Yes
+    Current or last journal . . . . . . . . . . :            FIGJRN
+      Library . . . . . . . . . . . . . . . . . :            F63QULDVES
+    Journal images  . . . . . . . . . . . . . . : IMAGES     *BOTH
+
 ```
 
 # Permissions
@@ -29,12 +29,12 @@ debezium-connector-ibmi
 GRTOBJAUT OBJ(<JRNLIB>) OBJTYPE(*LIB) USER(<CDC_USER>) AUT(*EXECUTE)
 GRTOBJAUT OBJ(<JRNLIB>/*ALL) OBJTYPE(*JRNRCV) USER(<CDC_USER>) AUT(*USE)
 GRTOBJAUT OBJ(<JRNLIB>/<JRN>) OBJTYPE(*JRN) USER(<CDC_USER>) AUT(*USE *OBJEXIST)
- 
+
 GRTOBJAUT OBJ(<FIGLIB>) OBJTYPE(*LIB) USER(<CDC_USER>) AUT(*EXECUTE)
 GRTOBJAUT OBJ(<FIGLIB>/*ALL) OBJTYPE(*FILE) USER(<CDC_USER>) AUT(*USE)
- 
+
 Where:
- 
+
 * <JRNLIB> is the library where the journal and receivers reside
 * <JRN> is the journal name
 * <FIGLIB> is the Figaro database library
@@ -77,7 +77,7 @@ select * from table (Display_Journal(
   '*FILE', '*ALL', -- Object type, Object member
   '',              -- User
   '',              -- Job
-  '',              -- Program 
+  '',              -- Program
   ''       			-- EOF delay
 ) ) as x;
 ```
@@ -85,9 +85,27 @@ select * from table (Display_Journal(
 or simply:
 
 ```
-SELECT entry_timestamp, receiver_name, sequence_number, journal_code, journal_entry_type, object 
-  FROM TABLE (QSYS2.DISPLAY_JOURNAL( 'F63QULDVES', 'FIGJRN')) AS JT 
+SELECT entry_timestamp, receiver_name, sequence_number, journal_code, journal_entry_type, object
+  FROM TABLE (QSYS2.DISPLAY_JOURNAL( 'F63QULDVES', 'FIGJRN')) AS JT
   ORDER BY entry_timestamp desc;
+```
+
+## list of journals
+
+```
+SELECT
+	journal_receiver_name,
+	first_sequence_number,
+	LAST_sequence_number,
+	attach_timestamp
+FROM
+	QSYS2.JOURNAL_RECEIVER_INFO
+WHERE
+	journal_name = 'FIGJRN'
+	AND JOURNAL_RECEIVER_LIBRARY = 'F63QUALDB4'
+	AND status = 'ONLINE'
+ORDER BY
+	attach_timestamp ASC ;
 ```
 
 # TODO
@@ -117,9 +135,9 @@ When the library is pointing to the wrong journal, it can be fixed with:
 STRJRNLIB LIB(<library>) JRN(<journal)
 ```
 
-# gotyas 
+# gotyas
 
-From the documentation: https://www.ibm.com/docs/en/i/7.5?topic=ssw_ibm_i_75/apis/QJORJRNE.html 
+From the documentation: https://www.ibm.com/docs/en/i/7.5?topic=ssw_ibm_i_75/apis/QJORJRNE.html
 
 ## Restrictions - at top of page
 If the sequence number is reset in the range of the receivers specified, the first occurrence of starting sequence number or ending sequence number is used if these key fields are specified.

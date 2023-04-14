@@ -13,6 +13,10 @@ steps:
       fi
       date
   - name: "eu.gcr.io/$PROJECT_ID/java17-maven3-8-gcp-alpine:latest"
+    secretEnv:
+      - NEXUS_USERNAME
+      - NEXUS_PASSWORD
+      - SONAR_TOKEN
     entrypoint: "/bin/bash"
     args:
     - "-c"
