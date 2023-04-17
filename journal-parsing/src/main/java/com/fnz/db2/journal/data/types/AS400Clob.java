@@ -124,8 +124,8 @@ public class AS400Clob implements AS400DataType {
 		log.debug("addresss re-encoded {}", toHex(address16));
 		log.debug("address raw {}", toHex(addressbyte));
 
-		final ProgramParameter[] parameters = new ProgramParameter[] { new ProgramParameter(
-				ProgramParameter.PASS_BY_REFERENCE, new AS400Bin4().toBytes(Long.valueOf(addressLow).intValue())), };
+		final ProgramParameter[] parameters = new ProgramParameter[] {
+				new ProgramParameter(ProgramParameter.PASS_BY_REFERENCE, new AS400Bin4().toBytes((int) addressLow)), };
 
 		final ServiceProgramCall spc = new ServiceProgramCall(as400);
 

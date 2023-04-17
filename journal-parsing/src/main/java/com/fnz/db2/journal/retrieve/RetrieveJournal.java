@@ -83,12 +83,11 @@ public class RetrieveJournal {
 	 *                   to capture this and log an error as we may have missed data
 	 */
 	public boolean retrieveJournal(JournalPosition retrievePosition) throws Exception {
-		offset = -1;
-		entryHeader = null;
-		header = null;
-
-		this.position = retrievePosition;
+		this.offset = -1;
 		this.entryHeader = null;
+		this.header = null;
+		this.position = retrievePosition;
+
 		log.debug("Fetch journal at postion {}", retrievePosition);
 		final ServiceProgramCall spc = new ServiceProgramCall(config.as400().connection());
 		spc.getServerJob().setLoggingLevel(0);
@@ -141,9 +140,7 @@ public class RetrieveJournal {
 			offset = -1;
 			if (header.status() == OffsetStatus.MORE_DATA_NEW_OFFSET && header.offset() == 0) {
 				log.error("buffer too small skipping this entry {}", retrievePosition);
-				header.nextPosition().ifPresent(offset -> {
-					retrievePosition.setPosition(offset);
-				});
+				header.nextPosition().ifPresent(retrievePosition::setPosition);
 			}
 			if (!hasData()) {
 				log.debug("moving on to current position {}", latestJournalPosition);
@@ -207,7 +204,7 @@ public class RetrieveJournal {
 	}
 
 	record PositionRange(JournalPosition start, JournalPosition end) {
-	};
+	}
 
 	List<DetailedJournalReceiver> cachedReceivers = Collections.emptyList();
 	DetailedJournalReceiver cachedCurrentPosition = null;
@@ -371,9 +368,9 @@ public class RetrieveJournal {
 
 	private void updateOffsetFromContinuation() {
 		// after we hit the end use the continuation header for the next offset
-		header.nextPosition().ifPresent(offset -> {
-			log.debug("Setting continuation offset {}", offset);
-			position.setPosition(offset);
+		header.nextPosition().ifPresent(nextOffset -> {
+			log.debug("Setting continuation offset {}", nextOffset);
+			position.setPosition(nextOffset);
 		});
 	}
 
