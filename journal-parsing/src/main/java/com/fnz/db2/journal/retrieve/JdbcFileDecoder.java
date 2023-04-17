@@ -73,8 +73,8 @@ public class JdbcFileDecoder extends JournalFileEntryDecoder {
 	 * CHAR(5) Length of entry specific data 5 5 CHAR(11) Reserved 16 16 CHAR(*)
 	 * Entry specific data
 	 */
-	private static AS400Text LENGTH_DECODER = new AS400Text(5);
-	private static Object[] EMPTY = new Object[] {};
+	private static final AS400Text LENGTH_DECODER = new AS400Text(5);
+	private static final Object[] EMPTY = new Object[] {};
 
 	@Override
 	public Object[] decodeFile(EntryHeader entryHeader, byte[] data, int offset) throws Exception {
