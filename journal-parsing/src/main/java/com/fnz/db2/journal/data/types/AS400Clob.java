@@ -18,9 +18,9 @@ import com.ibm.as400.access.Trace;
 
 public class AS400Clob implements AS400DataType {
 	private static final Logger log = LoggerFactory.getLogger(AS400Clob.class);
-	private static final String defaultValue = "";
+	private static final String EMPTY_STRING = "";
 	private final AS400 as400;
-	private static byte[] EMPTY = new byte[0];
+	private static final byte[] EMPTY_BYTES = new byte[0];
 
 	public AS400Clob(AS400 as400) {
 		this.as400 = as400;
@@ -33,7 +33,7 @@ public class AS400Clob implements AS400DataType {
 
 	@Override
 	public Object getDefaultValue() {
-		return defaultValue;
+		return EMPTY_STRING;
 	}
 
 	@Override
@@ -48,7 +48,7 @@ public class AS400Clob implements AS400DataType {
 
 	@Override
 	public byte[] toBytes(Object javaValue) {
-		return EMPTY;
+		return EMPTY_BYTES;
 	}
 
 	@Override
