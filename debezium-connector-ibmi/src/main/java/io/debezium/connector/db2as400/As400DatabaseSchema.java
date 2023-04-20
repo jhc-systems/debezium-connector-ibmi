@@ -26,100 +26,89 @@ import io.debezium.util.SchemaNameAdjuster;
 
 public class As400DatabaseSchema extends RelationalDatabaseSchema implements SchemaCacheIF {
 
-    private static final Logger log = LoggerFactory.getLogger(As400DatabaseSchema.class);
-    private final As400ConnectorConfig config;
-    private final Map<String, TableInfo> map = new HashMap<>();
-    private final As400JdbcConnection jdbcConnection;
-    private final SchemaInfoConversion schemaInfoConversion;
+	private static final Logger log = LoggerFactory.getLogger(As400DatabaseSchema.class);
+	private final As400ConnectorConfig config;
+	private final Map<String, TableInfo> map = new HashMap<>();
+	private final As400JdbcConnection jdbcConnection;
+	private final SchemaInfoConversion schemaInfoConversion;
 	private final JdbcFileDecoder fileDecoder;
-    
-    public As400DatabaseSchema(As400ConnectorConfig config, 
-    		As400JdbcConnection jdbcConnection,
-			TopicNamingStrategy<TableId> topicSelector,
-            SchemaNameAdjuster schemaNameAdjuster) {
-        super(config,
-                topicSelector,
-                config.getTableFilters().dataCollectionFilter(),
-                config.getColumnFilter(),
-                new TableSchemaBuilder(
-                        new As400ValueConverters(),
-                        new As400DefaultValueConverter(),
-                        schemaNameAdjuster,
-                        config.customConverterRegistry(),
-                        config.getSourceInfoStructMaker().schema(),
-                        config.getSanitizeFieldNames(),
-                        false),
-                false,
-                config.getKeyMapper());
 
-        this.config = config;
-        this.jdbcConnection = jdbcConnection;
-		fileDecoder = new JdbcFileDecoder(jdbcConnection, jdbcConnection.getRealDatabaseName(), this, config.getForcedCcsid());
+	public As400DatabaseSchema(As400ConnectorConfig config, As400JdbcConnection jdbcConnection,
+			TopicNamingStrategy<TableId> topicSelector, SchemaNameAdjuster schemaNameAdjuster) {
+		super(config, topicSelector, config.getTableFilters().dataCollectionFilter(), config.getColumnFilter(),
+				new TableSchemaBuilder(new As400ValueConverters(), new As400DefaultValueConverter(), schemaNameAdjuster,
+						config.customConverterRegistry(), config.getSourceInfoStructMaker().schema(),
+						config.getSanitizeFieldNames(), false),
+				false, config.getKeyMapper());
 
-        schemaInfoConversion = new SchemaInfoConversion(fileDecoder);
-    }
-    
-    public JdbcFileDecoder getFileDecoder() {
-    	return fileDecoder;
-    }
+		this.config = config;
+		this.jdbcConnection = jdbcConnection;
+		fileDecoder = new JdbcFileDecoder(jdbcConnection, jdbcConnection.getRealDatabaseName(), this,
+				config.getForcedCcsid());
+
+		schemaInfoConversion = new SchemaInfoConversion(fileDecoder);
+	}
+
+	public JdbcFileDecoder getFileDecoder() {
+		return fileDecoder;
+	}
 
 	public void clearCache(String systemTableName, String schema) {
 		fileDecoder.clearCache(systemTableName, schema);
 	}
-	
+
 	public Optional<TableInfo> getRecordFormat(String systemTableName, String schema) {
-		Optional<TableInfo> oti = fileDecoder.getRecordFormat(systemTableName, schema);
+		final Optional<TableInfo> oti = fileDecoder.getRecordFormat(systemTableName, schema);
 		oti.stream().forEach(ti -> {
 			store(jdbcConnection.getRealDatabaseName(), schema, systemTableName, ti);
 		});
 		return oti;
 	}
-	
-    // assume always long name - only called from snapshotting
-    public void addSchema(Table table) {
-        TableId id = table.id();
 
-        // save for decoding
-        final Optional<String> systemTableNameOpt = jdbcConnection.getSystemName(id.schema(), id.table());
-        systemTableNameOpt.map(systemTableName -> {
-            TableInfo tableInfo = schemaInfoConversion.table2TableInfo(table);
-    		return map.put(toKey(id.catalog(), id.schema(), systemTableName), tableInfo);
+	// assume always long name - only called from snapshotting
+	public void addSchema(Table table) {
+		final TableId id = table.id();
+
+		// save for decoding
+		final Optional<String> systemTableNameOpt = jdbcConnection.getSystemName(id.schema(), id.table());
+		systemTableNameOpt.ifPresent(systemTableName -> {
+			final TableInfo tableInfo = schemaInfoConversion.table2TableInfo(table);
+			map.put(toKey(id.catalog(), id.schema(), systemTableName), tableInfo);
 		});
 
-        forwardSchema(table);
-    }
-    
-    public void forwardSchema(Table table) {
-        tables().overwriteTable(table);
-        this.buildAndRegisterSchema(table);
-    }
+		forwardSchema(table);
+	}
 
-    public String getSchemaName() {
-        return config.getSchema();
-    }
+	public void forwardSchema(Table table) {
+		tables().overwriteTable(table);
+		this.buildAndRegisterSchema(table);
+	}
 
-    @Override
-    // implements SchemaCacheIF.store - system name tables/column names
-    // assume always short name - only called from the journal
-    public void store(String database, String schema, String tableName, TableInfo tableInfo) {
-        map.put(toKey(database, schema, tableName), tableInfo);
+	public String getSchemaName() {
+		return config.getSchema();
+	}
 
-        Table table = SchemaInfoConversion.tableInfo2Table(database, schema, tableName, tableInfo);
-        forwardSchema(table);
-    }
+	@Override
+	// implements SchemaCacheIF.store - system name tables/column names
+	// assume always short name - only called from the journal
+	public void store(String database, String schema, String tableName, TableInfo tableInfo) {
+		map.put(toKey(database, schema, tableName), tableInfo);
 
+		final Table table = SchemaInfoConversion.tableInfo2Table(database, schema, tableName, tableInfo);
+		forwardSchema(table);
+	}
 
-    @Override
-    // assume always short name - only called from the journal
-    public TableInfo retrieve(String database, String schema, String tableName) {
-        return map.get(toKey(database, schema, tableName));
-    }
+	@Override
+	// assume always short name - only called from the journal
+	public TableInfo retrieve(String database, String schema, String tableName) {
+		return map.get(toKey(database, schema, tableName));
+	}
 
-    @Override
-    // assume always short name - only called from the journal
-    public void clearCache(String database, String schema, String tableName) {
-        map.remove(toKey(database, schema, tableName));
-    }
+	@Override
+	// assume always short name - only called from the journal
+	public void clearCache(String database, String schema, String tableName) {
+		map.remove(toKey(database, schema, tableName));
+	}
 
 	private String toKey(String database, String schema, String tableName) {
 		return String.format("%s.%s.%s", database, schema, tableName);

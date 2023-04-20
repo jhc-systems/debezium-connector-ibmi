@@ -260,16 +260,13 @@ public class RetrieveJournal {
 		}
 		// limit max position to current journal end
 		final BigInteger endPosition = receivers.stream().map(DetailedJournalReceiver::end).max(BigInteger::compareTo)
-				.get();
+				.orElse(BigInteger.valueOf(0));
 		if (maxPosition.compareTo(endPosition) > 0) {
 			maxPosition = endPosition;
 		}
 		final Optional<JournalPosition> end = journalAtMaxOffset(maxPosition, receivers);
-		if (end.isPresent()) {
-			return Optional.of(new PositionRange(start, end.get()));
-		} else {
-			return Optional.empty();
-		}
+		final JournalPosition finalStart = start;
+		return end.map(x -> Optional.of(new PositionRange(finalStart, x))).orElse(Optional.<PositionRange>empty());
 	}
 
 	boolean withinRange(BigInteger desiredPosition, BigInteger startPosition, BigInteger endPosition) {
