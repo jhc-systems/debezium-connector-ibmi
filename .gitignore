@@ -9,3 +9,4 @@ jt400-override-ccsid/.flattened-pom.xml
 kafka-smt-collection/.flattened-pom.xml
 structured-logging/.flattened-pom.xml
 .vscode/
+debezium-connector-ibmi/src/test/resources/confluent-auth-template.properties
