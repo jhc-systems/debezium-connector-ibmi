@@ -102,7 +102,14 @@ file connector-name.json:
     "transforms.unwrap.drop.tombstones": "false",
     "transforms.unwrap.type": "io.debezium.transforms.ExtractNewRecordState",
     "table.include.list": "SCHEMA.TABLE1",
-    "snapshot.mode": "initial"
+    "snapshot.mode": "initial",
+
+    "key.converter.schema.registry.url": "http://schema-registry:8081",
+    "value.converter.schema.registry.url": "http://schema-registry:8081",
+    "key.converter": "io.confluent.connect.avro.AvroConverter",
+    "value.converter": "io.confluent.connect.avro.AvroConverter",
+    
+    "snapshot.max.threads": 4
   }
 }
 ```
