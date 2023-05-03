@@ -259,9 +259,27 @@ To run in VS Code, configure the following launch.json file, and run from the Ru
 }
 ```
 
+## Release notes
+
+### 1.9 
+
+additional configuration parameters required for avro in the submitted json
+
+```
+    "key.converter.schema.registry.url": "http://schema-registry:8081",
+    "value.converter.schema.registry.url": "http://schema-registry:8081",
+    "key.converter": "io.confluent.connect.avro.AvroConverter",
+    "value.converter": "io.confluent.connect.avro.AvroConverter",
+```
+
+optional parameter
+
+```
+"snapshot.max.threads": 4
+```
+
 # Build
 
 ## build docker image and publish to local docker server
 
 mvn compile jib:dockerBuild
-
