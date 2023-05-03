@@ -59,7 +59,7 @@ public class As400ConnectorTask extends BaseSourceTask<As400Partition, As400Offs
 		final TopicNamingStrategy<TableId> topicNamingStrategy = connectorConfig
 				.getTopicNamingStrategy(As400ConnectorConfig.TOPIC_NAMING_STRATEGY, true);
 
-		final SchemaNameAdjuster schemaNameAdjuster = SchemaNameAdjuster.AVRO_FIELD_NAMER;
+		final SchemaNameAdjuster schemaNameAdjuster = SchemaNameAdjuster.AVRO;
 
 		// TODO get list of DB ids - see Db2TaskContext
 		final CdcSourceTaskContext ctx = new CdcSourceTaskContext(connectorConfig.getContextName(),
