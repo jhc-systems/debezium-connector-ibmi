@@ -61,9 +61,14 @@ public class As400ConnectorTask extends BaseSourceTask<As400Partition, As400Offs
 
 		final SchemaNameAdjuster schemaNameAdjuster = SchemaNameAdjuster.AVRO;
 
-		// TODO get list of DB ids - see Db2TaskContext
+		final MainConnectionProvidingConnectionFactory<As400JdbcConnection> jdbcConnectionFactory = new DefaultMainConnectionProvidingConnectionFactory<>(
+				() -> new As400JdbcConnection(connectorConfig.getJdbcConfiguration()));
+		final As400JdbcConnection jdbcConnection = jdbcConnectionFactory.mainConnection();
+
+		this.schema = new As400DatabaseSchema(connectorConfig, jdbcConnection, topicNamingStrategy, schemaNameAdjuster);
+
 		final CdcSourceTaskContext ctx = new CdcSourceTaskContext(connectorConfig.getContextName(),
-				connectorConfig.getLogicalName(), null);
+				connectorConfig.getLogicalName(), schema::tableIds);
 
 		// Set up the task record queue ...
 		this.queue = new ChangeEventQueue.Builder<DataChangeEvent>().pollInterval(connectorConfig.getPollInterval())
@@ -79,13 +84,6 @@ public class As400ConnectorTask extends BaseSourceTask<As400Partition, As400Offs
 			log.info("previous offsets not found creating from config");
 			previousOffset = new As400OffsetContext(connectorConfig);
 		}
-
-		final MainConnectionProvidingConnectionFactory<As400JdbcConnection> jdbcConnectionFactory = new DefaultMainConnectionProvidingConnectionFactory<>(
-				() -> new As400JdbcConnection(connectorConfig.getJdbcConfiguration()));
-
-		final As400JdbcConnection jdbcConnection = jdbcConnectionFactory.mainConnection();
-
-		this.schema = new As400DatabaseSchema(connectorConfig, jdbcConnection, topicNamingStrategy, schemaNameAdjuster);
 
 		final As400EventMetadataProvider metadataProvider = new As400EventMetadataProvider();
 
