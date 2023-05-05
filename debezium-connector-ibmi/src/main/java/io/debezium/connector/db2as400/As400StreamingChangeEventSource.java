@@ -43,287 +43,285 @@ import io.debezium.util.Metronome;
  * </p>
  */
 public class As400StreamingChangeEventSource implements StreamingChangeEventSource<As400Partition, As400OffsetContext> {
-    private static final String NO_TRANSACTION_ID = "00000000000000000000";
-    private long connectionTime = -1;
-    private long MIN_DISCONNECT_TIME_MS = 30000;
+	private static final String NO_TRANSACTION_ID = "00000000000000000000";
+	private long connectionTime = -1;
+	private final long MIN_DISCONNECT_TIME_MS = 30000;
 
-    private static final Logger log = LoggerFactory.getLogger(As400StreamingChangeEventSource.class);
+	private static final Logger log = LoggerFactory.getLogger(As400StreamingChangeEventSource.class);
 
-    private HashMap<String, Object[]> beforeMap = new HashMap<>();
-    private static Set<Character> alwaysProcess = Stream.of('J', 'C')
-            .collect(Collectors.toCollection(HashSet::new));
+	private final HashMap<String, Object[]> beforeMap = new HashMap<>();
+	private static Set<Character> alwaysProcess = Stream.of('J', 'C').collect(Collectors.toCollection(HashSet::new));
 
-    /**
-     * Connection used for reading CDC tables.
-     */
-    private final As400RpcConnection dataConnection;
-    private As400JdbcConnection jdbcConnection;
+	/**
+	 * Connection used for reading CDC tables.
+	 */
+	private final As400RpcConnection dataConnection;
+	private final As400JdbcConnection jdbcConnection;
 
-    /**
-     * A separate connection for retrieving timestamps; without it, adaptive
-     * buffering will not work.
-     */
-    private final EventDispatcher<As400Partition, TableId> dispatcher;
-    private final ErrorHandler errorHandler;
-    private final Clock clock;
-    private final As400DatabaseSchema schema;
-    private final Duration pollInterval;
-    private final As400ConnectorConfig connectorConfig;
-    private final Map<String, TransactionContext> txMap = new HashMap<>();
-    private final String database;
+	/**
+	 * A separate connection for retrieving timestamps; without it, adaptive
+	 * buffering will not work.
+	 */
+	private final EventDispatcher<As400Partition, TableId> dispatcher;
+	private final ErrorHandler errorHandler;
+	private final Clock clock;
+	private final As400DatabaseSchema schema;
+	private final Duration pollInterval;
+	private final As400ConnectorConfig connectorConfig;
+	private final Map<String, TransactionContext> txMap = new HashMap<>();
+	private final String database;
 
-    public As400StreamingChangeEventSource(As400ConnectorConfig connectorConfig, As400RpcConnection dataConnection, As400JdbcConnection jdbcConnection,
-                                           EventDispatcher<As400Partition, TableId> dispatcher,
-                                           ErrorHandler errorHandler, Clock clock, As400DatabaseSchema schema) {
-        this.connectorConfig = connectorConfig;
-        this.dataConnection = dataConnection;
-        this.jdbcConnection = jdbcConnection;
-        this.dispatcher = dispatcher;
-        this.errorHandler = errorHandler;
-        this.clock = clock;
-        this.schema = schema;
-        this.pollInterval = connectorConfig.getPollInterval();
-        this.database = jdbcConnection.getRealDatabaseName();
-    }
+	public As400StreamingChangeEventSource(As400ConnectorConfig connectorConfig, As400RpcConnection dataConnection,
+			As400JdbcConnection jdbcConnection, EventDispatcher<As400Partition, TableId> dispatcher,
+			ErrorHandler errorHandler, Clock clock, As400DatabaseSchema schema) {
+		this.connectorConfig = connectorConfig;
+		this.dataConnection = dataConnection;
+		this.jdbcConnection = jdbcConnection;
+		this.dispatcher = dispatcher;
+		this.errorHandler = errorHandler;
+		this.clock = clock;
+		this.schema = schema;
+		this.pollInterval = connectorConfig.getPollInterval();
+		this.database = jdbcConnection.getRealDatabaseName();
+	}
 
-    private void cacheBefore(TableId tableId, Timestamp date, Object[] dataBefore) {
-        String key = String.format("%s-%s", tableId.schema(), tableId.table());
-        beforeMap.put(key, dataBefore);
-    }
+	private void cacheBefore(TableId tableId, Timestamp date, Object[] dataBefore) {
+		final String key = String.format("%s-%s", tableId.schema(), tableId.table());
+		beforeMap.put(key, dataBefore);
+	}
 
-    private Object[] getBefore(TableId tableId, Timestamp date) {
-        String key = String.format("%s-%s", tableId.schema(), tableId.table());
-        Object[] dataBefore = beforeMap.remove(key);
-        if (dataBefore == null) {
-            log.debug("before image not found for {}", key);
-        }
-        else {
-            log.debug("found before image for {}", key);
-        }
-        return dataBefore;
-    }
+	private Object[] getBefore(TableId tableId, Timestamp date) {
+		final String key = String.format("%s-%s", tableId.schema(), tableId.table());
+		final Object[] dataBefore = beforeMap.remove(key);
+		if (dataBefore == null) {
+			log.debug("before image not found for {}", key);
+		} else {
+			log.debug("found before image for {}", key);
+		}
+		return dataBefore;
+	}
 
-    @Override
-    public void execute(ChangeEventSourceContext context, As400Partition partition, As400OffsetContext offsetContext) throws InterruptedException {
-        final Metronome metronome = Metronome.sleeper(pollInterval, clock);
-        int retries = 0;
-        WatchDog watchDog = new WatchDog(Thread.currentThread(), connectorConfig.getMaxRetrievalTimeout());
-        watchDog.start();
-        try {
-	        while (context.isRunning()) {
-	            try {
-	                try {
-	                    JournalPosition before = new JournalPosition(offsetContext.getPosition());
-	                    if (!dataConnection.getJournalEntries(context, offsetContext, processJournalEntries(partition, offsetContext), watchDog)) {
-	                        log.debug("sleep");
-	                        metronome.pause();
-	                    }
-	                    if (!offsetContext.getPosition().equals(before)) {
-	                        dispatcher.dispatchHeartbeatEvent(partition, offsetContext);
-	                    }
-	                    retries = 0;
-	                }
-	                catch (FatalException e) {
-	                	log.error("Unable to process offset {}", offsetContext.getPosition(), e);
-	                	throw new DebeziumException("Unable to process offset " + offsetContext.getPosition(), e);
-	                }
-	                catch (InvalidPositionException e) {
-	                    log.error("Invalid position resetting offsets to beginning", e);
-	                    offsetContext.setPosition(new JournalPosition());
-	                }
-	                catch (InterruptedException e) {
-	                    log.error("Interrupted processing offset {} retry {}", offsetContext.getPosition().toString(), retries);
-	                    closeAndReconnect();
-	                    retries++;
-	                    metronome.pause();
-	                }
-	                catch (IOException | SQLNonTransientConnectionException e) { // SQLNonTransientConnectionException thrown by jt400 jdbc driver when connection errors
-	                    log.error("Connection failed offset {} retry {}", offsetContext.getPosition().toString(), retries, e);
-	                    closeAndReconnect();
-	
-	                    retries++;
-	                    metronome.pause(); // throws interruptedException
-	                }
-	                catch (Exception e) {
-	                    log.error("Failed to process offset {} retry {}", offsetContext.getPosition().toString(), retries, e);
-	
-	                    retries++;
-	                    metronome.pause();
-	                }
-	            }
-	            catch (InterruptedException e) { // handle InterruptedException during the exception handling
-	                log.debug("Interrupted", e);
-	            }
-	        }
-        } finally {
-        	watchDog.stop();
-        }
-    }
+	@Override
+	public void execute(ChangeEventSourceContext context, As400Partition partition, As400OffsetContext offsetContext)
+			throws InterruptedException {
+		final Metronome metronome = Metronome.sleeper(pollInterval, clock);
+		int retries = 0;
+		final WatchDog watchDog = new WatchDog(Thread.currentThread(), connectorConfig.getMaxRetrievalTimeout());
+		watchDog.start();
+		try {
+			while (context.isRunning()) {
+				try {
+					try {
+						final JournalPosition before = new JournalPosition(offsetContext.getPosition());
+						if (!dataConnection.getJournalEntries(context, offsetContext,
+								processJournalEntries(partition, offsetContext), watchDog)) {
+							log.debug("sleep");
+							metronome.pause();
+						}
+						if (!offsetContext.getPosition().equals(before)) {
+							dispatcher.dispatchHeartbeatEvent(partition, offsetContext);
+						}
+						retries = 0;
+					} catch (final FatalException e) {
+						log.error("Unable to process offset {}", offsetContext.getPosition(), e);
+						throw new DebeziumException("Unable to process offset " + offsetContext.getPosition(), e);
+					} catch (final InvalidPositionException e) {
+						log.error("Invalid position resetting offsets to beginning", e);
+						offsetContext.setPosition(new JournalPosition());
+					} catch (final InterruptedException e) {
+						log.error("Interrupted processing offset {} retry {}", offsetContext.getPosition(), retries);
+						closeAndReconnect();
+						retries++;
+						metronome.pause();
+					} catch (IOException | SQLNonTransientConnectionException e) { // SQLNonTransientConnectionException
+																					// thrown by jt400 jdbc driver when
+																					// connection errors
+						log.error("Connection failed offset {} retry {}", offsetContext.getPosition(), retries, e);
+						closeAndReconnect();
 
-    public void rateLimittedClose() {
-        if (System.currentTimeMillis() - connectionTime > MIN_DISCONNECT_TIME_MS) {
-            closeAndReconnect();
-        }
-        else {
-            log.debug("Only connected since {} ignoring disconnect", new Date(connectionTime));
-        }
-    }
+						retries++;
+						metronome.pause(); // throws interruptedException
+					} catch (final Exception e) {
+						log.error("Failed to process offset {} retry {}", offsetContext.getPosition(), retries, e);
 
-    public void closeAndReconnect() {
-        try {
-            dataConnection.close();
-            dataConnection.connection();
-        }
-        catch (Exception e) {
-            log.error("Failure reconnecting command", e);
-        }
-        try {
-            jdbcConnection.close();
-            jdbcConnection.connect();
-        }
-        catch (Exception e) {
-            log.error("Failure reconnecting sql", e);
-        }
-        connectionTime = System.currentTimeMillis();
-    }
+						retries++;
+						metronome.pause();
+					}
+				} catch (final InterruptedException e) { // handle InterruptedException during the exception handling
+					log.debug("Interrupted", e);
+				}
+			}
+		} finally {
+			watchDog.stop();
+		}
+	}
 
-    private BlockingRecieverConsumer processJournalEntries(As400Partition partition, As400OffsetContext offsetContext)
-            throws IOException, SQLNonTransientConnectionException {
-        return (nextOffset, r, eheader) -> {
-            try {
-                JournalEntryType journalEntryType = eheader.getJournalEntryType();
+	public void rateLimittedClose() {
+		if (System.currentTimeMillis() - connectionTime > MIN_DISCONNECT_TIME_MS) {
+			closeAndReconnect();
+		} else {
+			log.debug("Only connected since {} ignoring disconnect", new Date(connectionTime));
+		}
+	}
 
-                if (journalEntryType == null || ignore(journalEntryType)) {
-                    log.debug("excluding table {} entry type {}", eheader.getFile(), eheader.getEntryType());
-                    return;
-                }
+	public void closeAndReconnect() {
+		try {
+			dataConnection.close();
+			dataConnection.connection();
+		} catch (final Exception e) {
+			log.error("Failure reconnecting command", e);
+		}
+		try {
+			jdbcConnection.close();
+			jdbcConnection.connect();
+		} catch (final Exception e) {
+			log.error("Failure reconnecting sql", e);
+		}
+		connectionTime = System.currentTimeMillis();
+	}
 
-                String longName = eheader.getFile();
-                try {
-                    longName = jdbcConnection.getLongName(eheader.getLibrary(), eheader.getFile());
-                }
-                catch (IllegalStateException e) {
-                    log.error("failed to look up long name", e);
-                }
-                TableId tableId = new TableId(database, eheader.getLibrary(), longName);
+	private BlockingRecieverConsumer processJournalEntries(As400Partition partition, As400OffsetContext offsetContext)
+			throws IOException, SQLNonTransientConnectionException {
+		return (nextOffset, r, eheader) -> {
+			try {
+				final JournalEntryType journalEntryType = eheader.getJournalEntryType();
 
-                boolean includeTable = connectorConfig.getTableFilters().dataCollectionFilter().isIncluded(tableId);
+				if (journalEntryType == null || ignore(journalEntryType)) {
+					log.debug("excluding table {} entry type {}", eheader.getFile(), eheader.getEntryType());
+					return;
+				}
 
-                if (!alwaysProcess.contains(eheader.getJournalCode()) && !includeTable) { // always process journal J and transaction C messages
-                    log.debug("excluding table {} journal code {}", tableId, eheader.getJournalCode());
-                    return;
-                }
+				String longName = eheader.getFile();
+				try {
+					longName = jdbcConnection.getLongName(eheader.getLibrary(), eheader.getFile());
+				} catch (final IllegalStateException e) {
+					log.error("failed to look up long name", e);
+				}
+				final TableId tableId = new TableId(database, eheader.getLibrary(), longName);
 
-                log.debug("next event: {} - {} type: {} table: {}", eheader.getTimestamp(), eheader.getSequenceNumber(), eheader.getEntryType(), tableId.table());
-                switch (journalEntryType) {
-                    case START_COMMIT: {
-                        // start commit
-                        String txId = eheader.getCommitCycle().toString();
-                        log.debug("begin transaction: {}", txId);
-                        TransactionContext txc = new TransactionContext();
-                        txc.beginTransaction(txId);
-                        txMap.put(txId, txc);
-                        log.debug("start transaction id {} tx {} table {}", nextOffset, txId, tableId);
-                        dispatcher.dispatchTransactionStartedEvent(partition, txId, offsetContext, eheader.getTimestamp().toInstant());
-                    }
-                        break;
-                    case END_COMMIT: {
-                        // end commit
-                        // TOOD transaction must be provided by the OffsetContext
-                        String txId = eheader.getCommitCycle().toString();
-                        TransactionContext txc = txMap.remove(txId);
-                        log.debug("commit transaction id {} tx {} table {}", nextOffset, txId, tableId);
-                        if (txc != null) {
-                            txc.endTransaction();
-                            dispatcher.dispatchTransactionCommittedEvent(partition, offsetContext, eheader.getTimestamp().toInstant());
-                        }
-                    }
-                        break;
-                    case FILE_CHANGE:
-                    case FILE_CREATED: {
-                        // table has changed - reload schema
-                    	schema.clearCache(tableId.table(), tableId.schema());
-                    	schema.getRecordFormat(tableId.table(), tableId.schema());
-                    }
-                        break;
-                    case BEFORE_IMAGE: {
-                        // before image
-                        tableId.schema();
-                        Object[] dataBefore = r.decode(schema.getFileDecoder());
+				final boolean includeTable = connectorConfig.getTableFilters().dataCollectionFilter()
+						.isIncluded(tableId);
 
-                        cacheBefore(tableId, eheader.getTimestamp(), dataBefore);
-                    }
-                        break;
-                    case AFTER_IMAGE: {
-                        // after image
-                        // before image is meant to have been immediately before
-                        Object[] dataBefore = getBefore(tableId, eheader.getTimestamp());
-                        Object[] dataNext = r.decode(schema.getFileDecoder());
+				if (!alwaysProcess.contains(eheader.getJournalCode()) && !includeTable) { // always process journal J
+																							// and transaction C
+																							// messages
+					log.debug("excluding table {} journal code {}", tableId, eheader.getJournalCode());
+					return;
+				}
 
-                        offsetContext.setSourceTime(eheader.getTimestamp());
+				log.debug("next event: {} - {} type: {} table: {}", eheader.getTimestamp(), eheader.getSequenceNumber(),
+						eheader.getEntryType(), tableId.table());
+				switch (journalEntryType) {
+				case START_COMMIT: {
+					// start commit
+					final String txId = eheader.getCommitCycle().toString();
+					log.debug("begin transaction: {}", txId);
+					final TransactionContext txc = new TransactionContext();
+					txc.beginTransaction(txId);
+					txMap.put(txId, txc);
+					log.debug("start transaction id {} tx {} table {}", nextOffset, txId, tableId);
+					dispatcher.dispatchTransactionStartedEvent(partition, txId, offsetContext,
+							eheader.getTimestamp().toInstant());
+				}
+					break;
+				case END_COMMIT: {
+					// end commit
+					// TOOD transaction must be provided by the OffsetContext
+					final String txId = eheader.getCommitCycle().toString();
+					final TransactionContext txc = txMap.remove(txId);
+					log.debug("commit transaction id {} tx {} table {}", nextOffset, txId, tableId);
+					if (txc != null) {
+						txc.endTransaction();
+						dispatcher.dispatchTransactionCommittedEvent(partition, offsetContext,
+								eheader.getTimestamp().toInstant());
+					}
+				}
+					break;
+				case FILE_CHANGE:
+				case FILE_CREATED: {
+					// table has changed - reload schema
+					schema.clearCache(tableId.table(), tableId.schema());
+					schema.getRecordFormat(tableId.table(), tableId.schema());
+				}
+					break;
+				case BEFORE_IMAGE: {
+					// before image
+					tableId.schema();
+					final Object[] dataBefore = r.decode(schema.getFileDecoder());
 
-                        String txId = eheader.getCommitCycle().toString();
-                        TransactionContext txc = txMap.get(txId);
-                        offsetContext.setTransaction(txc);
+					cacheBefore(tableId, eheader.getTimestamp(), dataBefore);
+				}
+					break;
+				case AFTER_IMAGE: {
+					// after image
+					// before image is meant to have been immediately before
+					final Object[] dataBefore = getBefore(tableId, eheader.getTimestamp());
+					final Object[] dataNext = r.decode(schema.getFileDecoder());
 
-                        log.debug("update event id {} tx {} table {}", nextOffset, txId, tableId);
+					offsetContext.setSourceTime(eheader.getTimestamp());
 
-                        dispatcher.dispatchDataChangeEvent(partition, tableId,
-                                new As400ChangeRecordEmitter(partition, offsetContext, Operation.UPDATE, dataBefore, dataNext, clock));
-                    }
-                        break;
-                    case ADD_ROW1:
-                    case ADD_ROW2: {
-                        // record added
-                        Object[] dataNext = r.decode(schema.getFileDecoder());
-                        offsetContext.setSourceTime(eheader.getTimestamp());
+					final String txId = eheader.getCommitCycle().toString();
+					final TransactionContext txc = txMap.get(txId);
+					offsetContext.setTransaction(txc);
 
-                        String txId = eheader.getCommitCycle().toString();
-                        TransactionContext txc = txMap.get(txId);
-                        offsetContext.setTransaction(txc);
-                        if (txc != null) {
-                            txc.event(tableId);
-                        }
+					log.debug("update event id {} tx {} table {}", nextOffset, txId, tableId);
 
-                        log.debug("insert event id {} tx {} table {}", offsetContext.getPosition().toString(), txId, tableId);
-                        dispatcher.dispatchDataChangeEvent(partition, tableId,
-                                new As400ChangeRecordEmitter(partition, offsetContext, Operation.CREATE, null, dataNext, clock));
-                    }
-                        break;
-                    case DELETE_ROW1:
-                    case DELETE_ROW2: {
-                        // record deleted
-                        Object[] dataBefore = r.decode(schema.getFileDecoder());
+					dispatcher.dispatchDataChangeEvent(partition, tableId, new As400ChangeRecordEmitter(partition,
+							offsetContext, Operation.UPDATE, dataBefore, dataNext, clock));
+				}
+					break;
+				case ADD_ROW1:
+				case ADD_ROW2: {
+					// record added
+					final Object[] dataNext = r.decode(schema.getFileDecoder());
+					offsetContext.setSourceTime(eheader.getTimestamp());
 
-                        offsetContext.setSourceTime(eheader.getTimestamp());
+					final String txId = eheader.getCommitCycle().toString();
+					final TransactionContext txc = txMap.get(txId);
+					offsetContext.setTransaction(txc);
+					if (txc != null) {
+						txc.event(tableId);
+					}
 
-                        String txId = eheader.getCommitCycle().toString();
-                        TransactionContext txc = txMap.get(txId);
-                        offsetContext.setTransaction(txc);
-                        if (txc != null) {
-                            txc.event(tableId);
-                        }
+					log.debug("insert event id {} tx {} table {}", offsetContext.getPosition().toString(), txId,
+							tableId);
+					dispatcher.dispatchDataChangeEvent(partition, tableId, new As400ChangeRecordEmitter(partition,
+							offsetContext, Operation.CREATE, null, dataNext, clock));
+				}
+					break;
+				case DELETE_ROW1:
+				case DELETE_ROW2: {
+					// record deleted
+					final Object[] dataBefore = r.decode(schema.getFileDecoder());
 
-                        log.debug("delete event id {} tx {} table {}", offsetContext.getPosition().toString(), txId, tableId);
-                        dispatcher.dispatchDataChangeEvent(partition, tableId,
-                                new As400ChangeRecordEmitter(partition, offsetContext, Operation.DELETE, dataBefore, null, clock));
-                    }
-                        break;
-                    default:
-                        break;
-                }
-            }
-            catch (IOException | SQLNonTransientConnectionException e) {
-                throw e;
-            }
-            catch (Exception e) {
-                log.error("Failed to process record", e);
-            }
-        };
-    }
+					offsetContext.setSourceTime(eheader.getTimestamp());
 
-    private boolean ignore(JournalEntryType journalCode) {
-        return journalCode == JournalEntryType.OPEN || journalCode == JournalEntryType.CLOSE;
-    }
+					final String txId = eheader.getCommitCycle().toString();
+					final TransactionContext txc = txMap.get(txId);
+					offsetContext.setTransaction(txc);
+					if (txc != null) {
+						txc.event(tableId);
+					}
+
+					log.debug("delete event id {} tx {} table {}", offsetContext.getPosition().toString(), txId,
+							tableId);
+					dispatcher.dispatchDataChangeEvent(partition, tableId, new As400ChangeRecordEmitter(partition,
+							offsetContext, Operation.DELETE, dataBefore, null, clock));
+				}
+					break;
+				default:
+					break;
+				}
+			} catch (IOException | SQLNonTransientConnectionException e) {
+				throw e;
+			} catch (final Exception e) {
+				log.error("Failed to process record", e);
+			}
+		};
+	}
+
+	private boolean ignore(JournalEntryType journalCode) {
+		return journalCode == JournalEntryType.OPEN || journalCode == JournalEntryType.CLOSE;
+	}
 
 }
