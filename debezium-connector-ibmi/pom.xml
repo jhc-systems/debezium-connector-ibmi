@@ -19,7 +19,7 @@
 
 		<repository.project>fnz-poa-development</repository.project>
 		<changelist>-SNAPSHOT</changelist>
-		<debezium.version>2.2.0.Final</debezium.version>
+		<debezium.version>2.2.1.Final</debezium.version>
 	</properties>
 
 	<dependencyManagement>
