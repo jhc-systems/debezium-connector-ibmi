@@ -304,7 +304,7 @@
 			<plugin>
 				<groupId>com.google.cloud.tools</groupId>
 				<artifactId>jib-maven-plugin</artifactId>
-				<version>3.1.4</version>
+				<version>3.3.1</version>
 				<configuration>
 					<from>
 						<image>eu.gcr.io/${repository.project}/openjdk17:latest</image>
@@ -336,12 +336,12 @@
 						<paths>
 							<path>
 								<from>src/main/resources/docker/shell</from>
-								<into>/app</into>
+								<into>/app/</into>
 							</path>
 							<path>
 								<from>src/main/resources/docker/config</from>
-								<into>/app</into>
-							</path>
+								<into>/app/</into>
+							</path>						
 						</paths>
 						<permissions>
 							<permission>

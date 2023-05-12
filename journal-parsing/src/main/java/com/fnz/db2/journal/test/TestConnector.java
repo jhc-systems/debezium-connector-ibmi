@@ -25,18 +25,20 @@ public class TestConnector {
         String password =  System.getenv("ISERIES_PASSWORD");
         String host =  System.getenv("ISERIES_HOST");
         this.schema =  System.getenv("ISERIES_SCHEMA");
-        String ccsid =  System.getenv("FORCED_CCSID");
-        
-        
+        String fromCcsid =  System.getenv("FROM_CCSID");
+        String toCcsid =  System.getenv("TO_CCSID");
+
+
         String url = String.format("jdbc:as400:%s", host);
-        
+
         final Properties props = new Properties();
         props.setProperty("user", user);
         props.setProperty("password", password);
-    	if (ccsid != null) {
+    	if (fromCcsid != null && toCcsid != null) {
     		AS400JDBCDriverRegistration.registerCcsidDriver();
-    		props.setProperty(AS400JDBCConnectionForcedCcsid.FORCED_CCSID, ccsid);
-    		log.info("forced ccsid " + ccsid);
+    		props.setProperty(AS400JDBCConnectionForcedCcsid.FROM_CCSID, fromCcsid);
+    		props.setProperty(AS400JDBCConnectionForcedCcsid.TO_CCSID, toCcsid);
+    		log.info("forced ccsid " + toCcsid);
     	}
 
         this.as400Connect = new Connect<AS400, IOException>() {
@@ -46,26 +48,26 @@ public class TestConnector {
                 return as400;
             }
         };
-        
+
         this.sqlConnect = new Connect<Connection, SQLException>() {
             Connection con = DriverManager.getConnection(url, props);
             @Override
             public Connection connection() throws SQLException {
                 return con;
             }
-            
-        };    
+
+        };
     }
 
 
     public Connect<AS400, IOException> getAs400() {
         return as400Connect;
     }
-    
+
     public Connect<Connection, SQLException> getJdbc() {
         return sqlConnect;
     }
-    
+
     public String getSchema() {
         return this.schema;
     }

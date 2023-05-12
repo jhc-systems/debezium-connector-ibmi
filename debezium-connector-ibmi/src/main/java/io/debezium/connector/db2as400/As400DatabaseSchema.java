@@ -44,7 +44,7 @@ public class As400DatabaseSchema extends RelationalDatabaseSchema implements Sch
 		this.config = config;
 		this.jdbcConnection = jdbcConnection;
 		fileDecoder = new JdbcFileDecoder(jdbcConnection, jdbcConnection.getRealDatabaseName(), this,
-				config.getForcedCcsid());
+				config.getToCcsid());
 
 		schemaInfoConversion = new SchemaInfoConversion(fileDecoder);
 	}

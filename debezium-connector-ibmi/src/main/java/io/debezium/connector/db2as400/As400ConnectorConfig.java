@@ -83,8 +83,11 @@ public class As400ConnectorConfig extends RelationalDatabaseConnectorConfig {
     /**
      * If the ccsid is wrong on your tables and that is the least of your problems - just correct the CCSID before using this or as a last resort...
      * This applies to all tables - everything
+     * mapping from_ccsid and to_ccsid must *both* be specified
      */
-    public static final Field FORCE_CCSID = Field.create("forced_ccsid", "forced ccsid", "ignore all the information on your system and tables and use this encoding anyway", -1);
+    public static final Field FROM_CCSID = Field.create("from_ccsid", "from ccsid", "when the table indicates this from_ccsid translate to the to_ccsid setting", -1);
+
+    public static final Field TO_CCSID = Field.create("to_ccsid", "to ccsid", "when the table indicates the from_ccsid translate to this to_ccsid setting", -1);
 
     /**
      * Maximum number of journal entries to process server side
@@ -168,10 +171,12 @@ public class As400ConnectorConfig extends RelationalDatabaseConnectorConfig {
     }
     
 
-    public Integer getForcedCcsid() {
-        return config.getInteger(FORCE_CCSID);
+    public Integer getFromCcsid() {
+        return config.getInteger(FROM_CCSID);
     }
-
+    public Integer getToCcsid() {
+        return config.getInteger(TO_CCSID);
+    }
     public JournalPosition getOffset() {
         String receiver = config.getString(As400OffsetContext.RECEIVER);
         String lib = config.getString(As400OffsetContext.RECEIVER_LIBRARY);
@@ -205,14 +210,14 @@ public class As400ConnectorConfig extends RelationalDatabaseConnectorConfig {
 
     public static Field.Set ALL_FIELDS = Field.setOf(JdbcConfiguration.HOSTNAME, USER, PASSWORD, SCHEMA, BUFFER_SIZE,
             RelationalDatabaseConnectorConfig.SNAPSHOT_SELECT_STATEMENT_OVERRIDES_BY_TABLE, KEEP_ALIVE, THREAD_USED, SOCKET_TIMEOUT,
-            MAX_SERVER_SIDE_ENTRIES, TOPIC_NAMING_STRATEGY, FORCE_CCSID, DB_ERRORS, DATE_FORMAT);
+            MAX_SERVER_SIDE_ENTRIES, TOPIC_NAMING_STRATEGY, FROM_CCSID, TO_CCSID, DB_ERRORS, DATE_FORMAT);
 
     public static ConfigDef configDef() {
         ConfigDef c = RelationalDatabaseConnectorConfig.CONFIG_DEFINITION.edit()
                 .name("ibmi")
                 .type(
                         JdbcConfiguration.HOSTNAME, USER, PASSWORD, SCHEMA, BUFFER_SIZE,
-                        KEEP_ALIVE, THREAD_USED, SOCKET_TIMEOUT, FORCE_CCSID, DB_ERRORS, DATE_FORMAT)
+                        KEEP_ALIVE, THREAD_USED, SOCKET_TIMEOUT, FROM_CCSID, TO_CCSID, DB_ERRORS, DATE_FORMAT)
                 .connector()
                 .events(
                         As400OffsetContext.EVENT_SEQUENCE_FIELD,

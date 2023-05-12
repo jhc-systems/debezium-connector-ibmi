@@ -10,3 +10,5 @@ hs_err*
 .vscode/
 # intellij
 .idea/
+/.apt_generated/
+/.apt_generated_tests/

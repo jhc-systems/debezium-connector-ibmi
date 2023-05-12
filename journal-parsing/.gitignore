@@ -11,3 +11,5 @@ hs_err*
 # intellij
 .idea/
 exceptions.txt
+/.apt_generated/
+/.apt_generated_tests/

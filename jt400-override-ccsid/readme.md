@@ -18,7 +18,8 @@ Note the original AS400JDBCDriver has a static block that on class load register
 AS400JDBCDriverRegistration.registerCcsidDriver();
 
 Properties props = new Properties();
-props.setProperty("forced_ccsid", 37);
+props.setProperty("from_ccsid", 37);
+props.setProperty("to_ccsid", 37);
 props.setProperty("user", "user");
 props.setProperty("password", "password");
 try (Connection con = DriverManager.getConnection("jdbc:as400://db/;naming=system;prompt=false;libraries=xxx;errors=full", props)) {

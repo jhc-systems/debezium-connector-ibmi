@@ -35,4 +35,4 @@ fi
 perl -e 'while (my ($key, $value) = each(%ENV)) {if ($key=~/^DEBEZIUM_/) { $key =~s/^DEBEZIUM_//;  $key =~ s/_/./g; print lc($key)."=$value\n";} }' > /tmp/connect-distributed.properties
 
 jars=$(echo libs/*jar|tr ' ' ':'):classes:resources
-java -cp $jars -Djava.util.logging.manager=org.apache.logging.log4j.jul.LogManager -Dlog4j2.configurationFile=/app/resources/log4j2.xml com.fnz.db2.journal.test.CcsidDiscovery
+java -cp $jars -Djava.util.logging.manager=org.apache.logging.log4j.jul.LogManager -Dlog4j2.configurationFile=/app/resources/log4j2Text.xml com.fnz.db2.journal.test.CcsidDiscovery
