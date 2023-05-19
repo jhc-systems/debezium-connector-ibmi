@@ -45,7 +45,8 @@ public class As400JdbcConnection extends JdbcConnection implements Connect<Conne
     private static final String URL_PATTERN = "jdbc:as400://${" + JdbcConfiguration.HOSTNAME + "}/${"
             + JdbcConfiguration.DATABASE + "}";
     private final JdbcConfiguration config;
-    private final int forcedCcsid;
+    private final int fromCcsid;
+    private final int toCcsid;
     private boolean registered = false;
 
     private static final String GET_DATABASE_NAME = "values ( CURRENT_SERVER )";
@@ -69,7 +70,8 @@ public class As400JdbcConnection extends JdbcConnection implements Connect<Conne
     
     private static Field[] JdbcFields = new Field[] {
     		
-    		As400ConnectorConfig.FORCE_CCSID, 
+    		As400ConnectorConfig.FROM_CCSID, 
+    		As400ConnectorConfig.TO_CCSID, 
     		As400ConnectorConfig.DATE_FORMAT, 
     		As400ConnectorConfig.DB_ERRORS, 
     		As400ConnectorConfig.THREAD_USED,
@@ -84,7 +86,8 @@ public class As400JdbcConnection extends JdbcConnection implements Connect<Conne
 
     public As400JdbcConnection(JdbcConfiguration config) {
         super(withDefaults(config), FACTORY, "'", "'");
-        this.forcedCcsid = config.getInteger(As400ConnectorConfig.FORCE_CCSID);
+        this.fromCcsid = config.getInteger(As400ConnectorConfig.FROM_CCSID);
+        this.toCcsid = config.getInteger(As400ConnectorConfig.TO_CCSID);
         this.config = config;
         realDatabaseName = retrieveRealDatabaseName();
         log.debug("connection:" + this.connectionString(URL_PATTERN));
@@ -302,7 +305,7 @@ public class As400JdbcConnection extends JdbcConnection implements Connect<Conne
 
     @Override
     public synchronized Connection connection() throws SQLException {
-        if (forcedCcsid > 0 && !registered) {
+        if (fromCcsid > 0 && toCcsid > 0 && !registered) {
         	AS400JDBCDriverRegistration.registerCcsidDriver();
 			registered = true;
         }

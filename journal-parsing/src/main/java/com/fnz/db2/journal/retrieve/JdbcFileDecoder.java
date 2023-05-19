@@ -258,6 +258,7 @@ public class JdbcFileDecoder extends JournalFileEntryDecoder {
 	private final Map<String, Integer> ccsidMap = new HashMap<>();
 
 	public Integer getCcsid(String schema, String table, String columnName) {
+		log.info("forced ccsid {}", forcedCcsid);
 		if (forcedCcsid != -1) {
 			return forcedCcsid;
 		}
@@ -319,6 +320,7 @@ public class JdbcFileDecoder extends JournalFileEntryDecoder {
 
 	public AS400DataType toDataType(String schema, String table, String columnName, String type, int length,
 			Integer precision) {
+		log.info("fetch table {}", table);
 		switch (type) {
 		case "DECIMAL":
 			return new AS400PackedDecimal(length, precision);

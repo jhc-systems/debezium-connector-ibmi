@@ -9,23 +9,23 @@ public class AS400JDBCDriverRegistration {
 		// remove old driver
 		try {
 			while (true) {
-				Driver remove = DriverManager.getDriver("jdbc:as400://host");
+				final Driver remove = DriverManager.getDriver("jdbc:as400://host");
 				DriverManager.deregisterDriver(remove);
 			}
-		} catch (SQLException e) {
+		} catch (final SQLException e) {
 		}
-		DriverManager.registerDriver(new AS400JDBCDriverForcedCcsid());		
+		DriverManager.registerDriver(new AS400JDBCDriverForcedCcsid());
 	}
-	
+
 	public static void registerOriginalDriver() throws SQLException {
 		// remove old driver
 		try {
 			while (true) {
-				Driver remove = DriverManager.getDriver("jdbc:as400://host");
+				final Driver remove = DriverManager.getDriver("jdbc:as400://host");
 				DriverManager.deregisterDriver(remove);
 			}
-		} catch (SQLException e) {
+		} catch (final SQLException e) {
 		}
-		DriverManager.registerDriver(new AS400JDBCDriver());		
+		DriverManager.registerDriver(new AS400JDBCDriver());
 	}
 }
