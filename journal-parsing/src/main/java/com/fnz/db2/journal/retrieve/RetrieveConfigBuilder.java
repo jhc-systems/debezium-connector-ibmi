@@ -9,7 +9,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.fnz.db2.journal.retrieve.RetrievalCriteria.JournalCode;
-import com.fnz.db2.journal.retrieve.RetrieveJournal.ParameterListBuilder;
 import com.ibm.as400.access.AS400;
 
 public class RetrieveConfigBuilder {
