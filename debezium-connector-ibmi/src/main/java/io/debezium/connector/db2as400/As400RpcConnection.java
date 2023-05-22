@@ -188,7 +188,7 @@ public class As400RpcConnection implements AutoCloseable, Connect<AS400, IOExcep
             log.warn(new StructuredMessage("Detected newer receiver but no data received", 
                     Map.of("header", retrieveJournal.headerAsString(),
                             "position", position,
-                            "detectedReceiver", journalNow.receiver,
+                            "detectedReceiver", journalNow.journalName,
                             "currentReceiver", position.getReciever(),
                             "receivers", receivers)));
         }
@@ -203,7 +203,7 @@ public class As400RpcConnection implements AutoCloseable, Connect<AS400, IOExcep
     private boolean isLatestJournal(JournalPosition position, JournalInfo journalNow)
             throws Exception, IOException {
         if (position.getReciever() == null
-                || journalNow.receiver.equals(position.getReciever())) {
+                || journalNow.journalName.equals(position.getReciever())) {
             return true;
         }
         return false;

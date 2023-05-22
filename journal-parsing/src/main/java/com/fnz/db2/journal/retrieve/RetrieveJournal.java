@@ -5,13 +5,10 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.math.BigInteger;
 import java.nio.file.Files;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Date;
-import java.util.List;
 import java.util.Optional;
 
 import org.slf4j.Logger;
@@ -26,12 +23,7 @@ import com.fnz.db2.journal.retrieve.rjne0200.EntryHeaderDecoder;
 import com.fnz.db2.journal.retrieve.rjne0200.FirstHeader;
 import com.fnz.db2.journal.retrieve.rjne0200.FirstHeaderDecoder;
 import com.fnz.db2.journal.retrieve.rjne0200.OffsetStatus;
-import com.fnz.db2.journal.retrieve.rnrn0200.DetailedJournalReceiver;
-import com.ibm.as400.access.AS400;
-import com.ibm.as400.access.AS400Bin4;
 import com.ibm.as400.access.AS400Message;
-import com.ibm.as400.access.AS400Structure;
-import com.ibm.as400.access.AS400Text;
 import com.ibm.as400.access.MessageFile;
 import com.ibm.as400.access.ProgramParameter;
 import com.ibm.as400.access.ServiceProgramCall;
@@ -51,7 +43,7 @@ public class RetrieveJournal {
 	private static final FirstHeaderDecoder firstHeaderDecoder = new FirstHeaderDecoder();
 	private static final EntryHeaderDecoder entryHeaderDecoder = new EntryHeaderDecoder();
 	private static final SimpleDateFormat DATE_FORMATTER = new SimpleDateFormat("yyMMdd-hhmm");
-
+	private final JournalReceivers journalRecievers;
 	private final ParameterListBuilder builder = new ParameterListBuilder();
 
 	RetrieveConfig config;
@@ -61,12 +53,12 @@ public class RetrieveJournal {
 	private int offset = -1;
 	private JournalPosition position;
 	private long totalTransferred = 0;
-	private final JournalInfoRetrieval journalInfoRetrieval;
 
 	public RetrieveJournal(RetrieveConfig config, JournalInfoRetrieval journalRetrieval) {
 		this.config = config;
-		this.journalInfoRetrieval = journalRetrieval;
-		builder.withJournal(config.journalInfo().receiver, config.journalInfo().receiverLibrary);
+		journalRecievers = new JournalReceivers(journalRetrieval, config.maxServerSideEntries(), config.journalInfo());
+
+		builder.withJournal(config.journalInfo().journalName, config.journalInfo().journalLibrary);
 	}
 
 	/**
@@ -97,34 +89,33 @@ public class RetrieveJournal {
 			builder.withFileFilters(config.includeFiles());
 		}
 
-		Optional<JournalPosition> latestJournalPosition = Optional.empty();
-		final Optional<PositionRange> range = findRange(config.as400().connection(), retrievePosition);
-		if (range.isEmpty()) { // this can only be used at the start
-			if (retrievePosition.isOffsetSet()) {
-				builder.withStartingSequence(retrievePosition.getOffset());
-			} else {
-				builder.withFromStart();
-			}
-			builder.withReceivers("*CURCHAIN");
-			builder.withEnd();
-		} else {
-			final PositionRange r = range.get();
-			builder.withStartingSequence(r.start.getOffset());
+		final Optional<PositionRange> rangeOpt = journalRecievers.findRange(config.as400().connection(), retrievePosition);
+		
+		boolean hasData = rangeOpt.map( r -> { // this can only be used at the start
+			builder.withStartingSequence(r.start().getOffset());
 			/*
 			 * Very important if *CURCHAIN or *CURVCHAIN is used then you can end up in a
 			 * loop to overcome this the start journal must be set explicitly
 			 */
-			builder.withReceivers(r.start.getReciever(), r.start.getReceiverLibrary(), r.end.getReciever(),
-					r.end.getReceiverLibrary());
-			builder.withEnd(r.end.getOffset());
+			builder.withReceivers(r.start().getReciever(), r.start().getReceiverLibrary(), r.end().getReciever(),
+					r.end().getReceiverLibrary());
+			builder.withEnd(r.end().getOffset());
 
-			builder.withEnd();
-			if (retrievePosition.equals(r.end)) { // we are already at the end
-				header = new FirstHeader(0, 0, 0, OffsetStatus.NO_MORE_DATA, Optional.of(r.end));
-				return true;
+			if (retrievePosition.equals(r.end())) { // we are already at the end
+				header = new FirstHeader(0, 0, 0, OffsetStatus.NO_MORE_DATA, Optional.of(r.end()));
+				return false;
 			}
-			latestJournalPosition = Optional.of(r.end);
+			return true;
+		}).orElseGet(() -> {
+			builder.fromPositionToEnd(retrievePosition);
+			return true;
+		});
+
+		if (!hasData) {
+			return true;
 		}
+
+		final Optional<JournalPosition> latestJournalPosition = rangeOpt.map(x -> x.end());
 
 		final ProgramParameter[] parameters = builder.build();
 		spc.setProgram(JournalInfoRetrieval.JOURNAL_SERVICE_LIB, parameters);
@@ -150,42 +141,43 @@ public class RetrieveJournal {
 				});
 			}
 		} else {
-			return reThrowIfFatal(retrievePosition, spc, latestJournalPosition);
+			return reThrowIfFatal(retrievePosition, spc, latestJournalPosition, builder);
 		}
 		return success;
 	}
 
+
 	private boolean reThrowIfFatal(JournalPosition retrievePosition, final ServiceProgramCall spc,
-			Optional<JournalPosition> latestJournalPosition)
+			Optional<JournalPosition> latestJournalPosition, final ParameterListBuilder builder)
 			throws InvalidPositionException, InvalidJournalFilterException, RetrieveJournalException {
 		for (final AS400Message id : spc.getMessageList()) {
 			final String idt = id.getID();
 			if (idt == null) {
-				log.error("Call failed position {} no Id, message: {}", retrievePosition, id.getText());
+				log.error("Call failed position {} parameters {} no Id, message: {}", retrievePosition, builder, id.getText());
 				continue;
 			}
 			switch (idt) {
 			case "CPF7053": { // sequence number does not exist or break in receivers
 				throw new InvalidPositionException(
-						String.format("Call failed position %s failed to find sequence or break in receivers: %s",
-								retrievePosition, getFullAS400MessageText(id)));
+						String.format("Call failed position %s parameters %s failed to find sequence or break in receivers: %s",
+								retrievePosition, builder, getFullAS400MessageText(id)));
 			}
 			case "CPF9801": { // specify invalid receiver
-				throw new InvalidPositionException(String.format("Call failed position %s failed to find receiver: %s",
-						retrievePosition, getFullAS400MessageText(id)));
+				throw new InvalidPositionException(String.format("Call failed position %s parameters %s failed to find receiver: %s",
+						retrievePosition, builder, getFullAS400MessageText(id)));
 			}
 			case "CPF7054": { // e.g. last < first
 				throw new InvalidPositionException(
-						String.format("Call failed position %s failed to find offset or invalid offsets: %s",
-								retrievePosition, id.getText()));
+						String.format("Call failed position %s parameters %s failed to find offset or invalid offsets: %s",
+								retrievePosition, builder, id.getText()));
 			}
 			case "CPF7060": { // object in filter doesn't exist, or was not journaled
 				throw new InvalidJournalFilterException(
-						String.format("Call failed position %s object not found or not journaled: %s", retrievePosition,
+						String.format("Call failed position %s parameters %s object not found or not journaled: %s", retrievePosition, builder,
 								getFullAS400MessageText(id)));
 			}
 			case "CPF7062": {
-				log.debug("Call failed position {} no data received, probably all filtered: {}", retrievePosition,
+				log.debug("Call failed position {} parameters {} no data received, probably all filtered: {}", retrievePosition, builder, 
 						id.getText());
 				// if we're filtering we get no continuation offset just an error
 				header = new FirstHeader(0, 0, 0, OffsetStatus.NO_MORE_DATA, latestJournalPosition);
@@ -196,101 +188,25 @@ public class RetrieveJournal {
 				return true;
 			}
 			default:
-				log.error("Call failed position {} with error code {} message {}", retrievePosition, idt,
-						getFullAS400MessageText(id));
+				log.error("Call failed position {} parameters {} with error code {} message {}", retrievePosition, idt, 
+						builder, getFullAS400MessageText(id));
 			}
 		}
 		throw new RetrieveJournalException(String.format("Call failed position %s", retrievePosition));
 	}
 
-	record PositionRange(JournalPosition start, JournalPosition end) {
-	}
-
-	List<DetailedJournalReceiver> cachedReceivers = Collections.emptyList();
-	DetailedJournalReceiver cachedCurrentPosition = null;
-
-	Optional<PositionRange> findRange(AS400 as400, JournalPosition start) throws Exception {
-		BigInteger maxPosition = start.getOffset().add(BigInteger.valueOf(config.maxServerSideEntries()));
-		final boolean startValid = start.isOffsetSet() && !start.getOffset().equals(BigInteger.ZERO);
-		if (startValid) {
-			DetailedJournalReceiver currentPosition = cachedCurrentPosition;
-			if (cachedCurrentPosition == null || maxPosition.compareTo(cachedCurrentPosition.end()) >= 0) {
-				currentPosition = journalInfoRetrieval.getCurrentDetailedJournalReceiver(as400, config.journalInfo());
-				cachedCurrentPosition = currentPosition;
-				// can't go beyond current journal end
-				if (maxPosition.compareTo(currentPosition.end()) >= 0) {
-					maxPosition = currentPosition.end();
-					final JournalPosition end = new JournalPosition(maxPosition, currentPosition.info().name(),
-							currentPosition.info().library(), true);
-					return Optional.of(new PositionRange(start, end));
-				}
-			}
-			if (withinRange(maxPosition, currentPosition.start(), currentPosition.end())) {
-				final JournalPosition end = new JournalPosition(maxPosition, currentPosition.info().name(),
-						currentPosition.info().library(), true);
-				return Optional.of(new PositionRange(start, end));
-			}
-		}
-		final Optional<PositionRange> fromCache = findInReceivers(start, maxPosition, startValid, cachedReceivers);
-		if (fromCache.isPresent()) {
-			return fromCache;
-		}
-
-		final List<DetailedJournalReceiver> receivers = journalInfoRetrieval.getReceivers(as400, config.journalInfo());
-		cachedReceivers = receivers;
-		return findInReceivers(start, maxPosition, startValid, receivers);
-	}
-
-	private Optional<PositionRange> findInReceivers(JournalPosition start, BigInteger maxPosition, boolean startValid,
-			List<DetailedJournalReceiver> receivers) {
-		if (receivers.isEmpty()) {
-			return Optional.empty();
-		}
-
-		if (!startValid) {
-			final Optional<DetailedJournalReceiver> first = DetailedJournalReceiver.firstInLatestChain(receivers);
-			final Optional<JournalPosition> startOpt = first
-					.map(x -> new JournalPosition(x.start(), x.info().name(), x.info().library(), false));
-			if (startOpt.isPresent()) {
-				start = startOpt.get();
-				maxPosition = start.getOffset().add(BigInteger.valueOf(config.maxServerSideEntries()));
-			} else {
-				return Optional.empty();
-			}
-		}
-		// limit max position to current journal end
-		final BigInteger endPosition = receivers.stream().map(DetailedJournalReceiver::end).max(BigInteger::compareTo)
-				.get();
-		if (maxPosition.compareTo(endPosition) > 0) {
-			maxPosition = endPosition;
-		}
-		final Optional<JournalPosition> end = journalAtMaxOffset(maxPosition, receivers);
-		if (end.isPresent()) {
-			return Optional.of(new PositionRange(start, end.get()));
-		} else {
-			return Optional.empty();
-		}
-	}
-
-	boolean withinRange(BigInteger desiredPosition, BigInteger startPosition, BigInteger endPosition) {
-		return startPosition.compareTo(desiredPosition) <= 0 && endPosition.compareTo(desiredPosition) >= 0;
+	private <T> String optToString(Optional<T> t) {
+		return t.map(x -> x.toString()).orElse("<null>");
 	}
 
 	boolean shouldLimitRange() {
 		return config.filtering();
 	}
 
-	// returns journal within range of the max offset
-	Optional<JournalPosition> journalAtMaxOffset(BigInteger maxOffset, List<DetailedJournalReceiver> receivers) {
-		final Optional<DetailedJournalReceiver> found = receivers.stream()
-				.filter(p -> withinRange(maxOffset, p.start(), p.end())).findFirst();
-		return found.map(p -> new JournalPosition(maxOffset, p.info().name(), p.info().library(), true));
-	}
-
 	private String getFullAS400MessageText(AS400Message message) {
 		try {
 			message.load(MessageFile.RETURN_FORMATTING_CHARACTERS);
-			return message.getText() + " " + message.getHelp();
+			return String.format("%s %s", message.getText(), message.getHelp());
 		} catch (final Exception e) {
 			return message.getText();
 		}
@@ -466,118 +382,6 @@ public class RetrieveJournal {
 		return header;
 	}
 
-	// TODO remove now we've sanitised RetrievalCriteria
-	public static class ParameterListBuilder {
-		public static final int DEFAULT_JOURNAL_BUFFER_SIZE = 65536 * 2;
-		public static final int ERROR_CODE = 0;
-		private static final byte[] errorCodeData = new AS400Bin4().toBytes(ERROR_CODE);
-		public static final String FORMAT_NAME = "RJNE0200";
-		private static final byte[] formatNameData = new AS400Text(8).toBytes(FORMAT_NAME);
-
-		private int bufferLength = DEFAULT_JOURNAL_BUFFER_SIZE;
-		private byte[] bufferLengthData = new AS400Bin4().toBytes(bufferLength);
-
-		private String receiver = "";
-		private String receiverLibrary = "";
-		private final RetrievalCriteria criteria = new RetrievalCriteria();
-		private byte[] journalData;
-
-		public ParameterListBuilder() {
-			criteria.withLenNullPointerIndicatorVarLength();
-		}
-
-		public ParameterListBuilder withBufferLenth(int bufferLength) {
-			this.bufferLength = bufferLength;
-			this.bufferLengthData = new AS400Bin4().toBytes(bufferLength);
-			return this;
-		}
-
-		public ParameterListBuilder withJournal(String receiver, String receiverLibrary) {
-			if (!this.receiver.equals(receiver) && !this.receiverLibrary.equals(receiverLibrary)) {
-				this.receiver = receiver;
-				this.receiverLibrary = receiverLibrary;
-
-				final String jrnLib = StringHelpers.padRight(receiver, 10)
-						+ StringHelpers.padRight(receiverLibrary, 10);
-				journalData = new AS400Text(20).toBytes(jrnLib);
-			}
-			return this;
-		}
-
-		public void init() {
-			criteria.reset();
-		}
-
-		public ParameterListBuilder withJournalEntryType(JournalEntryType type) {
-			criteria.withEntTyp(new JournalEntryType[] { type });
-			return this;
-		}
-
-		public ParameterListBuilder withReceivers(String startReceiver, String startLibrary) {
-			criteria.withReceiverRange(startReceiver, startLibrary, "*CURRENT", startLibrary);
-			return this;
-		}
-
-		public ParameterListBuilder withReceivers(String startReceiver, String startLibrary, String endReceiver,
-				String endLibrary) {
-			criteria.withReceiverRange(startReceiver, startLibrary, endReceiver, endLibrary);
-			return this;
-		}
-
-		public ParameterListBuilder withEnd() {
-			criteria.withEnd();
-			return this;
-		}
-
-		public ParameterListBuilder withEnd(BigInteger end) {
-			criteria.withEnd(end);
-			return this;
-		}
-
-		public ParameterListBuilder withReceivers(String receivers) {
-			criteria.withReceiverRange(receivers);
-			return this;
-		}
-
-		public ParameterListBuilder withStartingSequence(BigInteger start) {
-			criteria.withFromEnt(start);
-			return this;
-		}
-
-		public ParameterListBuilder withFromStart() {
-			criteria.withFromEnt(RetrievalCriteria.FromEnt.FIRST);
-			return this;
-		}
-
-		public ParameterListBuilder filterJournalCodes(JournalCode[] codes) {
-			criteria.withJrnCde(codes);
-			return this;
-		}
-
-		public ParameterListBuilder withFileFilters(List<FileFilter> tableFilters) {
-			criteria.withFILE(tableFilters);
-			return this;
-		}
-
-		public ParameterListBuilder filterJournalEntryType(RetrievalCriteria.JournalEntryType[] codes) {
-			criteria.withEntTyp(codes);
-			return this;
-		}
-
-		public ProgramParameter[] build() {
-			final byte[] criteriaData = new AS400Structure(criteria.getStructure()).toBytes(criteria.getObject());
-			return new ProgramParameter[] { new ProgramParameter(ProgramParameter.PASS_BY_REFERENCE, bufferLength), // 1
-																													// Receiver
-																													// variable
-					new ProgramParameter(ProgramParameter.PASS_BY_REFERENCE, bufferLengthData), // 2 Length of receiver
-																								// variable
-					new ProgramParameter(ProgramParameter.PASS_BY_REFERENCE, journalData), // 3 Qualified journal name
-					new ProgramParameter(ProgramParameter.PASS_BY_REFERENCE, formatNameData), // 4 Format name
-					new ProgramParameter(ProgramParameter.PASS_BY_REFERENCE, criteriaData), // 5 Journal entries to
-																							// retrieve
-					new ProgramParameter(ProgramParameter.PASS_BY_REFERENCE, errorCodeData) }; // 6 Error code
-		}
-	}
 
 	public long getTotalTransferred() {
 		return totalTransferred;
@@ -590,4 +394,6 @@ public class RetrieveJournal {
 			super(message);
 		}
 	}
+	
+
 }

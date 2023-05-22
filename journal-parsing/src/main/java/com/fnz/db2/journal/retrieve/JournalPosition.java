@@ -7,6 +7,8 @@ package com.fnz.db2.journal.retrieve;
 
 import java.math.BigInteger;
 
+import com.fnz.db2.journal.retrieve.rnrn0200.DetailedJournalReceiver;
+
 public class JournalPosition {
 	// position should be last processed record as requesting the next record will error and be indistinguishable from losing the journal 
     private BigInteger offset; // sequence number up to 18 446 644 000 000 000 000
@@ -21,7 +23,7 @@ public class JournalPosition {
         this.receiverLibrary = position.receiverLibrary;
 		this.processed = position.processed;
     }
-
+    
     public JournalPosition() {
     }
     
@@ -144,5 +146,11 @@ public class JournalPosition {
     	this.receiver = newPosition.receiver;
     	this.receiverLibrary = newPosition.receiverLibrary;
 	    this.processed = newPosition.processed;
+	}
+	
+	public boolean isSameReceiver(DetailedJournalReceiver other) {
+		if (receiver == null ||receiverLibrary == null || other.info() == null)
+			return false;
+		return receiver.equals(other.info().name()) && receiverLibrary.equals(other.info().library());
 	}
 }

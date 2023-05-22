@@ -2,8 +2,8 @@ package com.fnz.db2.journal.data.types;
 
 import java.util.Arrays;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.fnz.db2.journal.retrieve.JournalInfoRetrieval;
 import com.ibm.as400.access.AS400;
@@ -17,7 +17,7 @@ import com.ibm.as400.access.ServiceProgramCall;
 import com.ibm.as400.access.Trace;
 
 public class AS400Clob implements AS400DataType {
-	private static final Logger log = LoggerFactory.getLogger(AS400Clob.class);
+	private static final Logger log = LogManager.getLogger(AS400Clob.class);
 	private static final String EMPTY_STRING = "";
 	private final AS400 as400;
 	private static final byte[] EMPTY_BYTES = new byte[0];
@@ -82,7 +82,7 @@ public class AS400Clob implements AS400DataType {
 		final byte[] address16 = new byte[16];
 		System.arraycopy(hb, 0, address16, 0, 8);
 		System.arraycopy(lb, 0, address16, 8, 8);
-		log.debug("addresss re-encoded {}", toHex(address16));
+		log.debug("addresss re-encoded {}", () -> toHex(address16));
 		log.debug("address raw {}", toHex(addressbyte));
 
 		final ProgramParameter[] parameters = new ProgramParameter[] {
@@ -179,7 +179,7 @@ public class AS400Clob implements AS400DataType {
 			log.debug(getClob(first, second, addressbyte, length));
 //			log.debug(deleteClob(first, second, addressbyte));
 		} catch (final Exception e) {
-			e.printStackTrace();
+			log.error("failed to get clob", e);
 		}
 
 		return "";

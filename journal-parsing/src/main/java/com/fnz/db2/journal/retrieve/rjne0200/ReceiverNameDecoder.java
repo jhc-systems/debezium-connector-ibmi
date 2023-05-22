@@ -4,6 +4,9 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.ibm.as400.access.AS400Bin2;
 import com.ibm.as400.access.AS400DataType;
 import com.ibm.as400.access.AS400Structure;
@@ -14,6 +17,8 @@ import com.ibm.as400.access.CharacterFieldDescription;
 import com.ibm.as400.access.FieldDescription;
 
 public class ReceiverNameDecoder {
+    private static final Logger log = LoggerFactory.getLogger(ReceiverNameDecoder.class);
+
     private final static AS400Structure structure;
     
 	static {
@@ -27,7 +32,7 @@ public class ReceiverNameDecoder {
 		    privateSetFormat.setAccessible(true);
 		    privateSetFormat.invoke(timeType, dtsformat);
 	    } catch (Exception e) {
-	    	e.printStackTrace();
+	    	log.error("failed setting up date formatting", e);
 	    }
 	    
 		FieldDescription[] fds = new FieldDescription[] {

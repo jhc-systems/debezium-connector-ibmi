@@ -50,7 +50,7 @@ public class JournalInfoRetrieval {
 	public JournalPosition getCurrentPosition(AS400 as400, JournalInfo journalLib) throws Exception {
 		final JournalInfo ji = JournalInfoRetrieval.getReceiver(as400, journalLib);
 		final BigInteger offset = getOffset(as400, ji).end();
-		return new JournalPosition(offset, ji.receiver, ji.receiverLibrary, false);
+		return new JournalPosition(offset, ji.journalName, ji.journalLibrary, false);
 	}
 
 	public DetailedJournalReceiver getCurrentDetailedJournalReceiver(AS400 as400, JournalInfo journalLib)
@@ -108,16 +108,18 @@ public class JournalInfoRetrieval {
 	}
 
 	/**
+	 * uses the current attached journal information in the header
+	 * 
 	 * @see https://www.ibm.com/support/knowledgecenter/ssw_ibm_i_74/apis/QJORJRNI.htm
 	 * @param as400
-	 * @param receiverLibrary
+	 * @param journalLibrary
 	 * @param journalFile
 	 * @return
 	 * @throws Exception
 	 */
 	public static JournalInfo getReceiver(AS400 as400, JournalInfo journalLib) throws Exception {
 		final int rcvLen = 4096;
-		final String jrnLib = padRight(journalLib.receiver, 10) + padRight(journalLib.receiverLibrary, 10);
+		final String jrnLib = padRight(journalLib.journalName, 10) + padRight(journalLib.journalLibrary, 10);
 		final String format = "RJRN0200";
 		final ProgramParameter[] parameters = new ProgramParameter[] {
 				new ProgramParameter(ProgramParameter.PASS_BY_REFERENCE, rcvLen),
@@ -137,9 +139,9 @@ public class JournalInfoRetrieval {
 					return new JournalInfo(journalReceiver, journalLibrary);
 				});
 	}
-
+ 
 	private byte[] bufferSizeRequired(AS400 as400, JournalInfo journalLib, int bufSize) throws Exception {
-		final String jrnLib = padRight(journalLib.receiver, 10) + padRight(journalLib.receiverLibrary, 10);
+		final String jrnLib = padRight(journalLib.journalName, 10) + padRight(journalLib.journalLibrary, 10);
 		final String format = "RJRN0200";
 
 		final JournalRetrievalCriteria criteria = new JournalRetrievalCriteria();
@@ -156,9 +158,11 @@ public class JournalInfoRetrieval {
 	}
 
 	/**
+	 * requests the list of receivers and orders them in attach time
+	 * 
 	 * @see https://www.ibm.com/support/knowledgecenter/ssw_ibm_i_74/apis/QJORJRNI.htm
 	 * @param as400
-	 * @param receiverLibrary
+	 * @param journalLibrary
 	 * @param journalFile
 	 * @return
 	 * @throws Exception
@@ -194,16 +198,13 @@ public class JournalInfoRetrieval {
 				}
 			}
 		}
-
-		l.sort((DetailedJournalReceiver f, DetailedJournalReceiver s) -> f.info().attachTime()
-				.compareTo(s.info().attachTime()));
-
-		return l;
+		
+		return DetailedJournalReceiver.lastJoined(l);
 	}
 
 	static DetailedJournalReceiver getOffset(AS400 as400, JournalInfo info) throws Exception {
 		return getOffset(as400,
-				new JournalReceiverInfo(info.receiver, info.receiverLibrary, null, null, Optional.empty()));
+				new JournalReceiverInfo(info.journalName, info.journalLibrary, null, null, Optional.empty()));
 	}
 
 	/**

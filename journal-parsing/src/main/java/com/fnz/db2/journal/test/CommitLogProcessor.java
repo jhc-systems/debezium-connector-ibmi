@@ -51,7 +51,7 @@ public class CommitLogProcessor {
         String offset =  System.getenv("ISERIES_OFFSET");
         String receiver =  System.getenv("ISERIES_RECEIVER");
         if (offset != null && receiver != null)
-            nextPosition = new JournalPosition(offset, receiver, journalLib.receiverLibrary, false);
+            nextPosition = new JournalPosition(offset, receiver, journalLib.journalLibrary, false);
         
         List<FileFilter> includes = new ArrayList<FileFilter>();
         String includesEnv = System.getenv("ISERIES_INCLUDES");
@@ -79,7 +79,7 @@ public class CommitLogProcessor {
 				.withDumpFolder("./bad-journal")
 				.withServerFiltering(true)
 				.withIncludeFiles(includes)
-				.withMaxServerSideEntries(100)
+				.withMaxServerSideEntries(10000)
 				.build();
 		RetrieveJournal rj = new RetrieveJournal(config, journalInfoRetrieval);
 
@@ -164,9 +164,9 @@ public class CommitLogProcessor {
 			JournalInfo journalNow = JournalInfoRetrieval.getReceiver(connector.connection(), journal);
             JournalPosition lastOffset = position;
             if (lastOffset.getReciever() != null
-                    && !journalNow.receiver.equals(lastOffset.getReciever())) {
+                    && !journalNow.journalName.equals(lastOffset.getReciever())) {
                 log.warn("journal reciever doesn't match at position {} we have journal {} and latest is {} ",
-                        position, lastOffset.getReciever(), journalNow.receiver);
+                        position, lastOffset.getReciever(), journalNow.journalName);
             }
             log.error(
                     "Lost journal at position {}. Restarting with blank journal and offset ( current journal is {} )",
@@ -214,7 +214,7 @@ public class CommitLogProcessor {
 						}
 					}
 					} catch (Exception e) {
-						e.printStackTrace();
+						log.error("Failed to dump table", e);
 					}
 					return null;
 				});

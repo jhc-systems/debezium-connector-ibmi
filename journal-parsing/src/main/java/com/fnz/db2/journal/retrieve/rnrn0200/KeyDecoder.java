@@ -4,6 +4,10 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.fnz.db2.journal.retrieve.rjne0200.ReceiverNameDecoder;
 import com.ibm.as400.access.AS400Bin4;
 import com.ibm.as400.access.AS400DataType;
 import com.ibm.as400.access.AS400Structure;
@@ -13,6 +17,8 @@ import com.ibm.as400.access.FieldDescription;
 
 // https://www.ibm.com/docs/en/i/7.2?topic=ssw_ibm_i_72/apis/QJORJRNI.htm "Key section"
 public class KeyDecoder {
+    private static final Logger log = LoggerFactory.getLogger(KeyDecoder.class);
+	
     private final static AS400Structure structure;
     
 	static {

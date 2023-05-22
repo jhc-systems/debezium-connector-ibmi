@@ -26,7 +26,9 @@ public class JournalInfoMain {
 
         List<DetailedJournalReceiver> jri = journalInfoRetrieval.getReceivers(as400Connect.connection(), ji);
         
-        log.info(DetailedJournalReceiver.firstInLatestChain(jri).toString());
+        log.info(jri.toString());
+
+//        log.info(DetailedJournalReceiver.lastJoined(jri).toString());
         
         for (DetailedJournalReceiver j : jri) {
             log.info("receiver {}", j);

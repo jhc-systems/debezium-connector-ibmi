@@ -66,6 +66,12 @@
 			<artifactId>log4j-core</artifactId>
 			<scope>runtime</scope>
 		</dependency>
+		<dependency>
+		    <groupId>org.mockito</groupId>
+		    <artifactId>mockito-junit-jupiter</artifactId>
+		    <version>4.6.1</version>
+		    <scope>test</scope>
+		</dependency>
 	</dependencies>
 
 
