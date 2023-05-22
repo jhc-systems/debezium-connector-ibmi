@@ -79,7 +79,7 @@ public class CommitLogProcessor {
 				.withDumpFolder("./bad-journal")
 				.withServerFiltering(true)
 				.withIncludeFiles(includes)
-				.withMaxServerSideEntries(100)
+				.withMaxServerSideEntries(10000)
 				.build();
 		RetrieveJournal rj = new RetrieveJournal(config, journalInfoRetrieval);
 

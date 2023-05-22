@@ -215,7 +215,7 @@ public class RetrievalCriteria {
         int i = 1;
         for (FileFilter f: fileFilters) {
             types[i] = TEXT10;
-            fdata[i++] = StringHelpers.padRight(f.getTableName().toUpperCase(), 10);
+            fdata[i++] = StringHelpers.padRight(f.getTable().toUpperCase(), 10);
             types[i] = TEXT10;
             fdata[i++] = StringHelpers.padRight(f.getSchema().toUpperCase(), 10);
             types[i] = TEXT10;
