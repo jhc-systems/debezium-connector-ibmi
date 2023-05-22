@@ -41,7 +41,7 @@ public class EntryHeaderDecoder {
 		    privateSetFormat.setAccessible(true);
 		    privateSetFormat.invoke(timeType, dtsformat);
 	    } catch (Exception e) {
-	    	e.printStackTrace();
+	    	log.error("failed setting up date formatting", e);
 	    }
 	    
 		FieldDescription[] fds = new FieldDescription[] {

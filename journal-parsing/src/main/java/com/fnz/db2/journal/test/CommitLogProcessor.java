@@ -214,7 +214,7 @@ public class CommitLogProcessor {
 						}
 					}
 					} catch (Exception e) {
-						e.printStackTrace();
+						log.error("Failed to dump table", e);
 					}
 					return null;
 				});
