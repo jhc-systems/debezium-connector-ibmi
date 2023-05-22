@@ -15,4 +15,9 @@ public class FileFilter {
     public String getTableName() {
         return tableName;
     }
+
+	@Override
+	public String toString() {
+		return String.format("FileFilter [schema=%s, tableName=%s]", schema, tableName);
+	}
 }

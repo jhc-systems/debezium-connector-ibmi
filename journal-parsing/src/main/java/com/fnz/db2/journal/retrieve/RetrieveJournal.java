@@ -206,7 +206,7 @@ public class RetrieveJournal {
 	private String getFullAS400MessageText(AS400Message message) {
 		try {
 			message.load(MessageFile.RETURN_FORMATTING_CHARACTERS);
-			return message.getText() + " " + message.getHelp();
+			return String.format("%s %s", message.getText(), message.getHelp());
 		} catch (final Exception e) {
 			return message.getText();
 		}

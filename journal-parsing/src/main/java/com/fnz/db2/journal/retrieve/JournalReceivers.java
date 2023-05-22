@@ -24,7 +24,6 @@ public class JournalReceivers {
 		this.journalInfo=  journalInfo;
 	}
 	
-	DetailedJournalReceiver cachedCurrentPosition = null;
 	List<DetailedJournalReceiver> cachedReceivers = null;
 
 	Optional<PositionRange> findRange(AS400 as400, JournalPosition startPosition) throws Exception {
@@ -37,14 +36,13 @@ public class JournalReceivers {
 		
 		if (cachedReceivers == null) {
 			cachedReceivers = journalInfoRetrieval.getReceivers(as400, journalInfo);
-			cachedCurrentPosition = cachedReceivers.get(cachedReceivers.size());
 		}
 
-		DetailedJournalReceiver endJournalPosition = journalInfoRetrieval.getCurrentDetailedJournalReceiver(as400, journalInfo);
-		if (startPosition.isSameReceiver(endJournalPosition)) {
+		DetailedJournalReceiver endPosition = journalInfoRetrieval.getCurrentDetailedJournalReceiver(as400, journalInfo);
+		if (startPosition.isSameReceiver(endPosition)) {
 			// we're currently on the same journal just check the relative offset is within range
 			// don't update the cache as we are not going to know the real end offset for this journal receiver until we move on to the next
-			return  Optional.of(maxOffsetInSameReceiver(startPosition, endJournalPosition, maxServerSideEntriesBI));
+			return  Optional.of(maxOffsetInSameReceiver(startPosition, endPosition, maxServerSideEntriesBI));
 		} else {
 			// last call to current position won't include the correct end offset so we need to refresh the list
 			cachedReceivers = journalInfoRetrieval.getReceivers(as400, journalInfo);
