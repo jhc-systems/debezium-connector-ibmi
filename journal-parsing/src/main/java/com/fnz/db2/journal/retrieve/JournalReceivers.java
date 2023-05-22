@@ -44,7 +44,7 @@ public class JournalReceivers {
 		if (startPosition.isSameReceiver(endJournalPosition)) {
 			// we're currently on the same journal just check the relative offset is within range
 			// don't update the cache as we are not going to know the real end offset for this journal receiver until we move on to the next
-			return maxOffsetInSameReceiver(startPosition, endJournalPosition, maxServerSideEntriesBI);
+			return  Optional.of(maxOffsetInSameReceiver(startPosition, endJournalPosition, maxServerSideEntriesBI));
 		} else {
 			// last call to current position won't include the correct end offset so we need to refresh the list
 			cachedReceivers = journalInfoRetrieval.getReceivers(as400, journalInfo);
@@ -55,23 +55,23 @@ public class JournalReceivers {
 	}
 
 	/**
-	 * only valid when startPosision and endJournalPosistion are the same receiver and library
+	 * only valid when startPosition and endJournalPosition are the same receiver and library
 	 * @param startPosition
 	 * @param endJournalPosition
 	 * @param maxServerSideEntriesBI
 	 * @return
 	 * @throws Exception 
 	 */
-	Optional<PositionRange> maxOffsetInSameReceiver(JournalPosition startPosition, DetailedJournalReceiver endJournalPosition, BigInteger maxServerSideEntriesBI) throws Exception {
+	PositionRange maxOffsetInSameReceiver(JournalPosition startPosition, DetailedJournalReceiver endJournalPosition, BigInteger maxServerSideEntriesBI) throws Exception {
 		if (!startPosition.isSameReceiver(endJournalPosition)) {
 			throw new Exception(String.format("Error this method is only valid for same receiver start %s, end %s", startPosition, endJournalPosition));
 		}
 		BigInteger diff = endJournalPosition.end().subtract(startPosition.getOffset());
 		if (diff.compareTo(maxServerSideEntriesBI) > 0) {
 			BigInteger restricted = startPosition.getOffset().add(maxServerSideEntriesBI);
-			return Optional.of(new PositionRange(startPosition, new JournalPosition(restricted, startPosition.getReciever(), startPosition.getReceiverLibrary(), true)));
+			return new PositionRange(startPosition, new JournalPosition(restricted, startPosition.getReciever(), startPosition.getReceiverLibrary(), true));
 		}
-		return Optional.of(new PositionRange(startPosition, new JournalPosition(endJournalPosition.end(), startPosition.getReciever(), startPosition.getReceiverLibrary(), true)));
+		return new PositionRange(startPosition, new JournalPosition(endJournalPosition.end(), startPosition.getReciever(), startPosition.getReceiverLibrary(), true));
 	}
 
 	/**

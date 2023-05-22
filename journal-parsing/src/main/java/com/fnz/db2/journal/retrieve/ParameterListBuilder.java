@@ -11,7 +11,7 @@ import com.ibm.as400.access.AS400Structure;
 import com.ibm.as400.access.AS400Text;
 import com.ibm.as400.access.ProgramParameter;
 
-// TODO remove now we've sanitised RetrievalCriteria
+// mostly a wrapper for RetrievalCriteria so we can capture parameters for diagnostics
 public class ParameterListBuilder {
 	public static final int DEFAULT_JOURNAL_BUFFER_SIZE = 65536 * 2;
 	public static final int ERROR_CODE = 0;
