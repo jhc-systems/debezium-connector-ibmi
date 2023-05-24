@@ -140,7 +140,7 @@ public class JournalInfoRetrieval {
 				});
 	}
  
-	private byte[] bufferSizeRequired(AS400 as400, JournalInfo journalLib, int bufSize) throws Exception {
+	private byte[] getReceiversForJournal(AS400 as400, JournalInfo journalLib, int bufSize) throws Exception {
 		final String jrnLib = padRight(journalLib.journalName, 10) + padRight(journalLib.journalLibrary, 10);
 		final String format = "RJRN0200";
 
@@ -169,11 +169,11 @@ public class JournalInfoRetrieval {
 	 */
 	public List<DetailedJournalReceiver> getReceivers(AS400 as400, JournalInfo journalLib) throws Exception {
 		final int defaultSize = 32768;
-		byte[] data = bufferSizeRequired(as400, journalLib, 32768);
+		byte[] data = getReceiversForJournal(as400, journalLib, 32768);
 		final int actualSizeRequired = decodeInt(data, 4) * 4096; // bytes available - value returned for rjrn0200 is 4k
 																	// pages
 		if (actualSizeRequired > defaultSize) {
-			data = bufferSizeRequired(as400, journalLib, actualSizeRequired);
+			data = getReceiversForJournal(as400, journalLib, actualSizeRequired);
 		}
 
 		final Integer keyOffset = decodeInt(data, 8) + 4;

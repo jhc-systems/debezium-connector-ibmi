@@ -78,4 +78,33 @@ class ReceiverChainTest {
 		assertEquals(secondAvailable, chain.next.details, "second availabe");
 		assertEquals(null, chain.next.next, "end of list");
 	}
+	
+	
+	
+	@Test
+	void testFindCurrentChainWithDetachedChains() {
+		DetailedJournalReceiver firstAvailable = new DetailedJournalReceiver(new JournalReceiverInfo("5", "lib", new Date(2), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.ZERO, BigInteger.ONE, "6", "", 1, 1);
+		DetailedJournalReceiver secondAvailable = new DetailedJournalReceiver(new JournalReceiverInfo("6", "lib", new Date(2), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.ZERO, BigInteger.ONE, "", "", 1, 1);
+		List<DetailedJournalReceiver> l = Arrays.asList(		
+			new DetailedJournalReceiver(new JournalReceiverInfo("1", "lib", new Date(1), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.ONE, BigInteger.TWO, "2", "", 1, 1),
+			new DetailedJournalReceiver(new JournalReceiverInfo("2", "lib", new Date(1), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.ONE, BigInteger.TWO, "3", "", 1, 1),
+			new DetailedJournalReceiver(new JournalReceiverInfo("3", "lib", new Date(1), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.ONE, BigInteger.TWO, "4", "", 1, 1),
+			new DetailedJournalReceiver(new JournalReceiverInfo("4", "lib", new Date(1), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.ONE, BigInteger.TWO, "", "", 1, 1),
+			firstAvailable,
+			secondAvailable
+		);
+		Map<String, ReceiverChain> map = ReceiverChain.availableSingleChainElement(l);
+		assertEquals(6, map.size());
+		
+		Set<ReceiverChain> detachedSet = ReceiverChain.buildReceiverChains(map);		
+		assertEquals(2, detachedSet.size());
+		
+		Optional<ReceiverChain> chainOpt = ReceiverChain.findChain(map, secondAvailable);
+
+		assertTrue(chainOpt.isPresent(), "chain found");
+		ReceiverChain chain = chainOpt.get();
+		assertEquals(firstAvailable, chain.details, "first avaiable");
+		assertEquals(secondAvailable, chain.next.details, "second availabe");
+		assertEquals(null, chain.next.next, "end of list");
+	}
 }

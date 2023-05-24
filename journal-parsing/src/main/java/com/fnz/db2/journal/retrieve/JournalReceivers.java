@@ -16,16 +16,15 @@ public class JournalReceivers {
 	private final JournalInfoRetrieval journalInfoRetrieval;
 	private final JournalInfo journalInfo;
 	private final BigInteger maxServerSideEntriesBI;
+	private DetailedJournalReceiver cachedEndPosition;
+	private List<DetailedJournalReceiver> cachedReceivers = null;
 
-	
 	JournalReceivers(JournalInfoRetrieval journalInfoRetrieval, int maxServerSideEntries, JournalInfo journalInfo) {
 		this.journalInfoRetrieval = journalInfoRetrieval;
 		maxServerSideEntriesBI = BigInteger.valueOf(maxServerSideEntries);
 		this.journalInfo=  journalInfo;
 	}
 	
-	List<DetailedJournalReceiver> cachedReceivers = null;
-
 	Optional<PositionRange> findRange(AS400 as400, JournalPosition startPosition) throws Exception {
 		BigInteger start = startPosition.getOffset();
 		final boolean startValid = startPosition.isOffsetSet() && !start.equals(BigInteger.ZERO);
@@ -39,19 +38,37 @@ public class JournalReceivers {
 		}
 
 		DetailedJournalReceiver endPosition = journalInfoRetrieval.getCurrentDetailedJournalReceiver(as400, journalInfo);
-		if (startPosition.isSameReceiver(endPosition)) {
+		if (cachedEndPosition.isSameReceiver(endPosition)) {
+			
 			// we're currently on the same journal just check the relative offset is within range
 			// don't update the cache as we are not going to know the real end offset for this journal receiver until we move on to the next
-			return  Optional.of(maxOffsetInSameReceiver(startPosition, endPosition, maxServerSideEntriesBI));
+			if (startPosition.isSameReceiver(endPosition)) {
+				return  Optional.of(maxOffsetInSameReceiver(startPosition, endPosition, maxServerSideEntriesBI));
+			} else {
+				// refresh end position in cached list
+				updateEndPosition(cachedReceivers, endPosition);
+			}
 		} else {
 			// last call to current position won't include the correct end offset so we need to refresh the list
 			cachedReceivers = journalInfoRetrieval.getReceivers(as400, journalInfo);
+			cachedEndPosition = endPosition;
 		}
 
 		Optional<JournalPosition> endOpt = findPosition(startPosition, maxServerSideEntriesBI, cachedReceivers);
 		return endOpt.map(end -> new PositionRange(startPosition, end));
 	}
 
+	
+	void updateEndPosition(List<DetailedJournalReceiver> cachedReceivers, DetailedJournalReceiver endPosition) {
+		// should be last entry
+		for (int i = cachedReceivers.size()-1; i > 0 ; i--) {
+			DetailedJournalReceiver d = cachedReceivers.get(i);
+			if (d.isSameReceiver(endPosition)) {
+				cachedReceivers.set(i, endPosition);
+			}
+		}
+	}
+	
 	/**
 	 * only valid when startPosition and endJournalPosition are the same receiver and library
 	 * @param startPosition
