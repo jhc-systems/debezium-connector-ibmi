@@ -117,13 +117,6 @@ public	class ReceiverChain {
 						nr.previous = or;
 					}
 				}
-				String nextDualReceiverName = or.details.nextDualReceiver();
-				if (nextDualReceiverName != null && !nextDualReceiverName.isBlank()) {
-					final ReceiverChain dualr = m.get(nextDualReceiverName);
-					if (dualr != null) {
-						noNext.remove(dualr);
-					}
-				}
 			}
 		}
 		return noNext;

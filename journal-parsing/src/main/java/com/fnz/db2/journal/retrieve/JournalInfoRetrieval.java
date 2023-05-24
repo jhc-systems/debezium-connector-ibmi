@@ -229,7 +229,6 @@ public class JournalInfoRetrieval {
 				(byte[] data) -> {
 					final String journalName = decodeString(data, 8, 10);
 					final String nextReceiver = decodeString(data, 332, 10);
-					final String nextDualReceiver = decodeString(data, 352, 10);
 					final Long numberOfEntries = Long.valueOf(decodeString(data, 372, 20));
 					final Long maxEntryLength = Long.valueOf(decodeString(data, 392, 20));
 					final BigInteger firstSequence = decodeBigIntFromString(data, 412);
@@ -241,7 +240,7 @@ public class JournalInfoRetrieval {
 						throw new Exception(msg);
 					}
 					return new DetailedJournalReceiver(receiverInfo, firstSequence, lastSequence, nextReceiver,
-							nextDualReceiver, maxEntryLength, numberOfEntries);
+							maxEntryLength, numberOfEntries);
 				});
 	}
 

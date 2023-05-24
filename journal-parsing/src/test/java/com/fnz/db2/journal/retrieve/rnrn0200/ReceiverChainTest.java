@@ -23,9 +23,9 @@ class ReceiverChainTest {
 
 	@Test
 	void testAvailableSingleChainElement() {		
-		DetailedJournalReceiver available = new DetailedJournalReceiver(new JournalReceiverInfo("2", "lib", new Date(2), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.ZERO, BigInteger.ONE, "", "", 1, 1); 
+		DetailedJournalReceiver available = new DetailedJournalReceiver(new JournalReceiverInfo("2", "lib", new Date(2), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.ZERO, BigInteger.ONE, "", 1, 1); 
 		List<DetailedJournalReceiver> l = Arrays.asList(		
-			new DetailedJournalReceiver(new JournalReceiverInfo("1", "lib", new Date(1), JournalStatus.Partial, Optional.of(1)), BigInteger.ONE, BigInteger.TWO, "2", "", 1, 1),
+			new DetailedJournalReceiver(new JournalReceiverInfo("1", "lib", new Date(1), JournalStatus.Partial, Optional.of(1)), BigInteger.ONE, BigInteger.TWO, "2", 1, 1),
 			available
 		);
 		Map<String, ReceiverChain> map = ReceiverChain.availableSingleChainElement(l);
@@ -36,10 +36,10 @@ class ReceiverChainTest {
 
 	@Test
 	void testBuildReceiverChains() {
-		DetailedJournalReceiver firstAvailable = new DetailedJournalReceiver(new JournalReceiverInfo("2", "lib", new Date(2), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.ZERO, BigInteger.ONE, "3", "", 1, 1);
-		DetailedJournalReceiver secondAvailable = new DetailedJournalReceiver(new JournalReceiverInfo("3", "lib", new Date(2), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.ZERO, BigInteger.ONE, "", "", 1, 1);
+		DetailedJournalReceiver firstAvailable = new DetailedJournalReceiver(new JournalReceiverInfo("2", "lib", new Date(2), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.ZERO, BigInteger.ONE, "3", 1, 1);
+		DetailedJournalReceiver secondAvailable = new DetailedJournalReceiver(new JournalReceiverInfo("3", "lib", new Date(2), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.ZERO, BigInteger.ONE, "", 1, 1);
 		List<DetailedJournalReceiver> l = Arrays.asList(		
-			new DetailedJournalReceiver(new JournalReceiverInfo("1", "lib", new Date(1), JournalStatus.Partial, Optional.of(1)), BigInteger.ONE, BigInteger.TWO, "2", "", 1, 1),
+			new DetailedJournalReceiver(new JournalReceiverInfo("1", "lib", new Date(1), JournalStatus.Partial, Optional.of(1)), BigInteger.ONE, BigInteger.TWO, "2", 1, 1),
 			firstAvailable,
 			secondAvailable
 		);
@@ -57,10 +57,10 @@ class ReceiverChainTest {
 	
 	@Test
 	void testFindCurrentChain() {
-		DetailedJournalReceiver firstAvailable = new DetailedJournalReceiver(new JournalReceiverInfo("2", "lib", new Date(2), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.ZERO, BigInteger.ONE, "3", "", 1, 1);
-		DetailedJournalReceiver secondAvailable = new DetailedJournalReceiver(new JournalReceiverInfo("3", "lib", new Date(2), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.ZERO, BigInteger.ONE, "", "", 1, 1);
+		DetailedJournalReceiver firstAvailable = new DetailedJournalReceiver(new JournalReceiverInfo("2", "lib", new Date(2), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.ZERO, BigInteger.ONE, "3", 1, 1);
+		DetailedJournalReceiver secondAvailable = new DetailedJournalReceiver(new JournalReceiverInfo("3", "lib", new Date(2), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.ZERO, BigInteger.ONE, "", 1, 1);
 		List<DetailedJournalReceiver> l = Arrays.asList(		
-			new DetailedJournalReceiver(new JournalReceiverInfo("1", "lib", new Date(1), JournalStatus.Partial, Optional.of(1)), BigInteger.ONE, BigInteger.TWO, "2", "", 1, 1),
+			new DetailedJournalReceiver(new JournalReceiverInfo("1", "lib", new Date(1), JournalStatus.Partial, Optional.of(1)), BigInteger.ONE, BigInteger.TWO, "2", 1, 1),
 			firstAvailable,
 			secondAvailable
 		);
@@ -83,13 +83,13 @@ class ReceiverChainTest {
 	
 	@Test
 	void testFindCurrentChainWithDetachedChains() {
-		DetailedJournalReceiver firstAvailable = new DetailedJournalReceiver(new JournalReceiverInfo("5", "lib", new Date(2), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.ZERO, BigInteger.ONE, "6", "", 1, 1);
-		DetailedJournalReceiver secondAvailable = new DetailedJournalReceiver(new JournalReceiverInfo("6", "lib", new Date(2), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.ZERO, BigInteger.ONE, "", "", 1, 1);
+		DetailedJournalReceiver firstAvailable = new DetailedJournalReceiver(new JournalReceiverInfo("5", "lib", new Date(1), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.ZERO, BigInteger.ONE, "6", 1, 1);
+		DetailedJournalReceiver secondAvailable = new DetailedJournalReceiver(new JournalReceiverInfo("6", "lib", new Date(1), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.ZERO, BigInteger.ONE, "", 1, 1);
 		List<DetailedJournalReceiver> l = Arrays.asList(		
-			new DetailedJournalReceiver(new JournalReceiverInfo("1", "lib", new Date(1), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.ONE, BigInteger.TWO, "2", "", 1, 1),
-			new DetailedJournalReceiver(new JournalReceiverInfo("2", "lib", new Date(1), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.ONE, BigInteger.TWO, "3", "", 1, 1),
-			new DetailedJournalReceiver(new JournalReceiverInfo("3", "lib", new Date(1), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.ONE, BigInteger.TWO, "4", "", 1, 1),
-			new DetailedJournalReceiver(new JournalReceiverInfo("4", "lib", new Date(1), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.ONE, BigInteger.TWO, "", "", 1, 1),
+			new DetailedJournalReceiver(new JournalReceiverInfo("1", "lib", new Date(1), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.ONE, BigInteger.TWO, "2",1, 1),
+			new DetailedJournalReceiver(new JournalReceiverInfo("2", "lib", new Date(1), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.ONE, BigInteger.TWO, "3", 1, 1),
+			new DetailedJournalReceiver(new JournalReceiverInfo("3", "lib", new Date(1), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.ONE, BigInteger.TWO, "4", 1, 1),
+			new DetailedJournalReceiver(new JournalReceiverInfo("4", "lib", new Date(1), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.ONE, BigInteger.TWO, "", 1, 1),
 			firstAvailable,
 			secondAvailable
 		);

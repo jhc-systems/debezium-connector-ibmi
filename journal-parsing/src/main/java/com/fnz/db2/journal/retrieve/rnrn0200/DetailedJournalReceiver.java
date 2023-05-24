@@ -6,8 +6,7 @@ import java.util.List;
 
 import com.fnz.db2.journal.retrieve.JournalPosition;
 
-public record DetailedJournalReceiver(JournalReceiverInfo info, BigInteger start, BigInteger end, String nextReceiver,
-		String nextDualReceiver, long maxEntryLength, long numberOfEntries) {
+public record DetailedJournalReceiver(JournalReceiverInfo info, BigInteger start, BigInteger end, String nextReceiver, long maxEntryLength, long numberOfEntries) {
 	
 	public boolean isSameReceiver(JournalPosition position) {
 		if (info == null || position == null)
@@ -35,7 +34,7 @@ public record DetailedJournalReceiver(JournalReceiverInfo info, BigInteger start
 	public static int indexOfLastJoined(List<DetailedJournalReceiver> list) {
 		int size = list.size();
 		int last = 0;
-		for (int i=0; i<size; i++) {
+		for (int i = 0; i < size; i++) {
 			if (!list.get(i).isJoined()) {
 				last = i + 1;
 			}				

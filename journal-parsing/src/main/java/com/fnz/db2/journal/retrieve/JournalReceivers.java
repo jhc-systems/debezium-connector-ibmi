@@ -38,8 +38,10 @@ public class JournalReceivers {
 		}
 
 		DetailedJournalReceiver endPosition = journalInfoRetrieval.getCurrentDetailedJournalReceiver(as400, journalInfo);
+		if (cachedEndPosition == null) {
+			cachedEndPosition = endPosition; 
+		}
 		if (cachedEndPosition.isSameReceiver(endPosition)) {
-			
 			// we're currently on the same journal just check the relative offset is within range
 			// don't update the cache as we are not going to know the real end offset for this journal receiver until we move on to the next
 			if (startPosition.isSameReceiver(endPosition)) {
@@ -59,14 +61,16 @@ public class JournalReceivers {
 	}
 
 	
-	void updateEndPosition(List<DetailedJournalReceiver> cachedReceivers, DetailedJournalReceiver endPosition) {
+	static void updateEndPosition(List<DetailedJournalReceiver> list, DetailedJournalReceiver endPosition) {
 		// should be last entry
-		for (int i = cachedReceivers.size()-1; i > 0 ; i--) {
-			DetailedJournalReceiver d = cachedReceivers.get(i);
+		for (int i = list.size()-1; i > 0 ; i--) {
+			DetailedJournalReceiver d = list.get(i);
 			if (d.isSameReceiver(endPosition)) {
-				cachedReceivers.set(i, endPosition);
+				list.set(i, endPosition);
+				return;
 			}
 		}
+		list.add(endPosition);
 	}
 	
 	/**
