@@ -1,0 +1,8 @@
+**free
+
+/include ./exit_pgm_defs.rpgleinc
+
+dcl-pr debexit extpgm;
+  exitInfo likeds(t_DRCV0100) const;
+  statusInfo likeds(t_dltjrnrcvStatus);
+end-pr;

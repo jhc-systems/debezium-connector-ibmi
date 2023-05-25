@@ -1,0 +1,27 @@
+**free
+
+dcl-ds t_DRCV0100 qualified template;
+  length int(10);
+  exitPointName char(20);
+  exitPointFormat char(8);
+  journalReceiver char(10);
+  journalReceiverLibrary char(10);
+  journal char(10);
+  journalLibrary char(10);
+  calledBySystemJob char(1);
+  calledDuringIpl char(1);
+  calledDuringProcessEnd char(1);
+  journalType char(1);
+  remoteJournalType char(1);
+  saveStatus char(1);
+  partialStatus char(1);
+  detachedDateAndTime char(13);
+end-ds;
+
+dcl-c PERMIT_DELETION '1';
+dcl-c PREVENT_DELETION '0';
+
+dcl-ds t_dltjrnrcvStatus qualified template;
+  length int(10);
+  deleteStatus char(1) inz(PREVENT_DELETION);
+end-ds;
