@@ -3,7 +3,9 @@ package com.fnz.db2.journal.retrieve;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -13,6 +15,7 @@ import org.slf4j.LoggerFactory;
 
 import com.fnz.db2.journal.retrieve.rnrn0200.DetailedJournalReceiver;
 import com.fnz.db2.journal.retrieve.rnrn0200.JournalReceiverInfo;
+import com.fnz.db2.journal.retrieve.rnrn0200.JournalStatus;
 import com.fnz.db2.journal.retrieve.rnrn0200.KeyDecoder;
 import com.fnz.db2.journal.retrieve.rnrn0200.KeyHeader;
 import com.fnz.db2.journal.retrieve.rnrn0200.ReceiverDecoder;
@@ -33,6 +36,8 @@ import com.ibm.as400.access.ServiceProgramCall;
  *
  */
 public class JournalInfoRetrieval {
+	private static final Logger log = LoggerFactory.getLogger(JournalInfoRetrieval.class);
+
 	public static final String JOURNAL_SERVICE_LIB = "/QSYS.LIB/QJOURNAL.SRVPGM";
 
 	private static final byte[] EMPTY_AS400_TEXT = new AS400Text(0).toBytes("");
@@ -41,7 +46,8 @@ public class JournalInfoRetrieval {
 	private static final AS400Bin8 AS400_BIN8 = new AS400Bin8();
 	private static final AS400Bin4 AS400_BIN4 = new AS400Bin4();
 	private static final int KEY_HEADER_LENGTH = 20;
-	static final Logger log = LoggerFactory.getLogger(JournalInfoRetrieval.class);
+	private static DetailedJournalReceiverCache cache = new DetailedJournalReceiverCache();
+
 
 	public JournalInfoRetrieval() {
 		super();
@@ -192,21 +198,22 @@ public class JournalInfoRetrieval {
 							+ i * kheader.getLengthOfKeyInfo();
 
 					final JournalReceiverInfo r = dec.decode(data, kioffset);
-					final DetailedJournalReceiver details = getOffset(as400, r);
+					final DetailedJournalReceiver details = getReceiverDetails(as400, r);
 
 					l.add(details);
 				}
 			}
 		}
+		cache.keepOnly(l);
 		
 		return DetailedJournalReceiver.lastJoined(l);
 	}
 
 	static DetailedJournalReceiver getOffset(AS400 as400, JournalInfo info) throws Exception {
-		return getOffset(as400,
+		return getReceiverDetails(as400,
 				new JournalReceiverInfo(info.journalName, info.journalLibrary, null, null, Optional.empty()));
 	}
-
+	
 	/**
 	 * @see https://www.ibm.com/support/knowledgecenter/ssw_ibm_i_74/apis/QJORRCVI.htm
 	 * @param as400
@@ -214,14 +221,17 @@ public class JournalInfoRetrieval {
 	 * @return
 	 * @throws Exception
 	 */
-	private static DetailedJournalReceiver getOffset(AS400 as400, JournalReceiverInfo receiverInfo) throws Exception {
+	private static DetailedJournalReceiver getReceiverDetails(AS400 as400, JournalReceiverInfo receiverInfo) throws Exception {
 		final int rcvLen = 32768;
-		final String jrnLib = padRight(receiverInfo.name(), 10) + padRight(receiverInfo.library(), 10);
+		final String receiverNameLib = padRight(receiverInfo.name(), 10) + padRight(receiverInfo.library(), 10);
+		if (cache.containsKey(receiverInfo)) {
+			return cache.get(receiverInfo);
+		}
 		final String format = "RRCV0100";
 		final ProgramParameter[] parameters = new ProgramParameter[] {
 				new ProgramParameter(ProgramParameter.PASS_BY_REFERENCE, rcvLen),
 				new ProgramParameter(ProgramParameter.PASS_BY_REFERENCE, AS400_BIN4.toBytes(rcvLen)),
-				new ProgramParameter(ProgramParameter.PASS_BY_REFERENCE, AS400_TEXT_20.toBytes(jrnLib)),
+				new ProgramParameter(ProgramParameter.PASS_BY_REFERENCE, AS400_TEXT_20.toBytes(receiverNameLib)),
 				new ProgramParameter(ProgramParameter.PASS_BY_REFERENCE, AS400_TEXT_8.toBytes(format)),
 				new ProgramParameter(ProgramParameter.PASS_BY_REFERENCE, AS400_BIN4.toBytes(0)) };
 
@@ -233,14 +243,19 @@ public class JournalInfoRetrieval {
 					final Long maxEntryLength = Long.valueOf(decodeString(data, 392, 20));
 					final BigInteger firstSequence = decodeBigIntFromString(data, 412);
 					final BigInteger lastSequence = decodeBigIntFromString(data, 432);
+					final JournalStatus status = JournalStatus.valueOfString(decodeString(data, 88, 1));
 
 					if (!journalName.equals(receiverInfo.name())) {
 						final String msg = String.format("journal names don't match requested %s got %s",
 								receiverInfo.name(), journalName);
 						throw new Exception(msg);
 					}
-					return new DetailedJournalReceiver(receiverInfo, firstSequence, lastSequence, nextReceiver,
+					
+					DetailedJournalReceiver dr = new DetailedJournalReceiver(receiverInfo.withStatus(status), firstSequence, lastSequence, nextReceiver,
 							maxEntryLength, numberOfEntries);
+					
+					cache.put(receiverInfo, dr);
+					return dr;
 				});
 	}
 
