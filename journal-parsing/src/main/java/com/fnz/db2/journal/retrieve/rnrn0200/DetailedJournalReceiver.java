@@ -3,6 +3,7 @@ package com.fnz.db2.journal.retrieve.rnrn0200;
 import java.math.BigInteger;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import com.fnz.db2.journal.retrieve.JournalPosition;
 
@@ -21,6 +22,7 @@ public record DetailedJournalReceiver(JournalReceiverInfo info, BigInteger start
 	}
 	
 	public static List<DetailedJournalReceiver> lastJoined(List<DetailedJournalReceiver> list) {
+		list = list.stream().filter(x -> x.info().attachTime() != null).collect(Collectors.toList()); // exclude any that have never been attached
 		list.sort((DetailedJournalReceiver f, DetailedJournalReceiver s) -> f.info().attachTime()
 				.compareTo(s.info().attachTime()));
 		int last = indexOfLastJoined(list);
