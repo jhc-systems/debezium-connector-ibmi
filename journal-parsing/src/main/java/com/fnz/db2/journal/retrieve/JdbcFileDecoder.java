@@ -258,7 +258,7 @@ public class JdbcFileDecoder extends JournalFileEntryDecoder {
 	private final Map<String, Integer> ccsidMap = new HashMap<>();
 
 	public Integer getCcsid(String schema, String table, String columnName) {
-		log.info("forced ccsid {}", forcedCcsid);
+		log.debug("forced ccsid {} {}", forcedCcsid, table);
 		if (forcedCcsid != -1) {
 			return forcedCcsid;
 		}

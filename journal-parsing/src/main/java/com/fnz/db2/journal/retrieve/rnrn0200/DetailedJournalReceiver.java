@@ -21,6 +21,7 @@ public record DetailedJournalReceiver(JournalReceiverInfo info, BigInteger start
 	}
 	
 	public static List<DetailedJournalReceiver> lastJoined(List<DetailedJournalReceiver> list) {
+		list = list.stream().filter(x -> x.info().attachTime() != null).toList(); // exclude any that have never been attached
 		list.sort((DetailedJournalReceiver f, DetailedJournalReceiver s) -> f.info().attachTime()
 				.compareTo(s.info().attachTime()));
 		int last = indexOfLastJoined(list);
