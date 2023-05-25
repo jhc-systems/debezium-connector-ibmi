@@ -30,10 +30,10 @@ import com.ibm.as400.access.AS400Text;
 
 // this file is utf-8
 
-class JournalEntryCcsidText {
+class JournalEntryCcsidIT {
     private static final String SPECIAL_CHARACTERS = "£$[^~?¢";
 
-	private static final Logger log = LoggerFactory.getLogger(JournalEntryCcsidText.class);
+	private static final Logger log = LoggerFactory.getLogger(JournalEntryCcsidIT.class);
 
 	static Connect<AS400, IOException> as400Connect;
 	static Connect<Connection, SQLException> sqlConnect;

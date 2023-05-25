@@ -17,8 +17,24 @@
         <maven.compiler.target>17</maven.compiler.target>
         <flatten.version>1.2.7</flatten.version>
 	    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-	    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>        
+	    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     </properties>
+    
+    <profiles>
+		<profile>
+			<id>external</id>
+		    <activation>
+				<activeByDefault>true</activeByDefault>
+		    </activation>			
+			 <repositories>
+				<repository>
+				  <id>confluent</id>
+				  <name>confluent repository</name>
+				  <url>https://packages.confluent.io/maven/</url>
+				</repository>
+			</repositories>		
+		</profile>
+	</profiles>
 
     <dependencyManagement>
         <dependencies>
