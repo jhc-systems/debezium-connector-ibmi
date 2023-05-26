@@ -320,7 +320,6 @@ public class JdbcFileDecoder extends JournalFileEntryDecoder {
 
 	public AS400DataType toDataType(String schema, String table, String columnName, String type, int length,
 			Integer precision) {
-		log.info("fetch table {}", table);
 		switch (type) {
 		case "DECIMAL":
 			return new AS400PackedDecimal(length, precision);
