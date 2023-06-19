@@ -27,7 +27,7 @@ public class DetailedJournalReceiverCache {
 	public DetailedJournalReceiver getUpdatingStatus(JournalReceiverInfo receiverInfo)  {
 		String key = toKey(receiverInfo);
 		DetailedJournalReceiver dr = cached.get(key);
-		if (! dr.info().status().equals(receiverInfo.status())) {
+		if (receiverInfo.status() != null && dr.info() != null && ! receiverInfo.status().equals(dr.info().status())) {
 			dr = dr.withStatus(receiverInfo.status());
 			cached.put(key, dr);
 		}
