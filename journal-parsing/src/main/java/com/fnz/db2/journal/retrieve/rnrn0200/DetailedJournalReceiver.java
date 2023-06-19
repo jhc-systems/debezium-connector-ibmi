@@ -5,9 +5,14 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.fnz.db2.journal.retrieve.JournalPosition;
 
 public record DetailedJournalReceiver(JournalReceiverInfo info, BigInteger start, BigInteger end, String nextReceiver, long maxEntryLength, long numberOfEntries) {
+	private static final Logger log = LoggerFactory.getLogger(DetailedJournalReceiver.class);
+
 	
 	public boolean isSameReceiver(JournalPosition position) {
 		if (info == null || position == null)
@@ -21,16 +26,34 @@ public record DetailedJournalReceiver(JournalReceiverInfo info, BigInteger start
 		return info.name().equals(otherReceiver.info().name()) && info.library().equals(otherReceiver.info().library());
 	}
 	
+	public boolean isAttached() {
+		if (info != null) {
+			return JournalStatus.Attached.equals(info.status());
+		}
+		return false;
+	}
+	
+	// simplistic way of looking for gaps in receivers
 	public static List<DetailedJournalReceiver> lastJoined(List<DetailedJournalReceiver> list) {
-		list = list.stream().filter(x -> x.info().attachTime() != null).collect(Collectors.toList()); // exclude any that have never been attached
-		list.sort((DetailedJournalReceiver f, DetailedJournalReceiver s) -> f.info().attachTime()
+		List<DetailedJournalReceiver> attached = list.stream().filter(x -> {
+				if (x.info().attachTime() != null) {
+					return true;
+				}
+				log.info("deleting journal {} will null start time", x);
+				return false;
+			}).collect(Collectors.toList()); // exclude any that have never been attached
+		attached.sort((DetailedJournalReceiver f, DetailedJournalReceiver s) -> f.info().attachTime()
 				.compareTo(s.info().attachTime()));
-		int last = indexOfLastJoined(list);
+		int last = indexOfLastJoined(attached);
 		if (last == 0)
-			return list;
-		if (last >= list.size())
+			return attached;
+		if (last >= attached.size()) {
+			log.warn("no available receivers");
 			return Collections.<DetailedJournalReceiver>emptyList();
-		return list.subList(last, list.size());
+		}
+		log.info("restricting as receiver is unavailble {}", attached.get(last-1));
+
+		return attached.subList(last, attached.size());
 	}
 
 	public static int indexOfLastJoined(List<DetailedJournalReceiver> list) {

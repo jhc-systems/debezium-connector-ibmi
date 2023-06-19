@@ -1,6 +1,7 @@
 package com.fnz.db2.journal.retrieve;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -8,7 +9,6 @@ import java.util.stream.Collectors;
 
 import com.fnz.db2.journal.retrieve.rnrn0200.DetailedJournalReceiver;
 import com.fnz.db2.journal.retrieve.rnrn0200.JournalReceiverInfo;
-import com.fnz.db2.journal.retrieve.rnrn0200.JournalStatus;
 
 /**
  * caches index on receiver name and lib
@@ -30,13 +30,11 @@ public class DetailedJournalReceiverCache {
 	}
 
 	public void put(JournalReceiverInfo receiverInfo, DetailedJournalReceiver details) {
-		if (!JournalStatus.Attached.equals(receiverInfo.status())) { // don't cache attached as the end offset will change
-			cached.put(toKey(receiverInfo), details);
-		}
+		cached.put(toKey(receiverInfo), details);
 	}
 	
 	public void keepOnly(List<DetailedJournalReceiver> list) {
-		Set<String> toGo = cached.keySet();
+		Set<String> toGo = new HashSet<>(cached.keySet()); // note delete operations on keySet will delete from underlying hash
 		Set<String> keep = list.stream().map(this::toKey).collect(Collectors.toSet());
 		toGo.removeAll(keep);
 		toGo.stream().forEach(x -> cached.remove(x));
