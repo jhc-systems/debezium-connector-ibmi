@@ -24,9 +24,14 @@ public class DetailedJournalReceiverCache {
 		return cached.containsKey(key);
 	}
 
-	public DetailedJournalReceiver get(JournalReceiverInfo receiverInfo)  {
+	public DetailedJournalReceiver getUpdatingStatus(JournalReceiverInfo receiverInfo)  {
 		String key = toKey(receiverInfo);
-		return cached.get(key);
+		DetailedJournalReceiver dr = cached.get(key);
+		if (! dr.info().status().equals(receiverInfo.status())) {
+			dr = dr.withStatus(receiverInfo.status());
+			cached.put(key, dr);
+		}
+		return dr;
 	}
 
 	public void put(JournalReceiverInfo receiverInfo, DetailedJournalReceiver details) {

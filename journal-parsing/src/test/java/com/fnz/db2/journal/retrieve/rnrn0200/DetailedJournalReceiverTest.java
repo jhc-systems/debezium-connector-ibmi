@@ -15,11 +15,11 @@ import org.junit.jupiter.api.Test;
 public class DetailedJournalReceiverTest {
 
 	@BeforeEach
-	public void setUp() throws Exception {
+	void setUp() throws Exception {
 	}
 
 	@Test
-	public void testLatestChain() {
+	void testLatestChain() {
 		List<DetailedJournalReceiver> l = new ArrayList<>(Arrays.asList(
 				new DetailedJournalReceiver(new JournalReceiverInfo("1", "lib", new Date(1), JournalStatus.Partial, Optional.of(1)), BigInteger.ONE, BigInteger.TWO, "", 1, 1)
 		));
@@ -36,7 +36,7 @@ public class DetailedJournalReceiverTest {
 	}
 
 	@Test
-	public void testLatestChainSorting() {
+	void testLatestChainSorting() {
 		List<DetailedJournalReceiver> inactive = Arrays.asList( 
 				new DetailedJournalReceiver(new JournalReceiverInfo("1", "lib", new Date(1), JournalStatus.Partial, Optional.of(1)), BigInteger.ONE, BigInteger.TWO, "", 1, 1)
 		);
@@ -50,6 +50,13 @@ public class DetailedJournalReceiverTest {
 		
 		List<DetailedJournalReceiver> firstChain = DetailedJournalReceiver.lastJoined(l);
 		assertEquals(active, firstChain);
+	}
+
+	@Test
+	void testWithStatus() {
+		DetailedJournalReceiver dr = new DetailedJournalReceiver(new JournalReceiverInfo("1", "lib", new Date(1), JournalStatus.Partial, Optional.of(1)), BigInteger.ONE, BigInteger.TWO, "", 1, 1);
+		DetailedJournalReceiver expected = new DetailedJournalReceiver(new JournalReceiverInfo("1", "lib", new Date(1), JournalStatus.Attached, Optional.of(1)), BigInteger.ONE, BigInteger.TWO, "", 1, 1);
+		assertEquals(expected, dr.withStatus(JournalStatus.Attached), "only the status should change");
 	}
 
 }

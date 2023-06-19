@@ -226,7 +226,7 @@ public class JournalInfoRetrieval {
 		final int rcvLen = 32768;
 		final String receiverNameLib = padRight(receiverInfo.name(), 10) + padRight(receiverInfo.library(), 10);
 		if (cache.containsKey(receiverInfo)) {
-			DetailedJournalReceiver r = cache.get(receiverInfo);			
+			DetailedJournalReceiver r = cache.getUpdatingStatus(receiverInfo);			
 			if ( ! r.isAttached() ) { // don't use attached journal cache
 				return r;
 			}

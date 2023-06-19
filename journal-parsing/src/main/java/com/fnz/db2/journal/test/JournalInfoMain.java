@@ -24,6 +24,7 @@ public class JournalInfoMain {
 		JournalInfoRetrieval journalInfoRetrieval = new JournalInfoRetrieval();
 
         List<DetailedJournalReceiver> jri = journalInfoRetrieval.getReceivers(as400Connect.connection(), ji);
+        jri = journalInfoRetrieval.getReceivers(as400Connect.connection(), ji);
         
 //        log.info(jri.toString());
 

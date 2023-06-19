@@ -13,6 +13,9 @@ import com.fnz.db2.journal.retrieve.JournalPosition;
 public record DetailedJournalReceiver(JournalReceiverInfo info, BigInteger start, BigInteger end, String nextReceiver, long maxEntryLength, long numberOfEntries) {
 	private static final Logger log = LoggerFactory.getLogger(DetailedJournalReceiver.class);
 
+	public DetailedJournalReceiver withStatus(JournalStatus status) {
+		return new DetailedJournalReceiver(info().withStatus(status), this.start, this.end, this.nextReceiver, this.maxEntryLength, this.numberOfEntries);
+	}
 	
 	public boolean isSameReceiver(JournalPosition position) {
 		if (info == null || position == null)
