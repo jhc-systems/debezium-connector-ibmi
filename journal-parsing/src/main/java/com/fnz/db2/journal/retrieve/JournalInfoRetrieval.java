@@ -175,7 +175,7 @@ public class JournalInfoRetrieval {
 	 */
 	public List<DetailedJournalReceiver> getReceivers(AS400 as400, JournalInfo journalLib) throws Exception {
 		final int defaultSize = 32768;
-		byte[] data = getReceiversForJournal(as400, journalLib, 32768);
+		byte[] data = getReceiversForJournal(as400, journalLib, defaultSize);
 		final int actualSizeRequired = decodeInt(data, 4) * 4096; // bytes available - value returned for rjrn0200 is 4k
 																	// pages
 		if (actualSizeRequired > defaultSize) {
@@ -258,7 +258,7 @@ public class JournalInfoRetrieval {
 					DetailedJournalReceiver dr = new DetailedJournalReceiver(receiverInfo.withStatus(status), firstSequence, lastSequence, nextReceiver,
 							maxEntryLength, numberOfEntries);
 					
-					cache.put(receiverInfo, dr);
+					cache.put(dr);
 					return dr;
 				});
 	}
