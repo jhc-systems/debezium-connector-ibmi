@@ -10,6 +10,7 @@ import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -364,8 +365,8 @@ public class As400JdbcConnection extends JdbcConnection implements Connect<Conne
     }
     
     @Override
-    public Optional<Timestamp> getCurrentTimestamp() throws SQLException {
+    public Optional<Instant> getCurrentTimestamp() throws SQLException {
         return queryAndMap("values ( CURRENT TIMESTAMP )",
-                rs -> rs.next() ? Optional.of(rs.getTimestamp(1)) : Optional.empty());
+                rs -> rs.next() ? Optional.of(rs.getTimestamp(1).toInstant()) : Optional.empty());
     }
 }

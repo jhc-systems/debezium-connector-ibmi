@@ -16,7 +16,7 @@ public class As400SourceInfoStructMaker extends AbstractSourceInfoStructMaker<So
     private final Schema schema;
 
     public As400SourceInfoStructMaker(String connector, String version, CommonConnectorConfig connectorConfig) {
-        super(connector, version, connectorConfig);
+        init(connector, version, connectorConfig);
         schema = commonSchemaBuilder()
                 .name("io.debezium.connector.db2as400.Source")
                 // TODO add in table info
