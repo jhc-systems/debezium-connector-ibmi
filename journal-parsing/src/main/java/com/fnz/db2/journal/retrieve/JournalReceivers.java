@@ -33,13 +33,13 @@ public class JournalReceivers {
 			return Optional.empty();
 		}
 		
-		if (cachedReceivers == null) {
-			cachedReceivers = journalInfoRetrieval.getReceivers(as400, journalInfo);
-		}
-
 		DetailedJournalReceiver endPosition = journalInfoRetrieval.getCurrentDetailedJournalReceiver(as400, journalInfo);
 		if (cachedEndPosition == null) {
 			cachedEndPosition = endPosition; 
+		}
+
+		if (cachedReceivers == null) {
+			cachedReceivers = journalInfoRetrieval.getReceivers(as400, journalInfo);
 		}
 		if (cachedEndPosition.isSameReceiver(endPosition)) {
 			// we're currently on the same journal just check the relative offset is within range
@@ -57,13 +57,18 @@ public class JournalReceivers {
 		}
 
 		Optional<JournalPosition> endOpt = findPosition(startPosition, maxServerSideEntriesBI, cachedReceivers);
+		if (endOpt.isEmpty()) {
+			log.info("retrying to find end offset");
+			cachedReceivers = journalInfoRetrieval.getReceivers(as400, journalInfo);
+			endOpt = findPosition(startPosition, maxServerSideEntriesBI, cachedReceivers);
+		}
 		return endOpt.map(end -> new PositionRange(startPosition, end));
 	}
 
 	
 	static void updateEndPosition(List<DetailedJournalReceiver> list, DetailedJournalReceiver endPosition) {
 		// should be last entry
-		for (int i = list.size()-1; i > 0 ; i--) {
+		for (int i = list.size()-1; i >= 0 ; i--) {
 			DetailedJournalReceiver d = list.get(i);
 			if (d.isSameReceiver(endPosition)) {
 				list.set(i, endPosition);
@@ -127,8 +132,8 @@ public class JournalReceivers {
 		if (found && last != null) {
 			return Optional.of(new JournalPosition(last.end(), last.info().name(), last.info().library(), true));
 		} else {
-			log.warn("position {} not found in active receivers {}", start, receivers);
+			log.warn("position {} not found in available receivers {}", start, receivers);
+			return Optional.empty();
 		}
-		return Optional.empty();
 	}
 }

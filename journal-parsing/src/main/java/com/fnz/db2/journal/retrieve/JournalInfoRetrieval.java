@@ -46,7 +46,7 @@ public class JournalInfoRetrieval {
 	private static final AS400Bin8 AS400_BIN8 = new AS400Bin8();
 	private static final AS400Bin4 AS400_BIN4 = new AS400Bin4();
 	private static final int KEY_HEADER_LENGTH = 20;
-	private static DetailedJournalReceiverCache cache = new DetailedJournalReceiverCache();
+	private DetailedJournalReceiverCache cache = new DetailedJournalReceiverCache();
 
 
 	public JournalInfoRetrieval() {
@@ -175,15 +175,16 @@ public class JournalInfoRetrieval {
 	 */
 	public List<DetailedJournalReceiver> getReceivers(AS400 as400, JournalInfo journalLib) throws Exception {
 		final int defaultSize = 32768;
-		byte[] data = getReceiversForJournal(as400, journalLib, 32768);
+		byte[] data = getReceiversForJournal(as400, journalLib, defaultSize);
 		final int actualSizeRequired = decodeInt(data, 4) * 4096; // bytes available - value returned for rjrn0200 is 4k
 																	// pages
 		if (actualSizeRequired > defaultSize) {
-			data = getReceiversForJournal(as400, journalLib, actualSizeRequired);
+			data = getReceiversForJournal(as400, journalLib, actualSizeRequired+4096);
 		}
 
 		final Integer keyOffset = decodeInt(data, 8) + 4;
 		final Integer totalKeys = decodeInt(data, keyOffset);
+		
 		final KeyDecoder keyDecoder = new KeyDecoder();
 
 		final List<DetailedJournalReceiver> l = new ArrayList<>();
@@ -209,7 +210,7 @@ public class JournalInfoRetrieval {
 		return DetailedJournalReceiver.lastJoined(l);
 	}
 
-	static DetailedJournalReceiver getOffset(AS400 as400, JournalInfo info) throws Exception {
+	DetailedJournalReceiver getOffset(AS400 as400, JournalInfo info) throws Exception {
 		return getReceiverDetails(as400,
 				new JournalReceiverInfo(info.journalName, info.journalLibrary, null, null, Optional.empty()));
 	}
@@ -221,11 +222,14 @@ public class JournalInfoRetrieval {
 	 * @return
 	 * @throws Exception
 	 */
-	private static DetailedJournalReceiver getReceiverDetails(AS400 as400, JournalReceiverInfo receiverInfo) throws Exception {
+	private DetailedJournalReceiver getReceiverDetails(AS400 as400, JournalReceiverInfo receiverInfo) throws Exception {
 		final int rcvLen = 32768;
 		final String receiverNameLib = padRight(receiverInfo.name(), 10) + padRight(receiverInfo.library(), 10);
 		if (cache.containsKey(receiverInfo)) {
-			return cache.get(receiverInfo);
+			DetailedJournalReceiver r = cache.getUpdatingStatus(receiverInfo);			
+			if ( ! r.isAttached() ) { // don't use attached journal cache
+				return r;
+			}
 		}
 		final String format = "RRCV0100";
 		final ProgramParameter[] parameters = new ProgramParameter[] {
@@ -254,7 +258,7 @@ public class JournalInfoRetrieval {
 					DetailedJournalReceiver dr = new DetailedJournalReceiver(receiverInfo.withStatus(status), firstSequence, lastSequence, nextReceiver,
 							maxEntryLength, numberOfEntries);
 					
-					cache.put(receiverInfo, dr);
+					cache.put(dr);
 					return dr;
 				});
 	}

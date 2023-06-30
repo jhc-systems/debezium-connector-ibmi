@@ -32,7 +32,7 @@ public class KeyDecoder {
 		    privateSetFormat.setAccessible(true);
 		    privateSetFormat.invoke(timeType, dtsformat);
 	    } catch (Exception e) {
-	    	e.printStackTrace();
+	    	log.error("Failed to decode receiver data", e);
 	    }
 	    
 		FieldDescription[] fds = new FieldDescription[] {
