@@ -7,8 +7,10 @@ import java.sql.SQLException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,32 +49,35 @@ public class CommitLogProcessor {
 		JournalProcessedPosition nextPosition = new JournalProcessedPosition();
 		JournalInfoRetrieval journalInfoRetrieval = new JournalInfoRetrieval();
 
-        JournalInfo journalLib = JournalInfoRetrieval.getJournal(as400Connect.connection(), schema);
-
-        String offset =  System.getenv("ISERIES_OFFSET");
-        String receiver =  System.getenv("ISERIES_RECEIVER");
-        if (offset != null && receiver != null)
-            nextPosition = new JournalProcessedPosition(offset, receiver, journalLib.journalLibrary, Instant.ofEpochSecond(0), false);
-        
-        List<FileFilter> includes = new ArrayList<FileFilter>();
+		List<FileFilter> includes = new ArrayList<FileFilter>();
         String includesEnv = System.getenv("ISERIES_INCLUDES");
         if (includesEnv != null) {
 			for (String i : Arrays.asList(includesEnv.split(","))) {
 				includes.add(new FileFilter(schema, i));
 			}
 		}
+        
+        if (includes.size() == 0) {
+        	throw new Exception("no tables specified");
+        }
+        
+        JournalInfo journal = JournalInfoRetrieval.getJournal(as400Connect.connection(), schema, includes);
 
+        String offset =  System.getenv("ISERIES_OFFSET");
+        String receiver =  System.getenv("ISERIES_RECEIVER");
+        if (offset != null && receiver != null)
+            nextPosition = new JournalProcessedPosition(offset, receiver, journal.journalLibrary(), Instant.ofEpochSecond(0), false);
+        
 		String database = JdbcFileDecoder.getDatabaseName(sqlConnect.connection());
 		fileDecoder = new JdbcFileDecoder(sqlConnect, database, schemaCache, -1);
 		JournalProcessedPosition lastPosition = null;
 		
-        JournalPosition endPosition = journalInfoRetrieval.getCurrentPosition(as400Connect.connection(), journalLib);
+        JournalPosition endPosition = journalInfoRetrieval.getCurrentPosition(as400Connect.connection(), journal);
 		log.info("end position is: {}", endPosition);
 		
 		long startTime = System.currentTimeMillis();
 		
 		
-		JournalInfo journal = JournalInfoRetrieval.getJournal(as400Connect.connection(), schema);
 		log.info("journal: {}", journal);
 		RetrieveConfig config = new RetrieveConfigBuilder()
 				.withAs400(as400Connect)
@@ -165,9 +170,9 @@ public class CommitLogProcessor {
 			JournalInfo journalNow = JournalInfoRetrieval.getReceiver(connector.connection(), journal);
             JournalProcessedPosition lastOffset = position;
             if (lastOffset.getReciever() != null
-                    && !journalNow.journalName.equals(lastOffset.getReciever())) {
+                    && !journalNow.journalName().equals(lastOffset.getReciever())) {
                 log.warn("journal reciever doesn't match at position {} we have journal {} and latest is {} ",
-                        position, lastOffset.getReciever(), journalNow.journalName);
+                        position, lastOffset.getReciever(), journalNow.journalName());
             }
             log.error(
                     "Lost journal at position {}. Restarting with blank journal and offset ( current journal is {} )",

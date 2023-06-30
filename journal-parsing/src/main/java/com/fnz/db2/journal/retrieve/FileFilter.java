@@ -1,20 +1,6 @@
 package com.fnz.db2.journal.retrieve;
 
-public class FileFilter {
-    private final String schema;
-    private final String table;
-    
-    public FileFilter(String schema, String table) {
-        this.schema = schema;
-        this.table = table;
-    }
-
-    public String getSchema() {
-        return schema;
-    }
-    public String getTable() {
-        return table;
-    }
+public record FileFilter (String schema, String table) {
 
 	@Override
 	public String toString() {

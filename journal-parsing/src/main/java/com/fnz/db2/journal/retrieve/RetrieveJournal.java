@@ -59,7 +59,7 @@ public class RetrieveJournal {
 		this.config = config;
 		journalRecievers = new JournalReceivers(journalRetrieval, config.maxServerSideEntries(), config.journalInfo());
 
-		builder.withJournal(config.journalInfo().journalName, config.journalInfo().journalLibrary);
+		builder.withJournal(config.journalInfo().journalName(), config.journalInfo().journalLibrary());
 	}
 
 	/**

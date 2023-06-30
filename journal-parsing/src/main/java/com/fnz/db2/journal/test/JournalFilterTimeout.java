@@ -36,11 +36,6 @@ public class JournalFilterTimeout {
 		final Connect<AS400, IOException> as400Connect = connector.getAs400();
 		final Connect<Connection, SQLException> sqlConnect = connector.getJdbc();
 		final String schema = connector.getSchema();
-
-		final JournalInfo journalLib = JournalInfoRetrieval.getJournal(as400Connect.connection(), schema);
-
-		final String offset = System.getenv("ISERIES_OFFSET");
-		final String receiver = System.getenv("ISERIES_RECEIVER");
 		final List<FileFilter> includes = new ArrayList<>();
 		final String includesEnv = System.getenv("ISERIES_INCLUDES");
 		if (includesEnv != null) {
@@ -48,17 +43,21 @@ public class JournalFilterTimeout {
 				includes.add(new FileFilter(schema, i));
 			}
 		}
+		final JournalInfo journal = JournalInfoRetrieval.getJournal(as400Connect.connection(), schema, includes);
+
+		final String offset = System.getenv("ISERIES_OFFSET");
+		final String receiver = System.getenv("ISERIES_RECEIVER");
+
 
 		final JournalInfoRetrieval journalInfoRetrieval = new JournalInfoRetrieval();
 		final List<DetailedJournalReceiver> receivers = journalInfoRetrieval.getReceivers(as400Connect.connection(),
-				journalLib);
+				journal);
 		final DetailedJournalReceiver first = receivers.stream().min((x, y) -> x.start().compareTo(y.start())).get();
 		final JournalPosition endPosition = journalInfoRetrieval.getCurrentPosition(as400Connect.connection(),
-				journalLib);
+				journal);
 		log.info("start {} end {}", first, endPosition);
 
 		try (PrintWriter pw = new PrintWriter(new File("exceptions.txt"))) {
-			final JournalInfo journal = JournalInfoRetrieval.getJournal(as400Connect.connection(), schema);
 			log.info("journal: {}", journal);
 			final RetrieveConfig config = new RetrieveConfigBuilder().withAs400(as400Connect).withJournalInfo(journal)
 					.withDumpFolder("./bad-journal").withServerFiltering(true).withIncludeFiles(includes).build();

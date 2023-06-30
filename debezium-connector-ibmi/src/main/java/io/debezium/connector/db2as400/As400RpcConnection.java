@@ -54,7 +54,7 @@ public class As400RpcConnection implements AutoCloseable, Connect<AS400, IOExcep
         this.streamingMetrics = streamingMetrics;
         try {
         	System.setProperty("com.ibm.as400.access.AS400.guiAvailable", "False");
-            journalInfo = JournalInfoRetrieval.getJournal(connection(), config.getSchema());
+            journalInfo = JournalInfoRetrieval.getJournal(connection(), config.getSchema(), includes);
 			RetrieveConfig rconfig = new RetrieveConfigBuilder().withAs400(this)
 					.withJournalBufferSize(config.getJournalBufferSize())
 					.withJournalInfo(journalInfo)
@@ -189,7 +189,7 @@ public class As400RpcConnection implements AutoCloseable, Connect<AS400, IOExcep
             log.warn(new StructuredMessage("Detected newer receiver but no data received", 
                     Map.of("header", retrieveJournal.headerAsString(),
                             "position", position,
-                            "detectedReceiver", journalNow.journalName,
+                            "detectedReceiver", journalNow.journalName(),
                             "currentReceiver", position.getReciever(),
                             "receivers", receivers)));
         }
@@ -204,7 +204,7 @@ public class As400RpcConnection implements AutoCloseable, Connect<AS400, IOExcep
     private boolean isLatestJournal(JournalProcessedPosition position, JournalInfo journalNow)
             throws Exception, IOException {
         if (position.getReciever() == null
-                || journalNow.journalName.equals(position.getReciever())) {
+                || journalNow.journalName().equals(position.getReciever())) {
             return true;
         }
         return false;
