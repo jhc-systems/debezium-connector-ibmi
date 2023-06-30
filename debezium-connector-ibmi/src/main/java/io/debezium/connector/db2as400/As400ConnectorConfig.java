@@ -5,12 +5,14 @@
  */
 package io.debezium.connector.db2as400;
 
+import java.time.Instant;
+
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.common.config.ConfigDef.Importance;
 import org.apache.kafka.common.config.ConfigDef.Type;
 import org.apache.kafka.common.config.ConfigDef.Width;
 
-import com.fnz.db2.journal.retrieve.JournalPosition;
+import com.fnz.db2.journal.retrieve.JournalProcessedPosition;
 import com.fnz.db2.journal.retrieve.RetrieveConfig;
 
 import io.debezium.config.Configuration;
@@ -177,12 +179,14 @@ public class As400ConnectorConfig extends RelationalDatabaseConnectorConfig {
     public Integer getToCcsid() {
         return config.getInteger(TO_CCSID);
     }
-    public JournalPosition getOffset() {
+    public JournalProcessedPosition getOffset() {
         String receiver = config.getString(As400OffsetContext.RECEIVER);
         String lib = config.getString(As400OffsetContext.RECEIVER_LIBRARY);
         String offset = config.getString(As400OffsetContext.EVENT_SEQUENCE);
         Boolean processed = config.getBoolean(As400OffsetContext.PROCESSED);
-    	return new JournalPosition(offset, receiver, lib, (processed == null) ? false : processed);
+        Long configTime = config.getLong(As400OffsetContext.EVENT_TIME);
+        Instant time = (configTime == null) ? Instant.ofEpochSecond(0) : Instant.ofEpochSecond(configTime);
+    	return new JournalProcessedPosition(offset, receiver, lib, time, (processed == null) ? false : processed);
     }
 
     private static class SystemTablesPredicate implements TableFilter {

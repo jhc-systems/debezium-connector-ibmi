@@ -131,7 +131,7 @@ public class ParameterListBuilder {
 		return this;
 	}
 	
-	public void fromPositionToEnd(JournalPosition retrievePosition) {
+	public void fromPositionToEnd(JournalProcessedPosition retrievePosition) {
 		if (retrievePosition.isOffsetSet()) {
 			withStartingSequence(retrievePosition.getOffset());
 		} else {

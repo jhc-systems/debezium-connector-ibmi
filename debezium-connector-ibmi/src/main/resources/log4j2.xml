@@ -37,6 +37,7 @@
 		<Logger name="io.confluent.kafka.serializers.KafkaAvroSerializerConfig" level="warn" additivity="false"/>
 		<Logger name="io.confluent.connect.avro.AvroConverterConfig" level="warn" additivity="false"/>
 	     
+		<Logger name="com.fnz.db2.journal.retrieve.RetrieveJournal" level="debug" additivity="false"/>
 		<Root level="info">
 			<AppenderRef ref="jsonConsole" />
 		</Root>

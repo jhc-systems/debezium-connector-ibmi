@@ -24,9 +24,7 @@ public class JournalInfoMain {
 		JournalInfoRetrieval journalInfoRetrieval = new JournalInfoRetrieval();
 
         List<DetailedJournalReceiver> jri = journalInfoRetrieval.getReceivers(as400Connect.connection(), ji);
-        jri = journalInfoRetrieval.getReceivers(as400Connect.connection(), ji);
-        
-//        log.info(jri.toString());
+        log.info("all {}", jri);
 
         log.info(DetailedJournalReceiver.lastJoined(jri).toString());
         
@@ -37,7 +35,6 @@ public class JournalInfoMain {
         log.info("Journal info {}", jr);
         
         log.info("current position: {}", journalInfoRetrieval.getCurrentPosition(as400Connect.connection(), ji));
-        
         log.info("size {}", jri.size());
 	}
 }

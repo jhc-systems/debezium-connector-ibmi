@@ -20,6 +20,7 @@ import com.fnz.db2.journal.retrieve.FileFilter;
 import com.fnz.db2.journal.retrieve.JournalInfo;
 import com.fnz.db2.journal.retrieve.JournalInfoRetrieval;
 import com.fnz.db2.journal.retrieve.JournalPosition;
+import com.fnz.db2.journal.retrieve.JournalProcessedPosition;
 import com.fnz.db2.journal.retrieve.RetrieveConfig;
 import com.fnz.db2.journal.retrieve.RetrieveConfigBuilder;
 import com.fnz.db2.journal.retrieve.RetrieveJournal;
@@ -110,7 +111,7 @@ public class As400RpcConnection implements AutoCloseable, Connect<AS400, IOExcep
         try {
             JournalPosition position = journalInfoRetrieval.getCurrentPosition(connection(), journalInfo);
 
-            return new JournalPosition(position.getOffset(), position.getReciever(), position.getReceiverLibrary(), true);
+            return new JournalPosition(position);
         }
         catch (Exception e) {
             throw new RpcException("Failed to find offset", e);
@@ -120,7 +121,7 @@ public class As400RpcConnection implements AutoCloseable, Connect<AS400, IOExcep
     public boolean getJournalEntries(ChangeEventSourceContext context, As400OffsetContext offsetCtx, BlockingRecieverConsumer consumer, WatchDog watchDog)
             throws Exception {
         boolean success = false;
-        JournalPosition position = offsetCtx.getPosition();
+        JournalProcessedPosition position = offsetCtx.getPosition();
         success = retrieveJournal.retrieveJournal(position);
 
         logOffsets(position, success);
@@ -152,7 +153,7 @@ public class As400RpcConnection implements AutoCloseable, Connect<AS400, IOExcep
             log.error(new StructuredMessage("Failed to fetch journal entries, resetting journal to blank",
                     Map.of("position", position, 
                             "receivers", receivers)));
-            offsetCtx.setPosition(new JournalPosition());
+            offsetCtx.setPosition(new JournalProcessedPosition());
         }
 
         return success && retrieveJournal.futureDataAvailable();
@@ -166,7 +167,7 @@ public class As400RpcConnection implements AutoCloseable, Connect<AS400, IOExcep
         }
     }
 
-    private void logOffsets(JournalPosition position, boolean success) throws IOException, Exception {
+    private void logOffsets(JournalProcessedPosition position, boolean success) throws IOException, Exception {
         if (periodic.shouldLogRateLimted("offsets")) {
             JournalPosition currentPosition = getCurrentPosition();
             BigInteger behind = currentPosition.getOffset().subtract(position.getOffset());
@@ -181,7 +182,7 @@ public class As400RpcConnection implements AutoCloseable, Connect<AS400, IOExcep
         }
     }
 
-    private void noDataDiagnostics(JournalPosition position) throws Exception, IOException {
+    private void noDataDiagnostics(JournalProcessedPosition position) throws Exception, IOException {
         JournalInfo journalNow = JournalInfoRetrieval.getReceiver(connection(), journalInfo);
         if (!isLatestJournal(position, journalNow)) {
             List<DetailedJournalReceiver> receivers = journalInfoRetrieval.getReceivers(connection(), journalInfo);
@@ -200,7 +201,7 @@ public class As400RpcConnection implements AutoCloseable, Connect<AS400, IOExcep
         }
     }
 
-    private boolean isLatestJournal(JournalPosition position, JournalInfo journalNow)
+    private boolean isLatestJournal(JournalProcessedPosition position, JournalInfo journalNow)
             throws Exception, IOException {
         if (position.getReciever() == null
                 || journalNow.journalName.equals(position.getReciever())) {

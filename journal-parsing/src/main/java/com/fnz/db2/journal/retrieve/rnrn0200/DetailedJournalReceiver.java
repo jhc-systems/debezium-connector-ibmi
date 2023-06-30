@@ -8,7 +8,7 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.fnz.db2.journal.retrieve.JournalPosition;
+import com.fnz.db2.journal.retrieve.JournalProcessedPosition;
 
 public record DetailedJournalReceiver(JournalReceiverInfo info, BigInteger start, BigInteger end, String nextReceiver, long maxEntryLength, long numberOfEntries) {
 	private static final Logger log = LoggerFactory.getLogger(DetailedJournalReceiver.class);
@@ -17,7 +17,7 @@ public record DetailedJournalReceiver(JournalReceiverInfo info, BigInteger start
 		return new DetailedJournalReceiver(info().withStatus(status), this.start, this.end, this.nextReceiver, this.maxEntryLength, this.numberOfEntries);
 	}
 	
-	public boolean isSameReceiver(JournalPosition position) {
+	public boolean isSameReceiver(JournalProcessedPosition position) {
 		if (info == null || position == null)
 			return false;
 		return info.name().equals(position.getReciever()) && info.library().equals(position.getReceiverLibrary());

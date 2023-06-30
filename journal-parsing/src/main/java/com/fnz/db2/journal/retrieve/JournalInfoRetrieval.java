@@ -3,9 +3,7 @@ package com.fnz.db2.journal.retrieve;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -56,7 +54,7 @@ public class JournalInfoRetrieval {
 	public JournalPosition getCurrentPosition(AS400 as400, JournalInfo journalLib) throws Exception {
 		final JournalInfo ji = JournalInfoRetrieval.getReceiver(as400, journalLib);
 		final BigInteger offset = getOffset(as400, ji).end();
-		return new JournalPosition(offset, ji.journalName, ji.journalLibrary, false);
+		return new JournalPosition(offset, ji.journalName, ji.journalLibrary);
 	}
 
 	public DetailedJournalReceiver getCurrentDetailedJournalReceiver(AS400 as400, JournalInfo journalLib)
@@ -81,6 +79,8 @@ public class JournalInfoRetrieval {
 		}
 		throw new IllegalStateException("Journal not found");
 	}
+	
+	
 
 	public static class JournalRetrievalCriteria {
 		private static final AS400Text AS400_TEXT_1 = new AS400Text(1);
@@ -174,12 +174,12 @@ public class JournalInfoRetrieval {
 	 * @throws Exception
 	 */
 	public List<DetailedJournalReceiver> getReceivers(AS400 as400, JournalInfo journalLib) throws Exception {
-		final int defaultSize = 32768;
+		final int defaultSize = 32768; // 4k takes 31ms 32k takes 85ms must be a multiple of 4k and 0 not allowed
 		byte[] data = getReceiversForJournal(as400, journalLib, defaultSize);
 		final int actualSizeRequired = decodeInt(data, 4) * 4096; // bytes available - value returned for rjrn0200 is 4k
 																	// pages
 		if (actualSizeRequired > defaultSize) {
-			data = getReceiversForJournal(as400, journalLib, actualSizeRequired+4096);
+			data = getReceiversForJournal(as400, journalLib, actualSizeRequired+4096); // allow for any growth since call
 		}
 
 		final Integer keyOffset = decodeInt(data, 8) + 4;

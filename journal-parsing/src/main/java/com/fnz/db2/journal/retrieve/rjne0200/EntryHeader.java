@@ -1,7 +1,7 @@
 package com.fnz.db2.journal.retrieve.rjne0200;
 
 import java.math.BigInteger;
-import java.sql.Timestamp;
+import java.time.Instant;
 
 import com.fnz.db2.journal.retrieve.JournalEntryType;
 import com.fnz.db2.journal.retrieve.StringHelpers;
@@ -15,7 +15,7 @@ public class EntryHeader {
 //	private final int receiverOffset;
 	private final BigInteger sequenceNumber;
 	private final BigInteger systemSequenceNumber;
-	private final java.sql.Timestamp timestamp;
+	private final Instant timestamp;
 	private final char journalCode;
 	private final String entryType;
 	private final String objectName;
@@ -26,7 +26,7 @@ public class EntryHeader {
 	private final String receiverLibrary;
 	
 	public EntryHeader(int nextEntryOffset, int nullValueOffest, long entrySpecificDataOffset, BigInteger sequenceNumber, BigInteger systemSequenceNumber,
-			java.sql.Timestamp timestamp, char journalCode, String entryType, String objectName, BigInteger commitCycle, int endOffset, long pointerHandle, 
+			Instant timestamp, char journalCode, String entryType, String objectName, BigInteger commitCycle, int endOffset, long pointerHandle, 
 			String receiver, String receiverLibrary) {
 		super();
 		this.nextEntryOffset = nextEntryOffset;
@@ -45,41 +45,13 @@ public class EntryHeader {
 		this.receiverLibrary = receiverLibrary;
 	}
 
-
-
 	@Override
 	public String toString() {
-		StringBuilder builder = new StringBuilder();
-		builder.append("EntryHeader [nextEntryOffset=");
-		builder.append(nextEntryOffset);
-		builder.append(", nullValueOffest=");
-		builder.append(nullValueOffest);
-		builder.append(", entrySpecificDataOffset=");
-		builder.append(entrySpecificDataOffset);
-		builder.append(", sequenceNumber=");
-		builder.append(sequenceNumber);
-		builder.append(", systemSequenceNumber=");
-		builder.append(systemSequenceNumber);
-		builder.append(", timestamp=");
-		builder.append(timestamp);
-		builder.append(", journalCode=");
-		builder.append(journalCode);
-		builder.append(", entryType=");
-		builder.append(entryType);
-		builder.append(", objectName=");
-		builder.append(objectName);
-		builder.append(", commitCycle=");
-		builder.append(commitCycle);
-		builder.append(", endOffset=");
-		builder.append(endOffset);
-		builder.append(", pointerHandle=");
-		builder.append(pointerHandle);
-		builder.append(", receiver=");
-		builder.append(receiver);
-		builder.append(", receiverLibrary=");
-		builder.append(receiverLibrary);
-		builder.append("]");
-		return builder.toString();
+		return String.format(
+				"EntryHeader [nextEntryOffset=%s, nullValueOffest=%s, entrySpecificDataOffset=%s, sequenceNumber=%s, systemSequenceNumber=%s, timestamp=%s, journalCode=%s, entryType=%s, objectName=%s, commitCycle=%s, endOffset=%s, pointerHandle=%s, receiver=%s, receiverLibrary=%s]",
+				nextEntryOffset, nullValueOffest, entrySpecificDataOffset, sequenceNumber, systemSequenceNumber,
+				timestamp, journalCode, entryType, objectName, commitCycle, endOffset, pointerHandle, receiver,
+				receiverLibrary);
 	}
 
 	public int getLength() {
@@ -106,7 +78,10 @@ public class EntryHeader {
 //		return timestamp;//new BigDecimal(timestamp).divide(BigDecimal.valueOf(4096000), 10, RoundingMode.HALF_UP).subtract(BigDecimal.valueOf(1305118613685l)).longValue();
 //	}
 	
-	public Timestamp getTimestamp() {
+	public Instant getTime() {
+		if (timestamp == null) {
+			return Instant.ofEpochSecond(0);
+		}
 		return timestamp;//new Timestamp(getTime());
 	}
 

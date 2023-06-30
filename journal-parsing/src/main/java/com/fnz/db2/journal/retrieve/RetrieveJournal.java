@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.math.BigInteger;
 import java.nio.file.Files;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
@@ -51,7 +52,7 @@ public class RetrieveJournal {
 	private FirstHeader header = null;
 	private EntryHeader entryHeader = null;
 	private int offset = -1;
-	private JournalPosition position;
+	private JournalProcessedPosition position;
 	private long totalTransferred = 0;
 
 	public RetrieveJournal(RetrieveConfig config, JournalInfoRetrieval journalRetrieval) {
@@ -74,7 +75,7 @@ public class RetrieveJournal {
 	 *                   be available if the journal is no longer available we need
 	 *                   to capture this and log an error as we may have missed data
 	 */
-	public boolean retrieveJournal(JournalPosition retrievePosition) throws Exception {
+	public boolean retrieveJournal(JournalProcessedPosition retrievePosition) throws Exception {
 		this.offset = -1;
 		this.entryHeader = null;
 		this.header = null;
@@ -102,7 +103,7 @@ public class RetrieveJournal {
 			builder.withEnd(r.end().getOffset());
 
 			if (retrievePosition.equals(r.end())) { // we are already at the end
-				header = new FirstHeader(0, 0, 0, OffsetStatus.NO_MORE_DATA, Optional.of(r.end()));
+				this.header = new FirstHeader(0, 0, 0, OffsetStatus.NO_MORE_DATA, Optional.of(r.end()));
 				return false;
 			}
 			return true;
@@ -130,14 +131,14 @@ public class RetrieveJournal {
 			log.debug("first header: {} ", header);
 			offset = -1;
 			if (header.status() == OffsetStatus.MORE_DATA_NEW_OFFSET && header.offset() == 0) {
-				log.error("buffer too small skipping this entry {}", retrievePosition);
-				header.nextPosition().ifPresent(retrievePosition::setPosition);
+				log.error("buffer too small need to skip this entry {}", retrievePosition);
+				header.nextPosition().ifPresent(x -> retrievePosition.setPosition(x, false)); // TODO check we can remove this
 			}
 			if (!hasData()) {
-				log.debug("moving on to current position {}", latestJournalPosition);
+				log.info("moving on to current position {}", latestJournalPosition);
 				latestJournalPosition.ifPresent(l -> {
-					header = header.withCurrentJournalPosition(l);
-					retrievePosition.setPosition(l);
+					this.header = header.withCurrentJournalPosition(l);
+					retrievePosition.setPosition(l, false); // TODO check we can remove this
 				});
 			}
 		} else {
@@ -147,7 +148,7 @@ public class RetrieveJournal {
 	}
 
 
-	private boolean reThrowIfFatal(JournalPosition retrievePosition, final ServiceProgramCall spc,
+	private boolean reThrowIfFatal(JournalProcessedPosition retrievePosition, final ServiceProgramCall spc,
 			Optional<JournalPosition> latestJournalPosition, final ParameterListBuilder builder)
 			throws InvalidPositionException, InvalidJournalFilterException, RetrieveJournalException {
 		for (final AS400Message id : spc.getMessageList()) {
@@ -183,7 +184,7 @@ public class RetrieveJournal {
 				header = new FirstHeader(0, 0, 0, OffsetStatus.NO_MORE_DATA, latestJournalPosition);
 				latestJournalPosition.ifPresent(l -> {
 					header = header.withCurrentJournalPosition(l);
-					retrievePosition.setPosition(l);
+					retrievePosition.setPosition(l, false);// TODO check we can remove this
 				});
 				return true;
 			}
@@ -193,10 +194,6 @@ public class RetrieveJournal {
 			}
 		}
 		throw new RetrieveJournalException(String.format("Call failed position %s", retrievePosition));
-	}
-
-	private <T> String optToString(Optional<T> t) {
-		return t.map(x -> x.toString()).orElse("<null>");
 	}
 
 	boolean shouldLimitRange() {
@@ -216,11 +213,11 @@ public class RetrieveJournal {
 	 * @return the current position or the next offset for fetching data when the
 	 *         end of data is reached
 	 */
-	public JournalPosition getPosition() {
+	public JournalProcessedPosition getPosition() {
 		return position;
 	}
 
-	public void setOutputData(byte[] b, FirstHeader header, JournalPosition position) {
+	public void setOutputData(byte[] b, FirstHeader header, JournalProcessedPosition position) {
 		outputData = b;
 		this.header = header;
 		this.position = position;
@@ -260,7 +257,6 @@ public class RetrieveJournal {
 				offset = header.offset();
 				entryHeader = entryHeaderDecoder.decode(outputData, offset);
 				if (alreadyProcessed(position, entryHeader)) {
-					updatePosition(position, entryHeader);
 					return nextEntry();
 				}
 				updatePosition(position, entryHeader);
@@ -286,23 +282,22 @@ public class RetrieveJournal {
 		// after we hit the end use the continuation header for the next offset
 		header.nextPosition().ifPresent(nextOffset -> {
 			log.debug("Setting continuation offset {}", nextOffset);
-			position.setPosition(nextOffset);
+			position.setPosition(nextOffset, false);
 		});
 	}
 
-	private static boolean alreadyProcessed(JournalPosition position, EntryHeader entryHeader) {
-		final JournalPosition entryPosition = new JournalPosition(position);
-		updatePosition(entryPosition, entryHeader);
-		return position.processed() && entryPosition.equals(position);
-
+	private static boolean alreadyProcessed(JournalProcessedPosition position, EntryHeader entryHeader) {
+		final JournalProcessedPosition entryPosition = new JournalProcessedPosition(position);
+		return position.processed() && entryPosition.equals(position) || entryHeader.getTime().isBefore(position.getTime());
 	}
 
-	private static void updatePosition(JournalPosition p, EntryHeader entryHeader) {
+	private static void updatePosition(JournalProcessedPosition p, EntryHeader entryHeader) {
 		if (entryHeader.hasReceiver()) {
 			p.setJournalReciever(entryHeader.getSequenceNumber(), entryHeader.getReceiver(),
-					entryHeader.getReceiverLibrary(), true);
+					entryHeader.getReceiverLibrary(), entryHeader.getTime(), true);
 		} else {
-			p.setOffset(entryHeader.getSequenceNumber(), true);
+			log.error("no receiver {}", entryHeader);
+			p.setOffset(entryHeader.getSequenceNumber(), entryHeader.getTime(), true);
 		}
 	}
 

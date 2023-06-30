@@ -2,9 +2,9 @@ package com.fnz.db2.journal.test;
 
 import java.io.FileWriter;
 import java.io.IOException;
-import java.math.BigInteger;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -20,6 +20,7 @@ import com.fnz.db2.journal.retrieve.JournalEntryType;
 import com.fnz.db2.journal.retrieve.JournalInfo;
 import com.fnz.db2.journal.retrieve.JournalInfoRetrieval;
 import com.fnz.db2.journal.retrieve.JournalPosition;
+import com.fnz.db2.journal.retrieve.JournalProcessedPosition;
 import com.fnz.db2.journal.retrieve.RetrieveConfig;
 import com.fnz.db2.journal.retrieve.RetrieveConfigBuilder;
 import com.fnz.db2.journal.retrieve.RetrieveJournal;
@@ -43,7 +44,7 @@ public class CommitLogProcessor {
 	    Connect<Connection, SQLException> sqlConnect = connector.getJdbc();
 	    String schema = connector.getSchema();
 	    
-		JournalPosition nextPosition = new JournalPosition((BigInteger)null, null, null, false);
+		JournalProcessedPosition nextPosition = new JournalProcessedPosition();
 		JournalInfoRetrieval journalInfoRetrieval = new JournalInfoRetrieval();
 
         JournalInfo journalLib = JournalInfoRetrieval.getJournal(as400Connect.connection(), schema);
@@ -51,7 +52,7 @@ public class CommitLogProcessor {
         String offset =  System.getenv("ISERIES_OFFSET");
         String receiver =  System.getenv("ISERIES_RECEIVER");
         if (offset != null && receiver != null)
-            nextPosition = new JournalPosition(offset, receiver, journalLib.journalLibrary, false);
+            nextPosition = new JournalProcessedPosition(offset, receiver, journalLib.journalLibrary, Instant.ofEpochSecond(0), false);
         
         List<FileFilter> includes = new ArrayList<FileFilter>();
         String includesEnv = System.getenv("ISERIES_INCLUDES");
@@ -63,7 +64,7 @@ public class CommitLogProcessor {
 
 		String database = JdbcFileDecoder.getDatabaseName(sqlConnect.connection());
 		fileDecoder = new JdbcFileDecoder(sqlConnect, database, schemaCache, -1);
-		JournalPosition lastPosition = null;
+		JournalProcessedPosition lastPosition = null;
 		
         JournalPosition endPosition = journalInfoRetrieval.getCurrentPosition(as400Connect.connection(), journalLib);
 		log.info("end position is: {}", endPosition);
@@ -84,7 +85,7 @@ public class CommitLogProcessor {
 		RetrieveJournal rj = new RetrieveJournal(config, journalInfoRetrieval);
 
 		do {
-			lastPosition = new JournalPosition(nextPosition);
+			lastPosition = new JournalProcessedPosition(nextPosition);
 			nextPosition = retrieveJorunal(as400Connect, journal, rj, nextPosition);
 			log.info("after : {} previous {}", nextPosition, lastPosition);
 			if (nextPosition.equals(lastPosition)) {
@@ -99,7 +100,7 @@ public class CommitLogProcessor {
 		
 	}
 
-	private static JournalPosition retrieveJorunal(Connect<AS400, IOException> connector, JournalInfo journal, RetrieveJournal r, JournalPosition position)
+	private static JournalProcessedPosition retrieveJorunal(Connect<AS400, IOException> connector, JournalInfo journal, RetrieveJournal r, JournalProcessedPosition position)
 			throws Exception {
 
 		boolean success = r.retrieveJournal(position);
@@ -120,23 +121,23 @@ public class CommitLogProcessor {
                 String lib = eheader.getLibrary();
                 String member = eheader.getMember();
 
-                log.debug("time {} receiver {} offset {} lib: {} file: {} member: {}", eheader.getTimestamp(), eheader.getReceiver(), eheader.getEndOffset(), lib, file, member);
+                log.debug("time {} receiver {} offset {} lib: {} file: {} member: {}", eheader.getTime(), eheader.getReceiver(), eheader.getEndOffset(), lib, file, member);
                 
 				switch (entryType) {
 					case DELETE_ROW1, DELETE_ROW2:
-    			        log.debug("deleted lib: {} file: {} member: {}", lib, file, member);
+//    			        log.debug("deleted lib: {} file: {} member: {}", lib, file, member);
 						break;
 					case ADD_ROW2,ADD_ROW1:
-                        log.debug("add row lib: {} file: {} member: {}", lib, file, member);
-                        dumpTable(eheader, r, file, lib, member);
+//                        log.debug("add row lib: {} file: {} member: {}", lib, file, member);
+//                        dumpTable(eheader, r, file, lib, member);
                         break;
                     case BEFORE_IMAGE:
-                        log.debug("update row old values lib: {} file: {} member: {}", lib, file, member);
+//                        log.debug("update row old values lib: {} file: {} member: {}", lib, file, member);
 //                        dumpTable(eheader, r, file, lib, member);
                         break;
 					case AFTER_IMAGE:
-					    log.debug("update row new values lib: {} file: {} member: {}", lib, file, member);
-				        dumpTable(eheader, r, file, lib, member);
+//					    log.debug("update row new values lib: {} file: {} member: {}", lib, file, member);
+//				        dumpTable(eheader, r, file, lib, member);
 						break;
 					default:
 						break;
@@ -162,7 +163,7 @@ public class CommitLogProcessor {
 		} else {
 			log.info("finished?");
 			JournalInfo journalNow = JournalInfoRetrieval.getReceiver(connector.connection(), journal);
-            JournalPosition lastOffset = position;
+            JournalProcessedPosition lastOffset = position;
             if (lastOffset.getReciever() != null
                     && !journalNow.journalName.equals(lastOffset.getReciever())) {
                 log.warn("journal reciever doesn't match at position {} we have journal {} and latest is {} ",
@@ -171,7 +172,7 @@ public class CommitLogProcessor {
             log.error(
                     "Lost journal at position {}. Restarting with blank journal and offset ( current journal is {} )",
                     position, journalNow);
-            position.setPosition(new JournalPosition());
+            position.setPosition(new JournalProcessedPosition());
             System.exit(-1);
 		}
 			

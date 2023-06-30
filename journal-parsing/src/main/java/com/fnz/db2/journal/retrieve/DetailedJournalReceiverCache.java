@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 
 import com.fnz.db2.journal.retrieve.rnrn0200.DetailedJournalReceiver;
 import com.fnz.db2.journal.retrieve.rnrn0200.JournalReceiverInfo;
+import com.fnz.db2.journal.retrieve.rnrn0200.JournalStatus;
 
 /**
  * caches index on receiver name and lib
@@ -42,8 +43,8 @@ public class DetailedJournalReceiverCache {
 	}
 
 	public void put(DetailedJournalReceiver details) {
-		if (details.info().status() == null) {
-			System.out.println("null!");
+		if (details.info().status() == null || details.info().attachTime() == null || JournalStatus.Attached.equals(details.info().status())) {
+			log.debug("not caching {} ", details);
 		}
 		cached.put(toKey(details.info()), details);
 	}

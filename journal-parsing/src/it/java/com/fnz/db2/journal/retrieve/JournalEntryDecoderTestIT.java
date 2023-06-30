@@ -11,6 +11,7 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -51,7 +52,9 @@ class JournalEntryDecoderTestIT {
 	public void testCharacterTypes() throws Exception {
 		JournalInfoRetrieval journalInfoRetrieval = new JournalInfoRetrieval();
 		JournalInfo journal = JournalInfoRetrieval.getJournal(as400Connect.connection(), schema);
-		JournalPosition position = journalInfoRetrieval.getCurrentPosition(as400Connect.connection(), journal);
+		Instant now = Instant.now();
+		JournalPosition current = journalInfoRetrieval.getCurrentPosition(as400Connect.connection(), journal);
+		JournalProcessedPosition position = new JournalProcessedPosition(current, now, true);
 		System.out.println("starting at " + position);
 
 		insertData();
@@ -103,7 +106,7 @@ class JournalEntryDecoderTestIT {
 					default:
 					    break;
 				}
-				JournalPosition next = rj.getPosition();
+				JournalProcessedPosition next = rj.getPosition();
 				if (position.equals(next)) {
 					Thread.sleep(100);
 				}

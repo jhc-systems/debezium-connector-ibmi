@@ -6,6 +6,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 import java.math.BigInteger;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -45,10 +46,10 @@ public class JournalReceiversTest {
 		
 		when(journalInfoRetrieval.getCurrentDetailedJournalReceiver(any(), any())).thenReturn(dp);
 		
-		JournalPosition startPosition = new JournalPosition(BigInteger.ONE, "j1", "jlib", true);
+		JournalProcessedPosition startPosition = new JournalProcessedPosition(BigInteger.ONE, "j1", "jlib", Instant.ofEpochSecond(0), true);
 		Optional<PositionRange> result = jreceivers.findRange(as400, startPosition);
 		assertTrue(result.isPresent());
-		PositionRange rangeAnswer = new PositionRange(startPosition, new JournalPosition(dp.end(), dp.info().name(), dp.info().library(), true)); 
+		PositionRange rangeAnswer = new PositionRange(startPosition, new JournalPosition(dp.end(), dp.info().name(), dp.info().library())); 
 		assertEquals(Optional.of(rangeAnswer), result);
 	}
 	
@@ -67,10 +68,10 @@ public class JournalReceiversTest {
 		
 		when(journalInfoRetrieval.getCurrentDetailedJournalReceiver(any(), any())).thenReturn(detailedEnd);
 		
-		JournalPosition startPosition = new JournalPosition(BigInteger.ONE, "j1", "jlib", true);
+		JournalProcessedPosition startPosition = new JournalProcessedPosition(BigInteger.ONE, "j1", "jlib", Instant.ofEpochSecond(0), true);
 		Optional<PositionRange> result = jreceivers.findRange(as400, startPosition);
 		assertTrue(result.isPresent());
-		PositionRange rangeAnswer = new PositionRange(startPosition, new JournalPosition(detailedEnd.end(), detailedEnd.info().name(), detailedEnd.info().library(), true)); 
+		PositionRange rangeAnswer = new PositionRange(startPosition, new JournalPosition(detailedEnd.end(), detailedEnd.info().name(), detailedEnd.info().library())); 
 		assertEquals(Optional.of(rangeAnswer), result);
 	}
 	
@@ -93,17 +94,17 @@ public class JournalReceiversTest {
 		when(journalInfoRetrieval.getReceivers(any(), any())).thenReturn(list).thenReturn(list2);
 		when(journalInfoRetrieval.getCurrentDetailedJournalReceiver(any(), any())).thenReturn(detailedEnd).thenReturn(detailedEnd2);
 		
-		JournalPosition startPosition = new JournalPosition(BigInteger.ONE, "j1", "jlib", true);
+		JournalProcessedPosition startPosition = new JournalProcessedPosition(BigInteger.ONE, "j1", "jlib", Instant.ofEpochSecond(0), true);
 		Optional<PositionRange> result = jreceivers.findRange(as400, startPosition);
 		assertTrue(result.isPresent());
-		PositionRange rangeAnswer = new PositionRange(startPosition, new JournalPosition(BigInteger.valueOf(6), detailedEnd.info().name(), detailedEnd.info().library(), true)); 
+		PositionRange rangeAnswer = new PositionRange(startPosition, new JournalPosition(BigInteger.valueOf(6), detailedEnd.info().name(), detailedEnd.info().library())); 
 		assertEquals(Optional.of(rangeAnswer), result);
 		
 		
-		JournalPosition startPosition2 = new JournalPosition(BigInteger.valueOf(2), "j2", "jlib", true);
+		JournalProcessedPosition startPosition2 = new JournalProcessedPosition(BigInteger.valueOf(2), "j2", "jlib", Instant.ofEpochSecond(0), true);
 		Optional<PositionRange> result2 = jreceivers.findRange(as400, startPosition2);
 		assertTrue(result2.isPresent());
-		PositionRange rangeAnswer2 = new PositionRange(startPosition2, new JournalPosition(BigInteger.valueOf(7), detailedEnd2.info().name(), detailedEnd2.info().library(), true)); 
+		PositionRange rangeAnswer2 = new PositionRange(startPosition2, new JournalPosition(BigInteger.valueOf(7), detailedEnd2.info().name(), detailedEnd2.info().library())); 
 		assertEquals(Optional.of(rangeAnswer2), result2);
 
 	}
@@ -117,7 +118,7 @@ public class JournalReceiversTest {
 				new DetailedJournalReceiver(new JournalReceiverInfo("j2", "jlib", new Date(2), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.valueOf(6), BigInteger.valueOf(20), "j3", 1, 1),
 				new DetailedJournalReceiver(new JournalReceiverInfo("j3", "jlib", new Date(3), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.valueOf(21), BigInteger.valueOf(22), "", 1, 1)
 		);
-		Optional<JournalPosition> position = jreceivers.findPosition(new JournalPosition(BigInteger.ONE, "j1", "jlib", true), BigInteger.valueOf(3), list);
+		Optional<JournalPosition> position = jreceivers.findPosition(new JournalProcessedPosition(BigInteger.ONE, "j1", "jlib", Instant.ofEpochSecond(0), true), BigInteger.valueOf(3), list);
 		assertTrue(position.isPresent());
 		assertEquals(BigInteger.valueOf(4), position.get().getOffset());
 	}
@@ -131,7 +132,7 @@ public class JournalReceiversTest {
 				new DetailedJournalReceiver(new JournalReceiverInfo("j2", "jlib", new Date(2), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.valueOf(1), BigInteger.valueOf(10), "j3", 1, 1),
 				new DetailedJournalReceiver(new JournalReceiverInfo("j3", "jlib", new Date(3), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.valueOf(1), BigInteger.valueOf(10), "", 1, 1)
 		);
-		Optional<JournalPosition> position = jreceivers.findPosition(new JournalPosition(BigInteger.ONE, "j1", "jlib", true), BigInteger.valueOf(15), list);
+		Optional<JournalPosition> position = jreceivers.findPosition(new JournalProcessedPosition(BigInteger.ONE, "j1", "jlib", Instant.ofEpochSecond(0), true), BigInteger.valueOf(15), list);
 		assertTrue(position.isPresent());
 		assertEquals(BigInteger.valueOf(6), position.get().getOffset());
 	}
@@ -144,7 +145,7 @@ public class JournalReceiversTest {
 				new DetailedJournalReceiver(new JournalReceiverInfo("j2", "jlib", new Date(2), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.valueOf(3), BigInteger.valueOf(20), "j3", 1, 1),
 				new DetailedJournalReceiver(new JournalReceiverInfo("j3", "jlib", new Date(3), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.valueOf(21), BigInteger.valueOf(22), "", 1, 1)
 		);
-		Optional<JournalPosition> position = jreceivers.findPosition(new JournalPosition(BigInteger.ONE, "j1", "jlib", true), BigInteger.valueOf(10), list);
+		Optional<JournalPosition> position = jreceivers.findPosition(new JournalProcessedPosition(BigInteger.ONE, "j1", "jlib", Instant.ofEpochSecond(0), true), BigInteger.valueOf(10), list);
 		assertTrue(position.isPresent());
 		assertEquals(BigInteger.valueOf(11), position.get().getOffset());
 	}
@@ -157,7 +158,7 @@ public class JournalReceiversTest {
 				new DetailedJournalReceiver(new JournalReceiverInfo("j2", "jlib", new Date(2), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.valueOf(3), BigInteger.valueOf(20), "j3", 1, 1),
 				new DetailedJournalReceiver(new JournalReceiverInfo("j3", "jlib", new Date(3), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.valueOf(21), BigInteger.valueOf(35), "", 1, 1)
 		);
-		Optional<JournalPosition> position = jreceivers.findPosition(new JournalPosition(BigInteger.ONE, "j1", "jlib", true), BigInteger.valueOf(30), list);
+		Optional<JournalPosition> position = jreceivers.findPosition(new JournalProcessedPosition(BigInteger.ONE, "j1", "jlib", Instant.ofEpochSecond(0), true), BigInteger.valueOf(30), list);
 		assertTrue(position.isPresent());
 		assertEquals(BigInteger.valueOf(31), position.get().getOffset());
 	}
@@ -170,7 +171,7 @@ public class JournalReceiversTest {
 				new DetailedJournalReceiver(new JournalReceiverInfo("j2", "jlib", new Date(2), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.valueOf(3), BigInteger.valueOf(20), "j3", 1, 1),
 				new DetailedJournalReceiver(new JournalReceiverInfo("j3", "jlib", new Date(3), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.valueOf(21), BigInteger.valueOf(35), "", 1, 1)
 		);
-		Optional<JournalPosition> position = jreceivers.findPosition(new JournalPosition(BigInteger.ONE, "j1", "jlib", true), BigInteger.valueOf(100), list);
+		Optional<JournalPosition> position = jreceivers.findPosition(new JournalProcessedPosition(BigInteger.ONE, "j1", "jlib", Instant.ofEpochSecond(0), true), BigInteger.valueOf(100), list);
 		assertTrue(position.isPresent());
 		assertEquals(BigInteger.valueOf(35), position.get().getOffset());
 	}
@@ -184,7 +185,7 @@ public class JournalReceiversTest {
 				new DetailedJournalReceiver(new JournalReceiverInfo("j3", "jlib", new Date(3), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.valueOf(21), BigInteger.valueOf(31), "j4", 1, 1),
 				new DetailedJournalReceiver(new JournalReceiverInfo("j4", "jlib", new Date(4), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.valueOf(41), BigInteger.valueOf(50), "", 1, 1)
 		);
-		Optional<JournalPosition> position = jreceivers.findPosition(new JournalPosition(BigInteger.valueOf(10), "j3", "jlib", true), BigInteger.valueOf(15), list);
+		Optional<JournalPosition> position = jreceivers.findPosition(new JournalProcessedPosition(BigInteger.valueOf(10), "j3", "jlib", Instant.ofEpochSecond(0), true), BigInteger.valueOf(15), list);
 		assertTrue(position.isPresent());
 		assertEquals(BigInteger.valueOf(25), position.get().getOffset());
 
@@ -197,7 +198,7 @@ public class JournalReceiversTest {
 				new DetailedJournalReceiver(new JournalReceiverInfo("j1", "jlib", new Date(1), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.valueOf(1), BigInteger.valueOf(10), "j2", 1, 1),
 				new DetailedJournalReceiver(new JournalReceiverInfo("j2", "jlib", new Date(2), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.valueOf(11), BigInteger.valueOf(20), "", 1, 1)
 		);
-		Optional<JournalPosition> position = jreceivers.findPosition(new JournalPosition(BigInteger.valueOf(30), "j3", "jlib", true), BigInteger.valueOf(15), list);
+		Optional<JournalPosition> position = jreceivers.findPosition(new JournalProcessedPosition(BigInteger.valueOf(30), "j3", "jlib", Instant.ofEpochSecond(0), true), BigInteger.valueOf(15), list);
 		assertTrue(position.isEmpty());
 	}
 
@@ -207,7 +208,7 @@ public class JournalReceiversTest {
 		BigInteger maxServerSideEntriesBI = BigInteger.valueOf(maxOffset);
 		JournalReceivers jreceivers = new JournalReceivers(journalInfoRetrieval, maxOffset, journalInfo);
 		
-		JournalPosition startPosition = new JournalPosition(BigInteger.ONE, "j1", "jlib", true);
+		JournalProcessedPosition startPosition = new JournalProcessedPosition(BigInteger.ONE, "j1", "jlib", Instant.ofEpochSecond(0), true);
 		DetailedJournalReceiver endJournalPosition = new DetailedJournalReceiver(new JournalReceiverInfo("j1", "jlib", new Date(1), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.valueOf(1), BigInteger.valueOf(100), "", 1, 1);
 
 		PositionRange range = jreceivers.maxOffsetInSameReceiver(startPosition, endJournalPosition, maxServerSideEntriesBI);
@@ -220,7 +221,7 @@ public class JournalReceiversTest {
 		BigInteger maxServerSideEntriesBI = BigInteger.valueOf(maxOffset);
 		JournalReceivers jreceivers = new JournalReceivers(journalInfoRetrieval, maxOffset, journalInfo);
 		
-		JournalPosition startPosition = new JournalPosition(BigInteger.ONE, "j1", "jlib", true);
+		JournalProcessedPosition startPosition = new JournalProcessedPosition(BigInteger.ONE, "j1", "jlib", Instant.ofEpochSecond(0), true);
 		DetailedJournalReceiver endJournalPosition = new DetailedJournalReceiver(new JournalReceiverInfo("j1", "jlib", new Date(1), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.valueOf(1), BigInteger.valueOf(100), "", 1, 1);
 
 		PositionRange range = jreceivers.maxOffsetInSameReceiver(startPosition, endJournalPosition, maxServerSideEntriesBI);

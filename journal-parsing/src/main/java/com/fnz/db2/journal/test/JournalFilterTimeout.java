@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -17,6 +18,7 @@ import com.fnz.db2.journal.retrieve.FileFilter;
 import com.fnz.db2.journal.retrieve.JournalInfo;
 import com.fnz.db2.journal.retrieve.JournalInfoRetrieval;
 import com.fnz.db2.journal.retrieve.JournalPosition;
+import com.fnz.db2.journal.retrieve.JournalProcessedPosition;
 import com.fnz.db2.journal.retrieve.RetrieveConfig;
 import com.fnz.db2.journal.retrieve.RetrieveConfigBuilder;
 import com.fnz.db2.journal.retrieve.RetrieveJournal;
@@ -62,8 +64,8 @@ public class JournalFilterTimeout {
 					.withDumpFolder("./bad-journal").withServerFiltering(true).withIncludeFiles(includes).build();
 			final RetrieveJournal rj = new RetrieveJournal(config, journalInfoRetrieval);
 
-			final JournalPosition p = new JournalPosition(first.start(), first.info().name(), first.info().library(),
-					false);
+			final JournalProcessedPosition p = new JournalProcessedPosition(first.start(), first.info().name(), first.info().library(),
+					Instant.ofEpochSecond(0), false);
 			final long start = System.currentTimeMillis();
 			final boolean success = rj.retrieveJournal(p);
 			final long end = System.currentTimeMillis();

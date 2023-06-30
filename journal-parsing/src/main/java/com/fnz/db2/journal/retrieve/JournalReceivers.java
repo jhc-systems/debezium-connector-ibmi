@@ -25,7 +25,7 @@ public class JournalReceivers {
 		this.journalInfo=  journalInfo;
 	}
 	
-	Optional<PositionRange> findRange(AS400 as400, JournalPosition startPosition) throws Exception {
+	Optional<PositionRange> findRange(AS400 as400, JournalProcessedPosition startPosition) throws Exception {
 		BigInteger start = startPosition.getOffset();
 		final boolean startValid = startPosition.isOffsetSet() && !start.equals(BigInteger.ZERO);
 		
@@ -86,16 +86,18 @@ public class JournalReceivers {
 	 * @return
 	 * @throws Exception 
 	 */
-	PositionRange maxOffsetInSameReceiver(JournalPosition startPosition, DetailedJournalReceiver endJournalPosition, BigInteger maxServerSideEntriesBI) throws Exception {
+	PositionRange maxOffsetInSameReceiver(JournalProcessedPosition startPosition, DetailedJournalReceiver endJournalPosition, BigInteger maxServerSideEntriesBI) throws Exception {
 		if (!startPosition.isSameReceiver(endJournalPosition)) {
 			throw new Exception(String.format("Error this method is only valid for same receiver start %s, end %s", startPosition, endJournalPosition));
 		}
 		BigInteger diff = endJournalPosition.end().subtract(startPosition.getOffset());
 		if (diff.compareTo(maxServerSideEntriesBI) > 0) {
 			BigInteger restricted = startPosition.getOffset().add(maxServerSideEntriesBI);
-			return new PositionRange(startPosition, new JournalPosition(restricted, startPosition.getReciever(), startPosition.getReceiverLibrary(), true));
+			return new PositionRange(startPosition, 
+					new JournalPosition(restricted, startPosition.getReciever(), startPosition.getReceiverLibrary()));
 		}
-		return new PositionRange(startPosition, new JournalPosition(endJournalPosition.end(), startPosition.getReciever(), startPosition.getReceiverLibrary(), true));
+		return new PositionRange(startPosition, 
+				new JournalPosition(endJournalPosition.end(), startPosition.getReciever(), startPosition.getReceiverLibrary()));
 	}
 
 	/**
@@ -105,7 +107,7 @@ public class JournalReceivers {
 	 * @param receivers
 	 * @return try and find end position at most offsetFromStart from start using the receiver list 
 	 */
-	Optional<JournalPosition> findPosition(JournalPosition start, BigInteger offsetFromStart, List<DetailedJournalReceiver> receivers) {
+	Optional<JournalPosition> findPosition(JournalProcessedPosition start, BigInteger offsetFromStart, List<DetailedJournalReceiver> receivers) {
 		BigInteger remaining = offsetFromStart;
 		boolean found = false;
 		DetailedJournalReceiver last = null;
@@ -115,7 +117,7 @@ public class JournalReceivers {
 				BigInteger toEnd = last.end().subtract(last.start()).add(BigInteger.ONE); // add one include end offset 1 -> 100 we get back 1 and 100
 				if (remaining.compareTo(toEnd) <= 0) {
 					BigInteger endOffset = last.start().add(remaining);
-					return Optional.of(new JournalPosition(endOffset, last.info().name(), last.info().library(), true));
+					return Optional.of(new JournalPosition(endOffset, last.info().name(), last.info().library()));
 				}
 				remaining = remaining.subtract(toEnd);
 			}
@@ -124,13 +126,13 @@ public class JournalReceivers {
 				BigInteger toEnd = last.end().subtract(start.getOffset()).add(BigInteger.ONE); // add one include end offset 1 -> 100 we get back 1 and 100
 				if (remaining.compareTo(toEnd) <= 0) {
 					BigInteger offset = start.getOffset().add(remaining);
-					return Optional.of(new JournalPosition(offset, last.info().name(), last.info().library(), true));
+					return Optional.of(new JournalPosition(offset, last.info().name(), last.info().library()));
 				}
 				remaining = remaining.subtract(toEnd);
 			}			
 		}
 		if (found && last != null) {
-			return Optional.of(new JournalPosition(last.end(), last.info().name(), last.info().library(), true));
+			return Optional.of(new JournalPosition(last.end(), last.info().name(), last.info().library()));
 		} else {
 			log.warn("position {} not found in available receivers {}", start, receivers);
 			return Optional.empty();
