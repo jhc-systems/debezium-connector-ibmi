@@ -43,7 +43,7 @@ public class RetrieveJournal {
 			JournalEntryType.CT, JournalEntryType.CG, JournalEntryType.SC, JournalEntryType.CM };
 	private static final FirstHeaderDecoder firstHeaderDecoder = new FirstHeaderDecoder();
 	private static final EntryHeaderDecoder entryHeaderDecoder = new EntryHeaderDecoder();
-	private static final SimpleDateFormat DATE_FORMATTER = new SimpleDateFormat("yyMMdd-hhmm");
+	private final SimpleDateFormat dateFormatter = new SimpleDateFormat("yyMMdd-hhmm");
 	private final JournalReceivers journalRecievers;
 	private final ParameterListBuilder builder = new ParameterListBuilder();
 
@@ -97,7 +97,7 @@ public class RetrieveJournal {
 			builder.withReceivers(r.start().getReciever().name(), r.start().getReciever().library(), r.end().getReciever().name(),
 					r.end().receiver().library());
 			builder.withEnd(r.end().getOffset());
-			return (r.start().equals(r.end()));
+			return (r.startEqualsEnd());
 		}).orElseGet(() -> {
 			builder.withStartReceiversToCurrent(retrievePosition.getReciever().name(), retrievePosition.getReciever().library());
 			builder.withStartingSequence(retrievePosition.getOffset());
@@ -332,7 +332,7 @@ public class RetrieveJournal {
 			boolean created = false;
 			for (int i = 0; !created && i < 100; i++) {
 
-				final String formattedDate = DATE_FORMATTER.format(new Date());
+				final String formattedDate = dateFormatter.format(new Date());
 				final File f = new File(path, String.format("%s-%s", formattedDate, Integer.toString(i)));
 				try {
 					created = f.createNewFile();

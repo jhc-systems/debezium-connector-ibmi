@@ -25,7 +25,7 @@ import com.ibm.as400.access.AS400;
 
 
 @ExtendWith(MockitoExtension.class)
-public class JournalReceiversTest {
+class JournalReceiversTest {
 	JournalReceivers receivers;
 	@Mock JournalInfoRetrieval journalInfoRetrieval;
 	JournalInfo journalInfo = new JournalInfo("journal", "journallib");

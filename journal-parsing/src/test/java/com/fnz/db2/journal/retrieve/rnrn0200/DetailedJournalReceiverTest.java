@@ -14,7 +14,7 @@ import org.junit.jupiter.api.Test;
 
 import com.fnz.db2.journal.retrieve.JournalReceiver;
 
-public class DetailedJournalReceiverTest {
+class DetailedJournalReceiverTest {
 	DetailedJournalReceiver dr3 = new DetailedJournalReceiver(new JournalReceiverInfo(new JournalReceiver("3", "lib"), new Date(3), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.ONE, BigInteger.TWO, Optional.empty(), 1, 1);
 	DetailedJournalReceiver dr2 = new DetailedJournalReceiver(new JournalReceiverInfo(new JournalReceiver("2", "lib"), new Date(2), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.ZERO, BigInteger.ONE, Optional.of(dr3.info().receiver()), 1, 1);
 	DetailedJournalReceiver dr1 = new DetailedJournalReceiver(new JournalReceiverInfo(new JournalReceiver("1",  "lib"), new Date(1), JournalStatus.Partial, Optional.of(1)), BigInteger.ONE, BigInteger.TWO, Optional.of(dr2.info().receiver()), 1, 1);

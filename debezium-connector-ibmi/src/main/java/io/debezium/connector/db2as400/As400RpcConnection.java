@@ -21,6 +21,7 @@ import com.fnz.db2.journal.retrieve.JournalInfo;
 import com.fnz.db2.journal.retrieve.JournalInfoRetrieval;
 import com.fnz.db2.journal.retrieve.JournalPosition;
 import com.fnz.db2.journal.retrieve.JournalProcessedPosition;
+import com.fnz.db2.journal.retrieve.JournalReceiver;
 import com.fnz.db2.journal.retrieve.RetrieveConfig;
 import com.fnz.db2.journal.retrieve.RetrieveConfigBuilder;
 import com.fnz.db2.journal.retrieve.RetrieveJournal;
@@ -141,9 +142,9 @@ public class As400RpcConnection implements AutoCloseable, Connect<AS400, IOExcep
             while (retrieveJournal.nextEntry() && context.isRunning()) {
                 watchDog.alive();
                 EntryHeader eheader = retrieveJournal.getEntryHeader();
-                BigInteger currentOffset = eheader.getSequenceNumber();
+                BigInteger processingOffset = eheader.getSequenceNumber();
 
-                consumer.accept(currentOffset, retrieveJournal, eheader);
+                consumer.accept(processingOffset, retrieveJournal, eheader);
                 // while processing journal entries getPosistion is the current position
                 position.setPosition(retrieveJournal.getPosition());
             }
@@ -174,30 +175,33 @@ public class As400RpcConnection implements AutoCloseable, Connect<AS400, IOExcep
 
     private void logOffsets(JournalProcessedPosition position, boolean success) throws IOException, Exception {
         if (periodic.shouldLogRateLimted("offsets")) {
-            JournalPosition currentPosition = getCurrentPosition();
-            BigInteger behind = currentPosition.getOffset().subtract(position.getOffset());
-            streamingMetrics.setJournalOffset(currentPosition.getOffset());
+            JournalPosition currentReceiver = getCurrentPosition();
+            BigInteger behind = currentReceiver.getOffset().subtract(position.getOffset());
+            streamingMetrics.setJournalOffset(currentReceiver.getOffset());
             streamingMetrics.setJournalBehind(behind);
             log.info(new StructuredMessage("current position diagnostics", 
                     Map.of("header", retrieveJournal.headerAsString(),
                             "behind", behind,
                             "position", position,
-                            "currentPosition", currentPosition,
+                            "currentReceiver", currentReceiver,
                             "success", success)));
 
         }
     }
 
     private void noDataDiagnostics(JournalProcessedPosition position) throws Exception, IOException {
-        JournalInfo journalNow = JournalInfoRetrieval.getReceiver(connection(), journalInfo);
-        if (!isLatestJournal(position, journalNow)) {
+        JournalReceiver currentReceiver = JournalInfoRetrieval.getReceiver(connection(), journalInfo);
+        if (!isLatestJournal(position, currentReceiver)) {
             List<DetailedJournalReceiver> receivers = journalInfoRetrieval.getReceivers(connection(), journalInfo);
+            int size = receivers.size();
+            if (size > 10) {
+            	receivers = receivers.subList(size-10, size);
+            }
             log.warn(new StructuredMessage("Detected newer receiver but no data received", 
                     Map.of("header", retrieveJournal.headerAsString(),
                             "position", position,
-                            "detectedReceiver", journalNow.journalName(),
-                            "currentReceiver", position.getReciever(),
-                            "receivers", receivers)));
+                            "currentReceiver", currentReceiver,
+                            "lastTenReceivers", receivers)));
         }
         else {
             if (periodic.shouldLogRateLimted("no-data")) {
@@ -207,10 +211,10 @@ public class As400RpcConnection implements AutoCloseable, Connect<AS400, IOExcep
         }
     }
 
-    private boolean isLatestJournal(JournalProcessedPosition position, JournalInfo journalNow)
+    private boolean isLatestJournal(JournalProcessedPosition position, JournalReceiver journalNow)
             throws Exception, IOException {
         if (position.getReciever() == null
-                || journalNow.journalName().equals(position.getReciever())) {
+                || journalNow.equals(position.getReciever())) {
             return true;
         }
         return false;
@@ -225,7 +229,6 @@ public class As400RpcConnection implements AutoCloseable, Connect<AS400, IOExcep
     }
 
     public static class RpcException extends Exception {
-
         public RpcException(String message, Throwable cause) {
             super(message, cause);
         }
@@ -233,7 +236,6 @@ public class As400RpcConnection implements AutoCloseable, Connect<AS400, IOExcep
         public RpcException(String message) {
             super(message);
         }
-
     }
 
 

@@ -12,7 +12,6 @@ import java.util.stream.Collectors;
 
 import com.fnz.db2.journal.retrieve.JournalReceiver;
 
-//TODO make receiver the key not the name
 public	class ReceiverChain {
 	DetailedJournalReceiver details;
 	Optional<ReceiverChain> next = Optional.empty();
@@ -67,12 +66,12 @@ public	class ReceiverChain {
 	}
 
 	static Map<JournalReceiver, ReceiverChain> availableSingleChainElement(List<DetailedJournalReceiver> l) {
-		final List<DetailedJournalReceiver> validReceivers = l.stream().filter(x -> {
-			return switch (x.info().status()) {
-			case Attached, OnlineSavedDetached, SavedDetchedNotFreed -> true;
-			default -> false;
-			};
-		}).toList(); // ignore any deleted or unused journals
+		final List<DetailedJournalReceiver> validReceivers = l.stream().filter(x -> 
+			switch (x.info().status()) {
+				case Attached, OnlineSavedDetached, SavedDetchedNotFreed -> true;
+				default -> false;
+			}
+		).toList(); // ignore any deleted or unused journals
 
 		final Map<JournalReceiver, ReceiverChain> m = validReceivers.stream()
 				.collect(Collectors.<DetailedJournalReceiver, JournalReceiver, ReceiverChain>toMap(x -> x.info().receiver(),
@@ -116,15 +115,14 @@ public	class ReceiverChain {
 		// each receiver lookup nextReceiver in hash and add to next 
 		// references to other receivers to remove from noNext
 		for (final ReceiverChain or : m.values()) {
-			if (or.details.nextReceiver().isPresent()) {
-				JournalReceiver nextReceiver = or.details.nextReceiver().get();
-				final ReceiverChain nr = m.get(nextReceiver);
-				if (nr != null) {
+			or.details.nextReceiver().ifPresent(nextReceiver -> {
+				if (m.containsKey(nextReceiver)) {
+					final ReceiverChain nr = m.get(nextReceiver);
 					noNext.remove(nr);
 					or.next = Optional.of(nr);
 					nr.previous = Optional.of(or);
 				}
-			}
+			});
 		}
 		return noNext;
 	}

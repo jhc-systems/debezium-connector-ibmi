@@ -180,6 +180,7 @@ public class As400StreamingChangeEventSource implements StreamingChangeEventSour
 		connectionTime = System.currentTimeMillis();
 	}
 
+	// TODO tidy up exception handling
 	private BlockingRecieverConsumer processJournalEntries(As400Partition partition, As400OffsetContext offsetContext)
 			throws IOException, SQLNonTransientConnectionException {
 		return (nextOffset, r, eheader) -> {
@@ -283,7 +284,7 @@ public class As400StreamingChangeEventSource implements StreamingChangeEventSour
 						txc.event(tableId);
 					}
 
-					log.debug("insert event id {} tx {} table {}", offsetContext.getPosition().toString(), txId,
+					log.debug("insert event id {} tx {} table {}", offsetContext.getPosition(), txId,
 							tableId);
 					dispatcher.dispatchDataChangeEvent(partition, tableId, new As400ChangeRecordEmitter(partition,
 							offsetContext, Operation.CREATE, null, dataNext, clock));
@@ -303,7 +304,7 @@ public class As400StreamingChangeEventSource implements StreamingChangeEventSour
 						txc.event(tableId);
 					}
 
-					log.debug("delete event id {} tx {} table {}", offsetContext.getPosition().toString(), txId,
+					log.debug("delete event id {} tx {} table {}", offsetContext.getPosition(), txId,
 							tableId);
 					dispatcher.dispatchDataChangeEvent(partition, tableId, new As400ChangeRecordEmitter(partition,
 							offsetContext, Operation.DELETE, dataBefore, null, clock));

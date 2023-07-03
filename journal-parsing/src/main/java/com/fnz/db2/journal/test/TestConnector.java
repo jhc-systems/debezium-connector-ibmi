@@ -38,11 +38,11 @@ public class TestConnector {
     		AS400JDBCDriverRegistration.registerCcsidDriver();
     		props.setProperty(AS400JDBCConnectionForcedCcsid.FROM_CCSID, fromCcsid);
     		props.setProperty(AS400JDBCConnectionForcedCcsid.TO_CCSID, toCcsid);
-    		log.info("forced ccsid " + toCcsid);
+    		log.info("forced ccsid {}", toCcsid);
     	}
 
         this.as400Connect = new Connect<AS400, IOException>() {
-            AS400 as400 = new AS400(host, user, password);
+            AS400 as400 = new AS400(host, user, password.toCharArray());
             @Override
             public AS400 connection() {
                 return as400;

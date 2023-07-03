@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import com.fnz.db2.journal.retrieve.Connect;
 import com.fnz.db2.journal.retrieve.JournalInfo;
 import com.fnz.db2.journal.retrieve.JournalInfoRetrieval;
+import com.fnz.db2.journal.retrieve.JournalReceiver;
 import com.fnz.db2.journal.retrieve.rnrn0200.DetailedJournalReceiver;
 import com.ibm.as400.access.AS400;
 
@@ -32,7 +33,7 @@ public class JournalInfoMain {
 //        for (DetailedJournalReceiver j : jri) {
 //            log.info("receiver {}", j);
 //        }
-        JournalInfo jr = JournalInfoRetrieval.getReceiver(as400Connect.connection(), ji);
+        JournalReceiver jr = JournalInfoRetrieval.getReceiver(as400Connect.connection(), ji);
         log.info("Journal info {}", jr);
         
         log.info("current position: {}", journalInfoRetrieval.getCurrentPosition(as400Connect.connection(), ji));

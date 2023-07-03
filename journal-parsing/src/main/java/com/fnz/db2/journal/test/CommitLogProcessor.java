@@ -7,10 +7,8 @@ import java.sql.SQLException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,6 +21,7 @@ import com.fnz.db2.journal.retrieve.JournalInfo;
 import com.fnz.db2.journal.retrieve.JournalInfoRetrieval;
 import com.fnz.db2.journal.retrieve.JournalPosition;
 import com.fnz.db2.journal.retrieve.JournalProcessedPosition;
+import com.fnz.db2.journal.retrieve.JournalReceiver;
 import com.fnz.db2.journal.retrieve.RetrieveConfig;
 import com.fnz.db2.journal.retrieve.RetrieveConfigBuilder;
 import com.fnz.db2.journal.retrieve.RetrieveJournal;
@@ -56,10 +55,6 @@ public class CommitLogProcessor {
 				includes.add(new FileFilter(schema, i));
 			}
 		}
-        
-        if (includes.size() == 0) {
-        	throw new Exception("no tables specified");
-        }
         
         JournalInfo journal = JournalInfoRetrieval.getJournal(as400Connect.connection(), schema, includes);
 
@@ -155,7 +150,7 @@ public class CommitLogProcessor {
 //            if (eh != null) {
 //                log.info("last offset was {}.{}.{}", eh.getSequenceNumber(), eh.getReceiver(), eh.getReceiverLibrary());
 //            }
-            
+//            
 //            r.getFirstHeader().nextPosition().map(jp -> {
 //				log.info("next offset is {}", jp.toString());
 //				return null;
@@ -167,12 +162,12 @@ public class CommitLogProcessor {
 
 		} else {
 			log.info("finished?");
-			JournalInfo journalNow = JournalInfoRetrieval.getReceiver(connector.connection(), journal);
+			JournalReceiver journalNow = JournalInfoRetrieval.getReceiver(connector.connection(), journal);
             JournalProcessedPosition lastOffset = position;
             if (lastOffset.getReciever() != null
-                    && !journalNow.journalName().equals(lastOffset.getReciever())) {
+                    && !journalNow.equals(lastOffset.getReciever())) {
                 log.warn("journal reciever doesn't match at position {} we have journal {} and latest is {} ",
-                        position, lastOffset.getReciever(), journalNow.journalName());
+                        position, lastOffset.getReciever(), journalNow);
             }
             log.error(
                     "Lost journal at position {}. Restarting with blank journal and offset ( current journal is {} )",
@@ -190,12 +185,12 @@ public class CommitLogProcessor {
 
 
 	private static void dumpTable(EntryHeader eheader, RetrieveJournal rnje, String file, String lib, String member) {
-		log.info("lib:" + lib + " file:" + file + " member:" + member);
+		log.info("lib: {} file: {} memper: {}", lib, file, member);
         // DL entries are empty don't try and decode them
 		if (!"DL".equals(eheader.getEntryType()) && !"DR".equals(eheader.getEntryType())) {
 //				String recordFileName = "/QSYS.LIB/" + lib + ".LIB/" + file + ".FILE/" + member + ".MBR";
 				Optional<TableInfo> tableInfoOpt = fileDecoder.getRecordFormat(eheader.getFile(), eheader.getLibrary());
-				tableInfoOpt.map(tableInfo -> {
+				tableInfoOpt.ifPresent(tableInfo -> {
 					try {
 					log.info("tableInfo: {}", tableInfo);
 	
@@ -222,7 +217,6 @@ public class CommitLogProcessor {
 					} catch (Exception e) {
 						log.error("Failed to dump table", e);
 					}
-					return null;
 				});
 		}
 	}

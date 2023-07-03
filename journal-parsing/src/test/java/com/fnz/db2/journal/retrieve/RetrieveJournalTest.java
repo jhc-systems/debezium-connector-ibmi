@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Test;
 import com.fnz.db2.journal.retrieve.RetrievalCriteria.JournalCode;
 import com.ibm.as400.access.AS400;
 
-public class RetrieveJournalTest {
+class RetrieveJournalTest {
 	JournalInfo ji = new JournalInfo("journalName", "journalLibrary");
 	Connect<AS400, IOException> as400;
 	JournalCode[] codes = new JournalCode[] {};

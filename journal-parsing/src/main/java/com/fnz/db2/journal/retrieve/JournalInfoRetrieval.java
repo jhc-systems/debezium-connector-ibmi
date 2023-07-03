@@ -59,14 +59,14 @@ public class JournalInfoRetrieval {
 	}
 
 	public JournalPosition getCurrentPosition(AS400 as400, JournalInfo journalLib) throws Exception {
-		final JournalInfo ji = JournalInfoRetrieval.getReceiver(as400, journalLib);
+		final JournalReceiver ji = JournalInfoRetrieval.getReceiver(as400, journalLib);
 		final BigInteger offset = getOffset(as400, ji).end();
-		return new JournalPosition(offset, new JournalReceiver(ji.journalName(), ji.journalLibrary()));
+		return new JournalPosition(offset, ji);
 	}
 
 	public DetailedJournalReceiver getCurrentDetailedJournalReceiver(AS400 as400, JournalInfo journalLib)
 			throws Exception {
-		final JournalInfo ji = JournalInfoRetrieval.getReceiver(as400, journalLib);
+		final JournalReceiver ji = JournalInfoRetrieval.getReceiver(as400, journalLib);
 		return getOffset(as400, ji);
 	}
 
@@ -194,7 +194,7 @@ public class JournalInfoRetrieval {
 	 * @return
 	 * @throws Exception
 	 */
-	public static JournalInfo getReceiver(AS400 as400, JournalInfo journalLib) throws Exception {
+	public static JournalReceiver getReceiver(AS400 as400, JournalInfo journalLib) throws Exception {
 		final int rcvLen = 32000;
 		final String jrnLib = padRight(journalLib.journalName(), 10) + padRight(journalLib.journalLibrary(), 10);
 		final String format = "RJRN0200";
@@ -213,7 +213,7 @@ public class JournalInfoRetrieval {
 					// receivers are attached.
 					final String journalReceiver = decodeString(data, 200, 10);
 					final String journalLibrary = decodeString(data, 210, 10);
-					return new JournalInfo(journalReceiver, journalLibrary);
+					return new JournalReceiver(journalReceiver, journalLibrary);
 				});
 	}
  
@@ -281,9 +281,9 @@ public class JournalInfoRetrieval {
 		return DetailedJournalReceiver.lastJoined(l);
 	}
 
-	DetailedJournalReceiver getOffset(AS400 as400, JournalInfo info) throws Exception {
+	DetailedJournalReceiver getOffset(AS400 as400, JournalReceiver receiver) throws Exception {
 		return getReceiverDetails(as400,
-				new JournalReceiverInfo(new JournalReceiver(info.journalName(), info.journalLibrary()), null, null, Optional.empty()));
+				new JournalReceiverInfo(receiver, null, null, Optional.empty()));
 	}
 	
 	/**

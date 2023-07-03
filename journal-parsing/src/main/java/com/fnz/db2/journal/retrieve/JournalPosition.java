@@ -21,16 +21,6 @@ public record JournalPosition(
 	public static JournalPosition endPosition(DetailedJournalReceiver details) {
 		return new JournalPosition(details.end(), details.info().receiver());
 	}
-    
-//    public JournalPosition(String offsetStr, String receiver, String receiverLibrary) {
-//    	this(
-//			(offsetStr == null || offsetStr.isBlank()) ? null : new BigInteger(offsetStr),
-//	    	new JournalReceiver(StringHelpers.safeTrim(receiver), StringHelpers.safeTrim(receiverLibrary)));
-//    }
-//    
-//    public JournalPosition(BigInteger offset, String receiver, String library) {
-//		this(offset, new JournalReceiver(receiver, library));
-//	}
 
 	public BigInteger getOffset() {
         if (null == offset) {

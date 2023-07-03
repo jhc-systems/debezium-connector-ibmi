@@ -38,7 +38,7 @@ public class JdbcFileDecoderIT {
 
 
 	@Test
-	public void testToDataType() throws Exception {
+	void testToDataType() throws Exception {
 		JdbcFileDecoder decoder = new JdbcFileDecoder(sqlConnect, database, new SchemaCacheHash(), -1);
 		Optional<TableInfo> info = decoder.getRecordFormat("DCDTBL", schema);
 		assertTrue(info.isPresent());
