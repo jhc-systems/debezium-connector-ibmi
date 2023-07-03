@@ -90,17 +90,20 @@ public class RetrieveJournal {
 			builder.withFileFilters(config.includeFiles());
 		}
 		
-		final Optional<PositionRange> rangeOpt =  journalRecievers.findRange(config.as400().connection(), retrievePosition);
+		final Optional<PositionRange> rangeOpt = journalRecievers.findRange(config.as400().connection(), retrievePosition);
 		
 		boolean startEqualsEnd = rangeOpt.map(r -> {
-			builder.withStartingSequence(r.start().getOffset());
-			builder.withReceivers(r.start().getReciever().name(), r.start().getReciever().library(), r.end().getReciever().name(),
+			builder.withReceivers(r.start().getOffset(), r.start().getReciever().name(), r.start().getReciever().library(), r.end().getOffset(), r.end().getReciever().name(),
 					r.end().receiver().library());
-			builder.withEnd(r.end().getOffset());
 			return (r.startEqualsEnd());
 		}).orElseGet(() -> {
-			builder.withStartReceiversToCurrent(retrievePosition.getReciever().name(), retrievePosition.getReciever().library());
-			builder.withStartingSequence(retrievePosition.getOffset());
+			if (retrievePosition.isOffsetSet()) {
+				log.warn("starting from current position to end");
+				builder.withStartReceiversToCurrentEnd(retrievePosition.getOffset(), retrievePosition.getReciever().name(), retrievePosition.getReciever().library());
+			} else {
+				log.warn("starting from beginning");
+				builder.withFromBeginningToEnd();
+			}
 			return false;
 		});
 

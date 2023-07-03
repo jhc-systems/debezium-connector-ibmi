@@ -69,8 +69,10 @@ public class ParameterListBuilder {
 		return this;
 	}
 
-	public ParameterListBuilder withReceivers(String startReceiver, String startLibrary, String endReceiver,
+	public ParameterListBuilder withReceivers(BigInteger start, String startReceiver, String startLibrary, BigInteger end, String endReceiver,
 			String endLibrary) {
+		withStartingSequence(start);
+		withEnd(end);
 		this.startReceiver = startReceiver;
 		this.startLibrary = startLibrary;
 		this.endReceiver = endReceiver;
@@ -78,32 +80,46 @@ public class ParameterListBuilder {
 		criteria.withReceiverRange(startReceiver, startLibrary, endReceiver, endLibrary);
 		return this;
 	}
+	
+	private ParameterListBuilder withStartingSequence(BigInteger start) {
+		startOffset = start.toString();
+		criteria.withFromEnt(start);
+		return this;
+	}
 
-	public ParameterListBuilder withEnd() {
-		endOffset="last";
+	private ParameterListBuilder withEnd() {
+		endOffset="*LAST";
 		criteria.withEnd();
 		return this;
 	}
 
-	public ParameterListBuilder withEnd(BigInteger end) {
+	private ParameterListBuilder withEnd(BigInteger end) {
 		endOffset = end.toString();
 		criteria.withEnd(end);
 		return this;
 	}
 	
-	public ParameterListBuilder withStartReceiversToCurrent(String startReceiver, String startLibrary) {
+	public ParameterListBuilder withStartReceiversToCurrentEnd(BigInteger start, String startReceiver, String startLibrary) {
+		withStartingSequence(start);
 		this.startReceiver = startReceiver;
 		this.startLibrary = startLibrary;
 		this.endReceiver = "*CURRENT";
 		this.endLibrary = "";		
 		criteria.withReceiverRange(startReceiver, startLibrary, endReceiver, endLibrary);
+		this.withEnd();
 		return this;
 	}
-
-	public ParameterListBuilder withStartingSequence(BigInteger start) {
-		startOffset = start.toString();
-		criteria.withFromEnt(start);
-		return this;
+	
+	public ParameterListBuilder withFromBeginningToEnd() {
+		this.startReceiver = "*CURCHAIN";
+		this.startLibrary = "";
+		this.endReceiver = "";
+		this.endLibrary = "";
+		criteria.withReceiverRange(startReceiver, startLibrary, endReceiver, endLibrary);
+		this.startOffset = "*FIRST";
+		criteria.withStart();
+		this.withEnd();
+		return this;		
 	}
 
 	public ParameterListBuilder filterJournalCodes(JournalCode[] journalCode) {

@@ -56,11 +56,11 @@ public class JournalReceivers {
 			cachedEndPosition = endPosition;
 		}
 
-		Optional<JournalPosition> endOpt = findPosition(startPosition, maxServerSideEntriesBI, cachedReceivers);
+		Optional<JournalPosition> endOpt = findPosition(startPosition, maxServerSideEntriesBI, cachedReceivers, cachedEndPosition);
 		if (endOpt.isEmpty()) {
 			log.warn("retrying to find end offset");
 			cachedReceivers = journalInfoRetrieval.getReceivers(as400, journalInfo);
-			endOpt = findPosition(startPosition, maxServerSideEntriesBI, cachedReceivers);
+			endOpt = findPosition(startPosition, maxServerSideEntriesBI, cachedReceivers, endPosition);
 		}
 		return endOpt.map(end -> new PositionRange(startPosition, end));
 	}
@@ -107,10 +107,16 @@ public class JournalReceivers {
 	 * @param receivers
 	 * @return try and find end position at most offsetFromStart from start using the receiver list 
 	 */
-	Optional<JournalPosition> findPosition(JournalProcessedPosition start, BigInteger offsetFromStart, List<DetailedJournalReceiver> receivers) {
+	Optional<JournalPosition> findPosition(JournalProcessedPosition start, BigInteger offsetFromStart, List<DetailedJournalReceiver> receivers, DetailedJournalReceiver endPosition) {
 		BigInteger remaining = offsetFromStart;
 		boolean found = false;
 		DetailedJournalReceiver last = null;
+		
+		if (!containsEndPosition(receivers, endPosition)) {
+			log.warn("unable to find active journal {} in receiver list", endPosition);
+			return Optional.empty();
+		}
+		
 		for (int i=0; i < receivers.size(); i++) {
 			last = receivers.get(i);
 			if (found) {
@@ -134,8 +140,18 @@ public class JournalReceivers {
 		if (found && last != null) {
 			return Optional.of(new JournalPosition(last.end(), last.info().receiver()));
 		} else {
-			log.warn("position {} not found in available receivers {}", start, receivers);
+			log.warn("Current position {} not found in available receivers {}", start, receivers);
 			return Optional.empty();
 		}
+	}
+
+	private boolean containsEndPosition(List<DetailedJournalReceiver> receivers, DetailedJournalReceiver endPosition) {
+		boolean containsEndPosition = false;
+		for (int i=0; i < receivers.size(); i++) {
+			if (receivers.get(i).info().receiver().equals(endPosition.info().receiver())) {
+				containsEndPosition = true;
+			}					
+		}
+		return containsEndPosition;
 	}
 }

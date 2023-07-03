@@ -102,7 +102,9 @@ public class RetrievalCriteria {
 		String temp = String.format("%20d", value);
 		addStructureData(RetrieveKey.FROMENT, AS400_TEXT_20, temp);
 	}
-	
+	public void withStart() {
+		addStructureData(RetrieveKey.FROMENT, AS400_TEXT_20, "*FIRST");
+	}	
 	public void withEnd() {
 		addStructureData(RetrieveKey.TOENT, AS400_TEXT_20, "*LAST");
 	}
