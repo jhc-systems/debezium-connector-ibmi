@@ -285,9 +285,7 @@ public class RetrieveJournal {
 
 	private static void updatePosition(JournalProcessedPosition p, EntryHeader entryHeader) {
 		if (entryHeader.getTime().isBefore(p.getTime())) {
-			log.error("position has gone backwards {} entry {}",p ,entryHeader);
-			System.exit(1);
-			return;
+			log.warn("position has gone backwards {} entry {}",p ,entryHeader);
 		}
 			
 		if (entryHeader.hasReceiver()) {
@@ -306,9 +304,7 @@ public class RetrieveJournal {
 	public void dumpEntry() {
 		final int start = offset + entryHeader.getEntrySpecificDataOffset();
 		final long end = entryHeader.getNextEntryOffset();
-		log.debug("total offset {} entry specific offset {} ", start, entryHeader.getEntrySpecificDataOffset());
-
-		log.debug("next offset {}", end);
+		log.debug("total offset {} entry specific offset {} next offset {}", start, entryHeader.getEntrySpecificDataOffset(), end);
 	}
 
 	public int getOffset() {
