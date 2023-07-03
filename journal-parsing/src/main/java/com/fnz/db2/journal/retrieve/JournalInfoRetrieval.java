@@ -3,10 +3,13 @@ package com.fnz.db2.journal.retrieve;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,6 +27,7 @@ import com.ibm.as400.access.AS400DataType;
 import com.ibm.as400.access.AS400Message;
 import com.ibm.as400.access.AS400Structure;
 import com.ibm.as400.access.AS400Text;
+import com.ibm.as400.access.FileAttributes;
 import com.ibm.as400.access.ProgramCall;
 import com.ibm.as400.access.ProgramParameter;
 import com.ibm.as400.access.QSYSObjectPathName;
@@ -57,7 +61,7 @@ public class JournalInfoRetrieval {
 	public JournalPosition getCurrentPosition(AS400 as400, JournalInfo journalLib) throws Exception {
 		final JournalInfo ji = JournalInfoRetrieval.getReceiver(as400, journalLib);
 		final BigInteger offset = getOffset(as400, ji).end();
-		return new JournalPosition(offset, ji.journalName(), ji.journalLibrary());
+		return new JournalPosition(offset, new JournalReceiver(ji.journalName(), ji.journalLibrary()));
 	}
 
 	public DetailedJournalReceiver getCurrentDetailedJournalReceiver(AS400 as400, JournalInfo journalLib)
@@ -66,7 +70,30 @@ public class JournalInfoRetrieval {
 		return getOffset(as400, ji);
 	}
 
+	static final Pattern JOURNAL_REGEX = Pattern.compile("\\/[^/]*\\/([^.]*).LIB\\/(.*).JRN");
+
+	@Deprecated
+	public static JournalInfo getJournal(AS400 as400, String schema) throws IllegalStateException {
+		// https://stackoverflow.com/questions/43061626/as-400-create-journal-jt400-java
+		// note each file can have it's own different journal
+		try {
+			final FileAttributes fa = new FileAttributes(as400, String.format("/QSYS.LIB/%s.LIB", schema));
+			final Matcher m = JOURNAL_REGEX.matcher(fa.getJournal());
+			if (m.matches()) {
+				return new JournalInfo(m.group(2), m.group(1));
+			} else {
+				log.error("no match searching for journal filename {}", fa.getJournal());
+			}
+		} catch (final Exception e) {
+			throw new IllegalStateException("Journal not found", e);
+		}
+		throw new IllegalStateException("Journal not found");
+	}
+	
 	public static JournalInfo getJournal(AS400 as400, String schema, List<FileFilter> includes)  throws IllegalStateException {
+		if (includes.isEmpty()) {
+			return getJournal(as400, schema);
+		}
         try {
 			Set<JournalInfo> jis = new HashSet<>();
 			for (FileFilter f: includes) {
@@ -256,7 +283,7 @@ public class JournalInfoRetrieval {
 
 	DetailedJournalReceiver getOffset(AS400 as400, JournalInfo info) throws Exception {
 		return getReceiverDetails(as400,
-				new JournalReceiverInfo(info.journalName(), info.journalLibrary(), null, null, Optional.empty()));
+				new JournalReceiverInfo(new JournalReceiver(info.journalName(), info.journalLibrary()), null, null, Optional.empty()));
 	}
 	
 	/**
@@ -268,7 +295,7 @@ public class JournalInfoRetrieval {
 	 */
 	private DetailedJournalReceiver getReceiverDetails(AS400 as400, JournalReceiverInfo receiverInfo) throws Exception {
 		final int rcvLen = 32768;
-		final String receiverNameLib = padRight(receiverInfo.name(), 10) + padRight(receiverInfo.library(), 10);
+		final String receiverNameLib = padRight(receiverInfo.receiver().name(), 10) + padRight(receiverInfo.receiver().library(), 10);
 		if (cache.containsKey(receiverInfo)) {
 			DetailedJournalReceiver r = cache.getUpdatingStatus(receiverInfo);			
 			if ( ! r.isAttached() ) { // don't use attached journal cache
@@ -286,20 +313,28 @@ public class JournalInfoRetrieval {
 		return callServiceProgram(as400, JOURNAL_SERVICE_LIB, "QjoRtvJrnReceiverInformation", parameters,
 				(byte[] data) -> {
 					final String journalName = decodeString(data, 8, 10);
-					final String nextReceiver = decodeString(data, 332, 10);
+					final String attachTimeStr = decodeString(data, 95, 13);
+					final String nextReceiverName = decodeString(data, 332, 10);
+					String nextReceiverLib = decodeString(data, 342, 10);
+					nextReceiverLib = (nextReceiverLib == null) ? receiverInfo.receiver().library() : nextReceiverLib;
 					final Long numberOfEntries = Long.valueOf(decodeString(data, 372, 20));
 					final Long maxEntryLength = Long.valueOf(decodeString(data, 392, 20));
 					final BigInteger firstSequence = decodeBigIntFromString(data, 412);
 					final BigInteger lastSequence = decodeBigIntFromString(data, 432);
 					final JournalStatus status = JournalStatus.valueOfString(decodeString(data, 88, 1));
 
-					if (!journalName.equals(receiverInfo.name())) {
+					if (!journalName.equals(receiverInfo.receiver().name())) {
 						final String msg = String.format("journal names don't match requested %s got %s",
-								receiverInfo.name(), journalName);
+								receiverInfo.receiver().name(), journalName);
 						throw new Exception(msg);
 					}
+					Date attachTime = ReceiverDecoder.toDate(attachTimeStr);
+					JournalReceiverInfo updatedInfo = new JournalReceiverInfo(receiverInfo.receiver(), attachTime, status, receiverInfo.chain());
 					
-					DetailedJournalReceiver dr = new DetailedJournalReceiver(receiverInfo.withStatus(status), firstSequence, lastSequence, nextReceiver,
+					Optional<JournalReceiver> nextReceiver = (nextReceiverName == null) ? Optional.empty() : Optional.of(new JournalReceiver(nextReceiverName, nextReceiverLib));
+					
+					DetailedJournalReceiver dr = new DetailedJournalReceiver(updatedInfo, firstSequence, lastSequence, 
+							nextReceiver,
 							maxEntryLength, numberOfEntries);
 					
 					cache.put(dr);

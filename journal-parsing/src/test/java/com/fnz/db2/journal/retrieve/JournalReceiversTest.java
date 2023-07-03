@@ -7,7 +7,7 @@ import static org.mockito.Mockito.when;
 
 import java.math.BigInteger;
 import java.time.Instant;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -31,6 +31,13 @@ public class JournalReceiversTest {
 	JournalInfo journalInfo = new JournalInfo("journal", "journallib");
 	@Mock AS400 as400;
 	
+	DetailedJournalReceiver dr3 = new DetailedJournalReceiver(new JournalReceiverInfo(new JournalReceiver("j3", "jlib"), new Date(3), 
+			JournalStatus.Attached, Optional.of(1)), BigInteger.ONE, BigInteger.valueOf(9), Optional.empty(), 1, 1);
+	DetailedJournalReceiver dr2 = new DetailedJournalReceiver(new JournalReceiverInfo(new JournalReceiver("j2", "jlib"), new Date(2), 
+			JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.ONE, BigInteger.valueOf(6), Optional.of(dr3.info().receiver()), 1, 1);
+	DetailedJournalReceiver dr1 = new DetailedJournalReceiver(new JournalReceiverInfo(new JournalReceiver("j1", "jlib"), new Date(1),
+			JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.ONE, BigInteger.TWO, Optional.of(dr2.info().receiver()),1, 1);
+	
 	@BeforeEach
 	public void setUp() throws Exception {
 	}
@@ -39,17 +46,16 @@ public class JournalReceiversTest {
 	void findRangeWithinCurrentPosistion() throws Exception {
 		JournalReceivers jreceivers = new JournalReceivers(journalInfoRetrieval, 100, journalInfo);
 		
-		DetailedJournalReceiver dp = new DetailedJournalReceiver(new JournalReceiverInfo("j1", "jlib", new Date(1), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.valueOf(1), BigInteger.valueOf(5), "", 1, 1);
-		List<DetailedJournalReceiver> list = List.of(dp);
+		List<DetailedJournalReceiver> list = Arrays.asList(dr1);
 
 		when(journalInfoRetrieval.getReceivers(any(), any())).thenReturn(list);
 		
-		when(journalInfoRetrieval.getCurrentDetailedJournalReceiver(any(), any())).thenReturn(dp);
+		when(journalInfoRetrieval.getCurrentDetailedJournalReceiver(any(), any())).thenReturn(dr1);
 		
-		JournalProcessedPosition startPosition = new JournalProcessedPosition(BigInteger.ONE, "j1", "jlib", Instant.ofEpochSecond(0), true);
+		JournalProcessedPosition startPosition = new JournalProcessedPosition(BigInteger.ONE, new JournalReceiver("j1", "jlib"), Instant.ofEpochSecond(0), true);
 		Optional<PositionRange> result = jreceivers.findRange(as400, startPosition);
 		assertTrue(result.isPresent());
-		PositionRange rangeAnswer = new PositionRange(startPosition, new JournalPosition(dp.end(), dp.info().name(), dp.info().library())); 
+		PositionRange rangeAnswer = new PositionRange(startPosition, new JournalPosition(dr1.end(), dr1.info().receiver())); 
 		assertEquals(Optional.of(rangeAnswer), result);
 	}
 	
@@ -57,21 +63,19 @@ public class JournalReceiversTest {
 	void findRangeInList() throws Exception {
 		JournalReceivers jreceivers = new JournalReceivers(journalInfoRetrieval, 100, journalInfo);
 		
-		DetailedJournalReceiver detailedStart = new DetailedJournalReceiver(new JournalReceiverInfo("j1", "jlib", new Date(1), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.valueOf(10), BigInteger.valueOf(5), "j2", 1, 1);
-		DetailedJournalReceiver detailedEnd = new DetailedJournalReceiver(new JournalReceiverInfo("j2", "jlib", new Date(2), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.valueOf(1), BigInteger.valueOf(10), "", 1, 1);
-		List<DetailedJournalReceiver> list = new ArrayList<>(List.of(
-				detailedStart,
-				detailedEnd
-				));
+		List<DetailedJournalReceiver> list = Arrays.asList(
+				dr1,
+				dr2
+				);
 
 		when(journalInfoRetrieval.getReceivers(any(), any())).thenReturn(list);
 		
-		when(journalInfoRetrieval.getCurrentDetailedJournalReceiver(any(), any())).thenReturn(detailedEnd);
+		when(journalInfoRetrieval.getCurrentDetailedJournalReceiver(any(), any())).thenReturn(dr2);
 		
-		JournalProcessedPosition startPosition = new JournalProcessedPosition(BigInteger.ONE, "j1", "jlib", Instant.ofEpochSecond(0), true);
+		JournalProcessedPosition startPosition = new JournalProcessedPosition(BigInteger.ONE, new JournalReceiver("j1", "jlib"), Instant.ofEpochSecond(0), true);
 		Optional<PositionRange> result = jreceivers.findRange(as400, startPosition);
 		assertTrue(result.isPresent());
-		PositionRange rangeAnswer = new PositionRange(startPosition, new JournalPosition(detailedEnd.end(), detailedEnd.info().name(), detailedEnd.info().library())); 
+		PositionRange rangeAnswer = new PositionRange(startPosition, new JournalPosition(dr2.end(), dr2.info().receiver())); 
 		assertEquals(Optional.of(rangeAnswer), result);
 	}
 	
@@ -79,32 +83,32 @@ public class JournalReceiversTest {
 	void findRangeReFetchList() throws Exception {
 		JournalReceivers jreceivers = new JournalReceivers(journalInfoRetrieval, 15, journalInfo);
 		
-		DetailedJournalReceiver detailedEnd = new DetailedJournalReceiver(new JournalReceiverInfo("j2", "jlib", new Date(2), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.valueOf(1), BigInteger.valueOf(10), "", 1, 1);
-		List<DetailedJournalReceiver> list = new ArrayList<>(List.of(
-				new DetailedJournalReceiver(new JournalReceiverInfo("j1", "jlib", new Date(1), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.valueOf(10), BigInteger.valueOf(10), "j2", 1, 1),
+		DetailedJournalReceiver detailedEnd = dr2;
+		List<DetailedJournalReceiver> list = Arrays.asList(
+				dr1,
 				detailedEnd
-				));
+				);
 
-		DetailedJournalReceiver detailedEnd2 = new DetailedJournalReceiver(new JournalReceiverInfo("j3", "jlib", new Date(3), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.valueOf(1), BigInteger.valueOf(10), "", 1, 1);
-		List<DetailedJournalReceiver> list2 = new ArrayList<>(List.of(
-				new DetailedJournalReceiver(new JournalReceiverInfo("j1", "jlib", new Date(1), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.valueOf(10), BigInteger.valueOf(10), "j2", 1, 1),
-				new DetailedJournalReceiver(new JournalReceiverInfo("j2", "jlib", new Date(2), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.valueOf(1), BigInteger.valueOf(10), "j3", 1, 1),
+		DetailedJournalReceiver detailedEnd2 = dr3;
+		List<DetailedJournalReceiver> list2 = Arrays.asList(
+				dr1,
+				dr2,
 				detailedEnd2
-				));
+				);
 		when(journalInfoRetrieval.getReceivers(any(), any())).thenReturn(list).thenReturn(list2);
 		when(journalInfoRetrieval.getCurrentDetailedJournalReceiver(any(), any())).thenReturn(detailedEnd).thenReturn(detailedEnd2);
 		
-		JournalProcessedPosition startPosition = new JournalProcessedPosition(BigInteger.ONE, "j1", "jlib", Instant.ofEpochSecond(0), true);
+		JournalProcessedPosition startPosition = new JournalProcessedPosition(BigInteger.ONE, new JournalReceiver("j1", "jlib"), Instant.ofEpochSecond(0), true);
 		Optional<PositionRange> result = jreceivers.findRange(as400, startPosition);
 		assertTrue(result.isPresent());
-		PositionRange rangeAnswer = new PositionRange(startPosition, new JournalPosition(BigInteger.valueOf(6), detailedEnd.info().name(), detailedEnd.info().library())); 
+		PositionRange rangeAnswer = new PositionRange(startPosition, new JournalPosition(BigInteger.valueOf(6), detailedEnd.info().receiver())); 
 		assertEquals(Optional.of(rangeAnswer), result);
 		
 		
-		JournalProcessedPosition startPosition2 = new JournalProcessedPosition(BigInteger.valueOf(2), "j2", "jlib", Instant.ofEpochSecond(0), true);
+		JournalProcessedPosition startPosition2 = new JournalProcessedPosition(BigInteger.valueOf(2), new JournalReceiver("j2", "jlib"), Instant.ofEpochSecond(0), true);
 		Optional<PositionRange> result2 = jreceivers.findRange(as400, startPosition2);
 		assertTrue(result2.isPresent());
-		PositionRange rangeAnswer2 = new PositionRange(startPosition2, new JournalPosition(BigInteger.valueOf(7), detailedEnd2.info().name(), detailedEnd2.info().library())); 
+		PositionRange rangeAnswer2 = new PositionRange(startPosition2, new JournalPosition(BigInteger.valueOf(9), detailedEnd2.info().receiver())); 
 		assertEquals(Optional.of(rangeAnswer2), result2);
 
 	}
@@ -113,12 +117,12 @@ public class JournalReceiversTest {
 	@Test
 	void testFindRangeMidFirstEntry() {
 		JournalReceivers jreceivers = new JournalReceivers(journalInfoRetrieval, 100, journalInfo);
-		List<DetailedJournalReceiver> list = List.of(
-				new DetailedJournalReceiver(new JournalReceiverInfo("j1", "jlib", new Date(1), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.valueOf(1), BigInteger.valueOf(5), "j2", 1, 1),
-				new DetailedJournalReceiver(new JournalReceiverInfo("j2", "jlib", new Date(2), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.valueOf(6), BigInteger.valueOf(20), "j3", 1, 1),
-				new DetailedJournalReceiver(new JournalReceiverInfo("j3", "jlib", new Date(3), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.valueOf(21), BigInteger.valueOf(22), "", 1, 1)
+		List<DetailedJournalReceiver> list = Arrays.asList(
+				new DetailedJournalReceiver(new JournalReceiverInfo(new JournalReceiver("j1", "jlib"), new Date(1), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.valueOf(1), BigInteger.valueOf(5), Optional.of(new JournalReceiver("j2", "jlib")), 1, 1),
+				new DetailedJournalReceiver(new JournalReceiverInfo(new JournalReceiver("j2", "jlib"), new Date(2), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.valueOf(6), BigInteger.valueOf(20), Optional.of(new JournalReceiver("j3", "jlib")), 1, 1),
+				new DetailedJournalReceiver(new JournalReceiverInfo(new JournalReceiver("j3", "jlib"), new Date(3), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.valueOf(21), BigInteger.valueOf(22), Optional.empty(), 1, 1)
 		);
-		Optional<JournalPosition> position = jreceivers.findPosition(new JournalProcessedPosition(BigInteger.ONE, "j1", "jlib", Instant.ofEpochSecond(0), true), BigInteger.valueOf(3), list);
+		Optional<JournalPosition> position = jreceivers.findPosition(new JournalProcessedPosition(BigInteger.ONE, new JournalReceiver("j1", "jlib"), Instant.ofEpochSecond(0), true), BigInteger.valueOf(3), list);
 		assertTrue(position.isPresent());
 		assertEquals(BigInteger.valueOf(4), position.get().getOffset());
 	}
@@ -127,12 +131,12 @@ public class JournalReceiversTest {
 	@Test
 	void testFindRangeMidSecondEntryReset() {
 		JournalReceivers jreceivers = new JournalReceivers(journalInfoRetrieval, 100, journalInfo);
-		List<DetailedJournalReceiver> list = List.of(
-				new DetailedJournalReceiver(new JournalReceiverInfo("j1", "jlib", new Date(1), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.valueOf(1), BigInteger.valueOf(10), "j2", 1, 1),
-				new DetailedJournalReceiver(new JournalReceiverInfo("j2", "jlib", new Date(2), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.valueOf(1), BigInteger.valueOf(10), "j3", 1, 1),
-				new DetailedJournalReceiver(new JournalReceiverInfo("j3", "jlib", new Date(3), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.valueOf(1), BigInteger.valueOf(10), "", 1, 1)
+		List<DetailedJournalReceiver> list = Arrays.asList(
+				new DetailedJournalReceiver(new JournalReceiverInfo(new JournalReceiver("j1", "jlib"), new Date(1), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.valueOf(1), BigInteger.valueOf(10), Optional.of(new JournalReceiver("j2", "jlib")), 1, 1),
+				new DetailedJournalReceiver(new JournalReceiverInfo(new JournalReceiver("j2", "jlib"), new Date(2), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.valueOf(1), BigInteger.valueOf(10), Optional.of(new JournalReceiver("j3", "jlib")), 1, 1),
+				new DetailedJournalReceiver(new JournalReceiverInfo(new JournalReceiver("j3", "jlib"), new Date(3), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.valueOf(1), BigInteger.valueOf(10), Optional.empty(), 1, 1)
 		);
-		Optional<JournalPosition> position = jreceivers.findPosition(new JournalProcessedPosition(BigInteger.ONE, "j1", "jlib", Instant.ofEpochSecond(0), true), BigInteger.valueOf(15), list);
+		Optional<JournalPosition> position = jreceivers.findPosition(new JournalProcessedPosition(BigInteger.ONE, new JournalReceiver("j1", "jlib"), Instant.ofEpochSecond(0), true), BigInteger.valueOf(15), list);
 		assertTrue(position.isPresent());
 		assertEquals(BigInteger.valueOf(6), position.get().getOffset());
 	}
@@ -141,11 +145,11 @@ public class JournalReceiversTest {
 	void testFindRangeMidSecondContiguous() {
 		JournalReceivers jreceivers = new JournalReceivers(journalInfoRetrieval, 100, journalInfo);
 		List<DetailedJournalReceiver> list = List.of(
-				new DetailedJournalReceiver(new JournalReceiverInfo("j1", "jlib", new Date(1), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.valueOf(1), BigInteger.valueOf(2), "j2", 1, 1),
-				new DetailedJournalReceiver(new JournalReceiverInfo("j2", "jlib", new Date(2), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.valueOf(3), BigInteger.valueOf(20), "j3", 1, 1),
-				new DetailedJournalReceiver(new JournalReceiverInfo("j3", "jlib", new Date(3), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.valueOf(21), BigInteger.valueOf(22), "", 1, 1)
+				new DetailedJournalReceiver(new JournalReceiverInfo(new JournalReceiver("j1", "jlib"), new Date(1), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.valueOf(1), BigInteger.valueOf(2), Optional.of(new JournalReceiver("j2", "jlib")), 1, 1),
+				new DetailedJournalReceiver(new JournalReceiverInfo(new JournalReceiver("j2", "jlib"), new Date(2), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.valueOf(3), BigInteger.valueOf(20), Optional.of(new JournalReceiver("j3", "jlib")), 1, 1),
+				new DetailedJournalReceiver(new JournalReceiverInfo(new JournalReceiver("j3", "jlib"), new Date(3), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.valueOf(21), BigInteger.valueOf(22), Optional.empty(), 1, 1)
 		);
-		Optional<JournalPosition> position = jreceivers.findPosition(new JournalProcessedPosition(BigInteger.ONE, "j1", "jlib", Instant.ofEpochSecond(0), true), BigInteger.valueOf(10), list);
+		Optional<JournalPosition> position = jreceivers.findPosition(new JournalProcessedPosition(BigInteger.ONE, new JournalReceiver("j1", "jlib"), Instant.ofEpochSecond(0), true), BigInteger.valueOf(10), list);
 		assertTrue(position.isPresent());
 		assertEquals(BigInteger.valueOf(11), position.get().getOffset());
 	}
@@ -154,11 +158,11 @@ public class JournalReceiversTest {
 	void testFindRangeMidEndEntry() {
 		JournalReceivers jreceivers = new JournalReceivers(journalInfoRetrieval, 100, journalInfo);
 		List<DetailedJournalReceiver> list = List.of(
-				new DetailedJournalReceiver(new JournalReceiverInfo("j1", "jlib", new Date(1), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.valueOf(1), BigInteger.valueOf(2), "j2", 1, 1),
-				new DetailedJournalReceiver(new JournalReceiverInfo("j2", "jlib", new Date(2), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.valueOf(3), BigInteger.valueOf(20), "j3", 1, 1),
-				new DetailedJournalReceiver(new JournalReceiverInfo("j3", "jlib", new Date(3), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.valueOf(21), BigInteger.valueOf(35), "", 1, 1)
+				new DetailedJournalReceiver(new JournalReceiverInfo(new JournalReceiver("j1", "jlib"), new Date(1), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.valueOf(1), BigInteger.valueOf(2), Optional.of(new JournalReceiver("j2", "jlib")), 1, 1),
+				new DetailedJournalReceiver(new JournalReceiverInfo(new JournalReceiver("j2", "jlib"), new Date(2), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.valueOf(3), BigInteger.valueOf(20), Optional.of(new JournalReceiver("j3", "jlib")), 1, 1),
+				new DetailedJournalReceiver(new JournalReceiverInfo(new JournalReceiver("j3", "jlib"), new Date(3), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.valueOf(21), BigInteger.valueOf(35), Optional.empty(), 1, 1)
 		);
-		Optional<JournalPosition> position = jreceivers.findPosition(new JournalProcessedPosition(BigInteger.ONE, "j1", "jlib", Instant.ofEpochSecond(0), true), BigInteger.valueOf(30), list);
+		Optional<JournalPosition> position = jreceivers.findPosition(new JournalProcessedPosition(BigInteger.ONE, new JournalReceiver("j1", "jlib"), Instant.ofEpochSecond(0), true), BigInteger.valueOf(30), list);
 		assertTrue(position.isPresent());
 		assertEquals(BigInteger.valueOf(31), position.get().getOffset());
 	}
@@ -167,11 +171,11 @@ public class JournalReceiversTest {
 	void testFindRangePastEnd() {
 		JournalReceivers jreceivers = new JournalReceivers(journalInfoRetrieval, 100, journalInfo);
 		List<DetailedJournalReceiver> list = List.of(
-				new DetailedJournalReceiver(new JournalReceiverInfo("j1", "jlib", new Date(1), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.valueOf(1), BigInteger.valueOf(2), "j2", 1, 1),
-				new DetailedJournalReceiver(new JournalReceiverInfo("j2", "jlib", new Date(2), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.valueOf(3), BigInteger.valueOf(20), "j3", 1, 1),
-				new DetailedJournalReceiver(new JournalReceiverInfo("j3", "jlib", new Date(3), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.valueOf(21), BigInteger.valueOf(35), "", 1, 1)
+				new DetailedJournalReceiver(new JournalReceiverInfo(new JournalReceiver("j1", "jlib"), new Date(1), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.valueOf(1), BigInteger.valueOf(2), Optional.of(new JournalReceiver("j2", "jlib")), 1, 1),
+				new DetailedJournalReceiver(new JournalReceiverInfo(new JournalReceiver("j2", "jlib"), new Date(2), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.valueOf(3), BigInteger.valueOf(20), Optional.of(new JournalReceiver("j3", "jlib")), 1, 1),
+				new DetailedJournalReceiver(new JournalReceiverInfo(new JournalReceiver("j3", "jlib"), new Date(3), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.valueOf(21), BigInteger.valueOf(35), Optional.empty(), 1, 1)
 		);
-		Optional<JournalPosition> position = jreceivers.findPosition(new JournalProcessedPosition(BigInteger.ONE, "j1", "jlib", Instant.ofEpochSecond(0), true), BigInteger.valueOf(100), list);
+		Optional<JournalPosition> position = jreceivers.findPosition(new JournalProcessedPosition(BigInteger.ONE, new JournalReceiver("j1", "jlib"), Instant.ofEpochSecond(0), true), BigInteger.valueOf(100), list);
 		assertTrue(position.isPresent());
 		assertEquals(BigInteger.valueOf(35), position.get().getOffset());
 	}
@@ -180,12 +184,12 @@ public class JournalReceiversTest {
 	void testFindMidStartingMid() {
 		JournalReceivers jreceivers = new JournalReceivers(journalInfoRetrieval, 100, journalInfo);
 		List<DetailedJournalReceiver> list = List.of(
-				new DetailedJournalReceiver(new JournalReceiverInfo("j1", "jlib", new Date(1), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.valueOf(1), BigInteger.valueOf(10), "j2", 1, 1),
-				new DetailedJournalReceiver(new JournalReceiverInfo("j2", "jlib", new Date(2), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.valueOf(11), BigInteger.valueOf(20), "j3", 1, 1),
-				new DetailedJournalReceiver(new JournalReceiverInfo("j3", "jlib", new Date(3), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.valueOf(21), BigInteger.valueOf(31), "j4", 1, 1),
-				new DetailedJournalReceiver(new JournalReceiverInfo("j4", "jlib", new Date(4), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.valueOf(41), BigInteger.valueOf(50), "", 1, 1)
+				new DetailedJournalReceiver(new JournalReceiverInfo(new JournalReceiver("j1", "jlib"), new Date(1), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.valueOf(1), BigInteger.valueOf(10), Optional.of(new JournalReceiver("j2", "jlib")), 1, 1),
+				new DetailedJournalReceiver(new JournalReceiverInfo(new JournalReceiver("j2", "jlib"), new Date(2), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.valueOf(11), BigInteger.valueOf(20), Optional.of(new JournalReceiver("j3", "jlib")), 1, 1),
+				new DetailedJournalReceiver(new JournalReceiverInfo(new JournalReceiver("j3", "jlib"), new Date(3), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.valueOf(21), BigInteger.valueOf(31), Optional.of(new JournalReceiver("j4", "jlib")), 1, 1),
+				new DetailedJournalReceiver(new JournalReceiverInfo(new JournalReceiver("j4", "jlib"), new Date(4), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.valueOf(41), BigInteger.valueOf(50), Optional.empty(), 1, 1)
 		);
-		Optional<JournalPosition> position = jreceivers.findPosition(new JournalProcessedPosition(BigInteger.valueOf(10), "j3", "jlib", Instant.ofEpochSecond(0), true), BigInteger.valueOf(15), list);
+		Optional<JournalPosition> position = jreceivers.findPosition(new JournalProcessedPosition(BigInteger.valueOf(10), new JournalReceiver("j3", "jlib"), Instant.ofEpochSecond(0), true), BigInteger.valueOf(15), list);
 		assertTrue(position.isPresent());
 		assertEquals(BigInteger.valueOf(25), position.get().getOffset());
 
@@ -195,10 +199,10 @@ public class JournalReceiversTest {
 	void testFindStartingPastEnd() {
 		JournalReceivers jreceivers = new JournalReceivers(journalInfoRetrieval, 100, journalInfo);
 		List<DetailedJournalReceiver> list = List.of(
-				new DetailedJournalReceiver(new JournalReceiverInfo("j1", "jlib", new Date(1), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.valueOf(1), BigInteger.valueOf(10), "j2", 1, 1),
-				new DetailedJournalReceiver(new JournalReceiverInfo("j2", "jlib", new Date(2), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.valueOf(11), BigInteger.valueOf(20), "", 1, 1)
+				new DetailedJournalReceiver(new JournalReceiverInfo(new JournalReceiver("j1", "jlib"), new Date(1), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.valueOf(1), BigInteger.valueOf(10), Optional.of(new JournalReceiver("j2", "jlib")), 1, 1),
+				new DetailedJournalReceiver(new JournalReceiverInfo(new JournalReceiver("j2", "jlib"), new Date(2), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.valueOf(11), BigInteger.valueOf(20), Optional.empty(), 1, 1)
 		);
-		Optional<JournalPosition> position = jreceivers.findPosition(new JournalProcessedPosition(BigInteger.valueOf(30), "j3", "jlib", Instant.ofEpochSecond(0), true), BigInteger.valueOf(15), list);
+		Optional<JournalPosition> position = jreceivers.findPosition(new JournalProcessedPosition(BigInteger.valueOf(30), new JournalReceiver("j3", "jlib"), Instant.ofEpochSecond(0), true), BigInteger.valueOf(15), list);
 		assertTrue(position.isEmpty());
 	}
 
@@ -208,8 +212,8 @@ public class JournalReceiversTest {
 		BigInteger maxServerSideEntriesBI = BigInteger.valueOf(maxOffset);
 		JournalReceivers jreceivers = new JournalReceivers(journalInfoRetrieval, maxOffset, journalInfo);
 		
-		JournalProcessedPosition startPosition = new JournalProcessedPosition(BigInteger.ONE, "j1", "jlib", Instant.ofEpochSecond(0), true);
-		DetailedJournalReceiver endJournalPosition = new DetailedJournalReceiver(new JournalReceiverInfo("j1", "jlib", new Date(1), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.valueOf(1), BigInteger.valueOf(100), "", 1, 1);
+		JournalProcessedPosition startPosition = new JournalProcessedPosition(BigInteger.ONE, new JournalReceiver("j1", "jlib"), Instant.ofEpochSecond(0), true);
+		DetailedJournalReceiver endJournalPosition = new DetailedJournalReceiver(new JournalReceiverInfo(new JournalReceiver("j1", "jlib"), new Date(1), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.valueOf(1), BigInteger.valueOf(100), Optional.empty(), 1, 1);
 
 		PositionRange range = jreceivers.maxOffsetInSameReceiver(startPosition, endJournalPosition, maxServerSideEntriesBI);
 		assertEquals(endJournalPosition.end(), range.end().getOffset());
@@ -221,8 +225,8 @@ public class JournalReceiversTest {
 		BigInteger maxServerSideEntriesBI = BigInteger.valueOf(maxOffset);
 		JournalReceivers jreceivers = new JournalReceivers(journalInfoRetrieval, maxOffset, journalInfo);
 		
-		JournalProcessedPosition startPosition = new JournalProcessedPosition(BigInteger.ONE, "j1", "jlib", Instant.ofEpochSecond(0), true);
-		DetailedJournalReceiver endJournalPosition = new DetailedJournalReceiver(new JournalReceiverInfo("j1", "jlib", new Date(1), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.valueOf(1), BigInteger.valueOf(100), "", 1, 1);
+		JournalProcessedPosition startPosition = new JournalProcessedPosition(BigInteger.ONE, new JournalReceiver("j1", "jlib"), Instant.ofEpochSecond(0), true);
+		DetailedJournalReceiver endJournalPosition = new DetailedJournalReceiver(new JournalReceiverInfo(new JournalReceiver("j1", "jlib"), new Date(1), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.valueOf(1), BigInteger.valueOf(100), Optional.empty(), 1, 1);
 
 		PositionRange range = jreceivers.maxOffsetInSameReceiver(startPosition, endJournalPosition, maxServerSideEntriesBI);
 		assertEquals(startPosition.getOffset().add(maxServerSideEntriesBI), range.end().getOffset());
@@ -230,11 +234,11 @@ public class JournalReceiversTest {
 	
 	@Test
 	void testUpdateEndPosition() {
-		List<DetailedJournalReceiver> list = new ArrayList<>(List.of(
-				new DetailedJournalReceiver(new JournalReceiverInfo("j1", "jlib", new Date(1), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.valueOf(1), BigInteger.valueOf(10), "j2", 1, 1),
-				new DetailedJournalReceiver(new JournalReceiverInfo("j2", "jlib", new Date(2), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.valueOf(11), BigInteger.valueOf(20), "", 1, 1)
-		));
-		DetailedJournalReceiver endPosition = new DetailedJournalReceiver(new JournalReceiverInfo("j2", "jlib", new Date(2), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.valueOf(11), BigInteger.valueOf(200), "", 1, 1);
+		List<DetailedJournalReceiver> list = Arrays.asList(
+				new DetailedJournalReceiver(new JournalReceiverInfo(new JournalReceiver("j1", "jlib"), new Date(1), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.valueOf(1), BigInteger.valueOf(10), Optional.of(new JournalReceiver("j2", "jlib")), 1, 1),
+				new DetailedJournalReceiver(new JournalReceiverInfo(new JournalReceiver("j2", "jlib"), new Date(2), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.valueOf(11), BigInteger.valueOf(20), Optional.empty(), 1, 1)
+		);
+		DetailedJournalReceiver endPosition = new DetailedJournalReceiver(new JournalReceiverInfo(new JournalReceiver("j2", "jlib"), new Date(2), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.valueOf(11), BigInteger.valueOf(200), Optional.empty(), 1, 1);
 		JournalReceivers.updateEndPosition(list, endPosition);
 		
 		assertEquals(endPosition, list.get(1));

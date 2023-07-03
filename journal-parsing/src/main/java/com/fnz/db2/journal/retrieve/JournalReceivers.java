@@ -58,7 +58,7 @@ public class JournalReceivers {
 
 		Optional<JournalPosition> endOpt = findPosition(startPosition, maxServerSideEntriesBI, cachedReceivers);
 		if (endOpt.isEmpty()) {
-			log.info("retrying to find end offset");
+			log.warn("retrying to find end offset");
 			cachedReceivers = journalInfoRetrieval.getReceivers(as400, journalInfo);
 			endOpt = findPosition(startPosition, maxServerSideEntriesBI, cachedReceivers);
 		}
@@ -94,10 +94,10 @@ public class JournalReceivers {
 		if (diff.compareTo(maxServerSideEntriesBI) > 0) {
 			BigInteger restricted = startPosition.getOffset().add(maxServerSideEntriesBI);
 			return new PositionRange(startPosition, 
-					new JournalPosition(restricted, startPosition.getReciever(), startPosition.getReceiverLibrary()));
+					new JournalPosition(restricted, startPosition.getReciever()));
 		}
 		return new PositionRange(startPosition, 
-				new JournalPosition(endJournalPosition.end(), startPosition.getReciever(), startPosition.getReceiverLibrary()));
+				new JournalPosition(endJournalPosition.end(), startPosition.getReciever()));
 	}
 
 	/**
@@ -117,7 +117,7 @@ public class JournalReceivers {
 				BigInteger toEnd = last.end().subtract(last.start()).add(BigInteger.ONE); // add one include end offset 1 -> 100 we get back 1 and 100
 				if (remaining.compareTo(toEnd) <= 0) {
 					BigInteger endOffset = last.start().add(remaining);
-					return Optional.of(new JournalPosition(endOffset, last.info().name(), last.info().library()));
+					return Optional.of(new JournalPosition(endOffset, last.info().receiver()));
 				}
 				remaining = remaining.subtract(toEnd);
 			}
@@ -126,13 +126,13 @@ public class JournalReceivers {
 				BigInteger toEnd = last.end().subtract(start.getOffset()).add(BigInteger.ONE); // add one include end offset 1 -> 100 we get back 1 and 100
 				if (remaining.compareTo(toEnd) <= 0) {
 					BigInteger offset = start.getOffset().add(remaining);
-					return Optional.of(new JournalPosition(offset, last.info().name(), last.info().library()));
+					return Optional.of(new JournalPosition(offset, last.info().receiver()));
 				}
 				remaining = remaining.subtract(toEnd);
 			}			
 		}
 		if (found && last != null) {
-			return Optional.of(new JournalPosition(last.end(), last.info().name(), last.info().library()));
+			return Optional.of(new JournalPosition(last.end(), last.info().receiver()));
 		} else {
 			log.warn("position {} not found in available receivers {}", start, receivers);
 			return Optional.empty();

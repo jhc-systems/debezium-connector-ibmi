@@ -89,34 +89,26 @@ public class RetrieveJournal {
 		if (config.filtering() && !config.includeFiles().isEmpty()) {
 			builder.withFileFilters(config.includeFiles());
 		}
-
-		final Optional<PositionRange> rangeOpt = journalRecievers.findRange(config.as400().connection(), retrievePosition);
 		
-		boolean hasData = rangeOpt.map( r -> { // this can only be used at the start
+		final Optional<PositionRange> rangeOpt =  journalRecievers.findRange(config.as400().connection(), retrievePosition);
+		
+		boolean startEqualsEnd = rangeOpt.map(r -> {
 			builder.withStartingSequence(r.start().getOffset());
-			/*
-			 * Very important if *CURCHAIN or *CURVCHAIN is used then you can end up in a
-			 * loop to overcome this the start journal must be set explicitly
-			 */
-			builder.withReceivers(r.start().getReciever(), r.start().getReceiverLibrary(), r.end().getReciever(),
-					r.end().getReceiverLibrary());
+			builder.withReceivers(r.start().getReciever().name(), r.start().getReciever().library(), r.end().getReciever().name(),
+					r.end().receiver().library());
 			builder.withEnd(r.end().getOffset());
-
-			if (retrievePosition.equals(r.end())) { // we are already at the end
-				this.header = new FirstHeader(0, 0, 0, OffsetStatus.NO_MORE_DATA, Optional.of(r.end()));
-				return false;
-			}
-			return true;
+			return (r.start().equals(r.end()));
 		}).orElseGet(() -> {
-			builder.fromPositionToEnd(retrievePosition);
-			return true;
+			builder.withStartReceiversToCurrent(retrievePosition.getReciever().name(), retrievePosition.getReciever().library());
+			builder.withStartingSequence(retrievePosition.getOffset());
+			return false;
 		});
 
-		if (!hasData) {
+		if (startEqualsEnd) {
 			return true;
 		}
 
-		final Optional<JournalPosition> latestJournalPosition = rangeOpt.map(x -> x.end());
+		final Optional<JournalPosition> latestJournalPosition = Optional.empty(); //rangeOpt.map(x -> x.end());
 
 		final ProgramParameter[] parameters = builder.build();
 		spc.setProgram(JournalInfoRetrieval.JOURNAL_SERVICE_LIB, parameters);
@@ -288,15 +280,21 @@ public class RetrieveJournal {
 
 	private static boolean alreadyProcessed(JournalProcessedPosition position, EntryHeader entryHeader) {
 		final JournalProcessedPosition entryPosition = new JournalProcessedPosition(position);
-		return position.processed() && entryPosition.equals(position) || entryHeader.getTime().isBefore(position.getTime());
+		return position.processed() && entryPosition.equals(position);
 	}
 
 	private static void updatePosition(JournalProcessedPosition p, EntryHeader entryHeader) {
+		if (entryHeader.getTime().isBefore(p.getTime())) {
+			log.error("position has gone backwards {} entry {}",p ,entryHeader);
+			System.exit(1);
+			return;
+		}
+			
 		if (entryHeader.hasReceiver()) {
 			p.setJournalReciever(entryHeader.getSequenceNumber(), entryHeader.getReceiver(),
 					entryHeader.getReceiverLibrary(), entryHeader.getTime(), true);
 		} else {
-			log.error("no receiver {}", entryHeader);
+			// this happens a lot
 			p.setOffset(entryHeader.getSequenceNumber(), entryHeader.getTime(), true);
 		}
 	}

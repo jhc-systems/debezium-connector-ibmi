@@ -43,8 +43,11 @@ public class DetailedJournalReceiverCache {
 	}
 
 	public void put(DetailedJournalReceiver details) {
-		if (details.info().status() == null || details.info().attachTime() == null || JournalStatus.Attached.equals(details.info().status())) {
+		if (details.info().status() == null || details.info().attachTime() == null) {
 			log.debug("not caching {} ", details);
+		}
+		if (details.info().status() == null || details.info().attachTime() == null || JournalStatus.Attached.equals(details.info().status())) {
+			return;
 		}
 		cached.put(toKey(details.info()), details);
 	}
@@ -57,12 +60,12 @@ public class DetailedJournalReceiverCache {
 	}
 	
 	private String toKey(JournalReceiverInfo receiverInfo) {
-		String key = String.format("%s:%s", receiverInfo.name(), receiverInfo.library());
+		String key = String.format("%s:%s", receiverInfo.receiver().name(), receiverInfo.receiver().library());
 		return key;
 	}
 
 	private String toKey(DetailedJournalReceiver receiverInfo) {
-		String key = String.format("%s:%s", receiverInfo.info().name(), receiverInfo.info().library());
+		String key = String.format("%s:%s", receiverInfo.info().receiver().name(), receiverInfo.info().receiver().library());
 		return key;
 	}
 }

@@ -126,7 +126,7 @@ public class CommitLogProcessor {
                 String lib = eheader.getLibrary();
                 String member = eheader.getMember();
 
-                log.debug("time {} receiver {} offset {} lib: {} file: {} member: {}", eheader.getTime(), eheader.getReceiver(), eheader.getEndOffset(), lib, file, member);
+//                log.debug("time {} receiver {} offset {} lib: {} file: {} member: {}", eheader.getTime(), eheader.getReceiver(), eheader.getEndOffset(), lib, file, member);
                 
 				switch (entryType) {
 					case DELETE_ROW1, DELETE_ROW2:
@@ -152,14 +152,14 @@ public class CommitLogProcessor {
 
             EntryHeader eh = r.getEntryHeader();
 			
-            if (eh != null) {
-                log.info("last offset was {}.{}.{}", eh.getSequenceNumber(), eh.getReceiver(), eh.getReceiverLibrary());
-            }
+//            if (eh != null) {
+//                log.info("last offset was {}.{}.{}", eh.getSequenceNumber(), eh.getReceiver(), eh.getReceiverLibrary());
+//            }
             
-            r.getFirstHeader().nextPosition().map(jp -> {
-				log.info("next offset is {}", jp.toString());
-				return null;
-			});
+//            r.getFirstHeader().nextPosition().map(jp -> {
+//				log.info("next offset is {}", jp.toString());
+//				return null;
+//			});
 			log.info("next offset == {}", r.getPosition());
 			
 			

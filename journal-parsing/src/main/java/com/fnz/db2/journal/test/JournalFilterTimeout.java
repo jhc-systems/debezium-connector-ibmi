@@ -63,7 +63,7 @@ public class JournalFilterTimeout {
 					.withDumpFolder("./bad-journal").withServerFiltering(true).withIncludeFiles(includes).build();
 			final RetrieveJournal rj = new RetrieveJournal(config, journalInfoRetrieval);
 
-			final JournalProcessedPosition p = new JournalProcessedPosition(first.start(), first.info().name(), first.info().library(),
+			final JournalProcessedPosition p = new JournalProcessedPosition(first.start(), first.info().receiver(),
 					Instant.ofEpochSecond(0), false);
 			final long start = System.currentTimeMillis();
 			final boolean success = rj.retrieveJournal(p);

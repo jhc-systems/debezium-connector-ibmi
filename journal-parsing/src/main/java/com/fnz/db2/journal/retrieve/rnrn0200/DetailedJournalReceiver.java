@@ -3,14 +3,16 @@ package com.fnz.db2.journal.retrieve.rnrn0200;
 import java.math.BigInteger;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.fnz.db2.journal.retrieve.JournalProcessedPosition;
+import com.fnz.db2.journal.retrieve.JournalReceiver;
 
-public record DetailedJournalReceiver(JournalReceiverInfo info, BigInteger start, BigInteger end, String nextReceiver, long maxEntryLength, long numberOfEntries) {
+public record DetailedJournalReceiver(JournalReceiverInfo info, BigInteger start, BigInteger end, Optional<JournalReceiver> nextReceiver, long maxEntryLength, long numberOfEntries) {
 	private static final Logger log = LoggerFactory.getLogger(DetailedJournalReceiver.class);
 
 	public DetailedJournalReceiver withStatus(JournalStatus status) {
@@ -20,13 +22,13 @@ public record DetailedJournalReceiver(JournalReceiverInfo info, BigInteger start
 	public boolean isSameReceiver(JournalProcessedPosition position) {
 		if (info == null || position == null)
 			return false;
-		return info.name().equals(position.getReciever()) && info.library().equals(position.getReceiverLibrary());
+		return info.receiver().equals(position.getReciever());
 	}
 
 	public boolean isSameReceiver(DetailedJournalReceiver otherReceiver) {
 		if (info == null || otherReceiver == null || otherReceiver.info() == null)
 			return false;
-		return info.name().equals(otherReceiver.info().name()) && info.library().equals(otherReceiver.info().library());
+		return info.receiver().equals(otherReceiver.info().receiver());
 	}
 	
 	public boolean isAttached() {

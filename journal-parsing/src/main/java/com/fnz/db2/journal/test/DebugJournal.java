@@ -50,6 +50,8 @@ public class DebugJournal {
         			JournalReceiver receiver = rnj.decode(new JournalRecordDecoder());
         			log.info("receiver {}", receiver);
         			break;
+    			default:
+    				break;
         		
         	}
         	log.info("header {}", rnj.getEntryHeader().toString());

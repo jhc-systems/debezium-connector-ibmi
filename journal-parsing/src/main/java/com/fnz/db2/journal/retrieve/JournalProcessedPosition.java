@@ -15,8 +15,7 @@ import com.fnz.db2.journal.retrieve.rnrn0200.DetailedJournalReceiver;
 public class JournalProcessedPosition {
 	// position should be last processed record as requesting the next record will error and be indistinguishable from losing the journal 
     private BigInteger offset; // sequence number up to 18 446 644 000 000 000 000
-    private String receiver;
-    private String receiverLibrary;
+    private JournalReceiver receiver;
     private Instant time = Instant.ofEpochSecond(0);
     private boolean processed = false;
     private static String[] empty = new String[]{};
@@ -24,7 +23,6 @@ public class JournalProcessedPosition {
     public JournalProcessedPosition(JournalProcessedPosition position) {
         this.offset = position.offset;
         this.receiver = position.receiver;
-        this.receiverLibrary = position.receiverLibrary;
 		this.processed = position.processed;
 		this.time = position.time;
     }
@@ -33,11 +31,11 @@ public class JournalProcessedPosition {
     }
     
     public JournalProcessedPosition(JournalPosition p, Instant time, boolean processed) {
-    	this(p.getOffset(), p.getReciever(), p.getReceiverLibrary(), time, processed);
+    	this(p.getOffset(), p.getReciever(), time, processed);
     }
     
     public JournalPosition asJournalPosition() {
-    	return new JournalPosition(this.offset, this.receiver, this.receiverLibrary);
+    	return new JournalPosition(this.offset, this.receiver);
     }
     
     public boolean processed() {
@@ -50,16 +48,14 @@ public class JournalProcessedPosition {
         } else {
         	this.offset = new BigInteger(offsetStr);
         }
-        this.receiver = StringHelpers.safeTrim(receiver);
-        this.receiverLibrary = StringHelpers.safeTrim(receiverLibrary);
+        this.receiver = new JournalReceiver(StringHelpers.safeTrim(receiver), StringHelpers.safeTrim(receiverLibrary));
     	this.time = time;
 		this.processed = processed;
     }
 
-    public JournalProcessedPosition(BigInteger offset, String receiver, String receiverLibrary, Instant time, boolean processed) {
+    public JournalProcessedPosition(BigInteger offset, JournalReceiver receiver, Instant time, boolean processed) {
         this.offset = offset;
-        this.receiver = StringHelpers.safeTrim(receiver);
-        this.receiverLibrary = StringHelpers.safeTrim(receiverLibrary);
+        this.receiver = receiver;
     	this.time = time;
 		this.processed = processed;
     }
@@ -79,17 +75,13 @@ public class JournalProcessedPosition {
         return (null != offset);
     }
 
-    public String getReciever() {
+    public JournalReceiver getReciever() {
         return receiver;
     }
 
-    public String getReceiverLibrary() {
-        return receiverLibrary;
-    }
-
     public String[] getJournal() {
-        if (receiver != null && receiverLibrary != null) {
-            return new String[]{ receiver, receiverLibrary, receiver, receiverLibrary };
+        if (receiver.name() != null && receiver.library() != null) {
+            return new String[]{ receiver.name(), receiver.library(), receiver.name(), receiver.library() };
         }
         else {
             return empty;
@@ -98,7 +90,7 @@ public class JournalProcessedPosition {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(offset, processed, receiver, receiverLibrary);
+		return Objects.hash(offset, processed, receiver);
 	}
 
 	@Override
@@ -111,14 +103,13 @@ public class JournalProcessedPosition {
 			return false;
 		JournalProcessedPosition other = (JournalProcessedPosition) obj;
 		return Objects.equals(offset, other.offset) && processed == other.processed
-				&& Objects.equals(receiver, other.receiver) && Objects.equals(receiverLibrary, other.receiverLibrary);
+				&& Objects.equals(receiver, other.receiver);
 	}
-	
+
 	@Override
 	public String toString() {
-		return String.format(
-				"JournalProcessedPosition [offset=%s, receiver=%s, receiverLibrary=%s, time=%s, processed=%s]", offset,
-				receiver, receiverLibrary, time, processed);
+		return String.format("JournalProcessedPosition [offset=%s, receiver=%s, time=%s, processed=%s]", offset,
+				receiver, time, processed);
 	}
 	
 	// TODO remove all setters and convert to record
@@ -136,8 +127,7 @@ public class JournalProcessedPosition {
 
 	public void setJournalReciever(BigInteger offset, String journalReciever, String schema, Instant time, boolean processed) {
 	  this.offset = offset;
-	  this.receiver = StringHelpers.safeTrim(journalReciever);
-	  this.receiverLibrary = StringHelpers.safeTrim(schema);
+	  this.receiver = new JournalReceiver(StringHelpers.safeTrim(journalReciever), StringHelpers.safeTrim(schema));
 		this.processed = processed;
 		this.time = time;
 	}
@@ -145,21 +135,19 @@ public class JournalProcessedPosition {
 	public void setPosition(JournalProcessedPosition newPosition) {
 	    this.offset = newPosition.offset;
     	this.receiver = newPosition.receiver;
-    	this.receiverLibrary = newPosition.receiverLibrary;
     	this.time = newPosition.time;
 	    this.processed = newPosition.processed;
 	}
 
 	public void setPosition(JournalPosition newPosition, boolean processed) {
 	    this.offset = newPosition.getOffset();
-    	this.receiver = newPosition.getReciever();
-    	this.receiverLibrary = newPosition.getReceiverLibrary();
+    	this.receiver = newPosition.receiver();
 	    this.processed = processed;
 	}
 	
 	public boolean isSameReceiver(DetailedJournalReceiver other) {
-		if (receiver == null ||receiverLibrary == null || other.info() == null)
+		if (receiver == null || other.info() == null)
 			return false;
-		return receiver.equals(other.info().name()) && receiverLibrary.equals(other.info().library());
+		return receiver.equals(other.info().receiver());
 	}
 }

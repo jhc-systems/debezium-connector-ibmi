@@ -90,26 +90,19 @@ public class ParameterListBuilder {
 		criteria.withEnd(end);
 		return this;
 	}
-
-	public ParameterListBuilder withReceivers(String receivers) {
-		this.startReceiver = receivers;
-		this.startLibrary = "";
-		this.endReceiver = "";
+	
+	public ParameterListBuilder withStartReceiversToCurrent(String startReceiver, String startLibrary) {
+		this.startReceiver = startReceiver;
+		this.startLibrary = startLibrary;
+		this.endReceiver = "*CURRENT";
 		this.endLibrary = "";		
-		criteria.withReceiverRange(receivers);
+		criteria.withReceiverRange(startReceiver, startLibrary, endReceiver, endLibrary);
 		return this;
 	}
-
 
 	public ParameterListBuilder withStartingSequence(BigInteger start) {
 		startOffset = start.toString();
 		criteria.withFromEnt(start);
-		return this;
-	}
-
-	public ParameterListBuilder withFromStart() {
-		startOffset="first";
-		criteria.withFromEnt(RetrievalCriteria.FromEnt.FIRST);
 		return this;
 	}
 
@@ -129,16 +122,6 @@ public class ParameterListBuilder {
 		this.journalEntryTypes = journalEntryTypes;
 		criteria.withEntTyp(journalEntryTypes);
 		return this;
-	}
-	
-	public void fromPositionToEnd(JournalProcessedPosition retrievePosition) {
-		if (retrievePosition.isOffsetSet()) {
-			withStartingSequence(retrievePosition.getOffset());
-		} else {
-			withFromStart();
-		}
-		withReceivers("*CURCHAIN");
-		withEnd();
 	}
 
 	public ProgramParameter[] build() {

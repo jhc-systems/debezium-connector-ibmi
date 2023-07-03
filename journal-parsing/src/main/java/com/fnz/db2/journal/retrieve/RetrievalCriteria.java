@@ -36,10 +36,6 @@ public class RetrievalCriteria {
 	private static final AS400Bin4 BIN4 = new AS400Bin4();
 	private ArrayList<AS400DataType> structure = new ArrayList<AS400DataType>();
 	private ArrayList<Object> data = new ArrayList<Object>();
-	private static AS400Text TEXT10 = AS400_TEXT_10;
-
-	public RetrievalCriteria() {
-	}
 
 	public AS400DataType[] getStructure() {
 		return structure.toArray(new AS400DataType[structure.size()]);
@@ -61,7 +57,7 @@ public class RetrievalCriteria {
 			temp = StringHelpers.padRight(temp, 40);
 		} else {
 			throw new IllegalArgumentException(
-					String.format("Simple value for 'Range of journal receivers' must be either '*CURAVLCHN' or '*CURCHAIN' or '*CURRENT'"));
+					String.format("value '%s' for 'Range of journal receivers' must be either '*CURAVLCHN' or '*CURCHAIN' or '*CURRENT'", value));
 		}
 		addStructureData(RetrieveKey.RCVRNG, AS400_TEXT_40, temp);
 	}
@@ -79,7 +75,7 @@ public class RetrievalCriteria {
 		String padded = null;
 		if (value % 16 != 0) {
 			throw new IllegalArgumentException(String.format(
-					"Value for 'Null value indicators length' should be divisible by 16"));
+					"Value %d for 'Null value indicators length' should be divisible by 16", value));
 		}
 		padded = StringHelpers.padLeft(Integer.toString(value), 10);
 		addStructureData(RetrieveKey.NULLINDLEN, AS400_TEXT_10, padded);
@@ -103,7 +99,7 @@ public class RetrievalCriteria {
 	 * @param value
 	 */
 	public void withFromEnt(BigInteger value) {
-		String temp = String.format("%20d", value).toString();
+		String temp = String.format("%20d", value);
 		addStructureData(RetrieveKey.FROMENT, AS400_TEXT_20, temp);
 	}
 	
@@ -112,7 +108,7 @@ public class RetrievalCriteria {
 	}
 	
 	public void withEnd(BigInteger value) {
-		String temp = String.format("%20d", value).toString();
+		String temp = String.format("%20d", value);
 		addStructureData(RetrieveKey.TOENT, AS400_TEXT_20, temp);
 	}
 
@@ -164,11 +160,10 @@ public class RetrievalCriteria {
 	 * 
 	 * @param value
 	 */
-	public void withEntTyp(JournalEntryType[] value) {
+	public void withEntTyp(JournalEntryType[] range) {
 		String temp = null;
 		int count = 0;
 
-		JournalEntryType[] range = (JournalEntryType[]) value;
 		StringBuilder entry = new StringBuilder();
 		for (int i = 0; i < range.length; i++) {
 			entry.append(StringHelpers.padRight(range[i].getKey(), 10));
@@ -180,7 +175,7 @@ public class RetrievalCriteria {
 		temp2[0] = Integer.valueOf(count);
 		temp2[1] = temp;
 
-		AS400DataType type[] = AS400_DATA_TYPES_2;
+		AS400DataType[] type = AS400_DATA_TYPES_2;
 		type[0] = BIN4;
 		type[1] = new AS400Text(temp.length());
 		AS400Structure temp2Structure = new AS400Structure(type);
@@ -214,11 +209,11 @@ public class RetrievalCriteria {
 
         int i = 1;
         for (FileFilter f: fileFilters) {
-            types[i] = TEXT10;
+            types[i] = AS400_TEXT_10;
             fdata[i++] = StringHelpers.padRight(f.table().toUpperCase(), 10);
-            types[i] = TEXT10;
+            types[i] = AS400_TEXT_10;
             fdata[i++] = StringHelpers.padRight(f.schema().toUpperCase(), 10);
-            types[i] = TEXT10;
+            types[i] = AS400_TEXT_10;
             fdata[i++] = "*ALL      ";
         }
 

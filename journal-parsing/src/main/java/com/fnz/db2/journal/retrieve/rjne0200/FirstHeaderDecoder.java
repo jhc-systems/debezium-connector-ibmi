@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.Optional;
 
 import com.fnz.db2.journal.retrieve.JournalPosition;
-import com.fnz.db2.journal.retrieve.JournalProcessedPosition;
+import com.fnz.db2.journal.retrieve.JournalReceiver;
 import com.fnz.db2.journal.retrieve.StringHelpers;
 import com.ibm.as400.access.AS400Bin4;
 import com.ibm.as400.access.AS400DataType;
@@ -46,7 +46,7 @@ public class FirstHeaderDecoder {
 	        String library = StringHelpers.safeTrim((String)os[5]);
 	        String offsetStr = StringHelpers.safeTrim((String)os[6]);
 	        BigInteger offset = new BigInteger(offsetStr);
-	        pos = Optional.of(new JournalPosition(offset, receiver, library));
+	        pos = Optional.of(new JournalPosition(offset, new JournalReceiver(receiver, library)));
 	    }
 	    
 	    return new FirstHeader(

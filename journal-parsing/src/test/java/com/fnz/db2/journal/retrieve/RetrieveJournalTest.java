@@ -25,7 +25,7 @@ public class RetrieveJournalTest {
 
 	@Test
 	void testRetrieveJournal() throws Exception {
-		retrieve.retrieveJournal(new JournalProcessedPosition(BigInteger.valueOf(0), "receiver", "lib", Instant.ofEpochSecond(0), true));
+		retrieve.retrieveJournal(new JournalProcessedPosition(BigInteger.valueOf(0), new JournalReceiver("receiver", "lib"), Instant.ofEpochSecond(0), true));
 	}
 
 }

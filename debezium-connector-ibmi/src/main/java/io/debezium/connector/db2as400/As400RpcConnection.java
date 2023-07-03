@@ -43,8 +43,8 @@ public class As400RpcConnection implements AutoCloseable, Connect<AS400, IOExcep
     private RetrieveJournal retrieveJournal;
     private AS400 as400;
     private static SocketProperties socketProperties = new SocketProperties();
-    private final LogLimmiting periodic = new LogLimmiting(5 * 60 * 1000);
-    private final LogLimmiting infrequent = new LogLimmiting(60 * 60 * 1000);
+    private final LogLimmiting periodic = new LogLimmiting(5 * 60 * 1000l);
+    private final LogLimmiting infrequent = new LogLimmiting(60 * 60 * 1000l);
     private JournalInfoRetrieval journalInfoRetrieval = new JournalInfoRetrieval();
 
 
@@ -54,7 +54,12 @@ public class As400RpcConnection implements AutoCloseable, Connect<AS400, IOExcep
         this.streamingMetrics = streamingMetrics;
         try {
         	System.setProperty("com.ibm.as400.access.AS400.guiAvailable", "False");
-            journalInfo = JournalInfoRetrieval.getJournal(connection(), config.getSchema(), includes);
+        	if (includes.isEmpty()) {
+        		// TODO add in parameters so this is configurable
+    			journalInfo = JournalInfoRetrieval.getJournal(connection(), config.getSchema());
+    		} else {
+    			journalInfo = JournalInfoRetrieval.getJournal(connection(), config.getSchema(), includes);
+    		}
 			RetrieveConfig rconfig = new RetrieveConfigBuilder().withAs400(this)
 					.withJournalBufferSize(config.getJournalBufferSize())
 					.withJournalInfo(journalInfo)
@@ -94,7 +99,7 @@ public class As400RpcConnection implements AutoCloseable, Connect<AS400, IOExcep
             try {
                 // need to both create a new object and connect
                 close();
-                this.as400 = new AS400(config.getHostName(), config.getUser(), config.getPassword());
+                this.as400 = new AS400(config.getHostName(), config.getUser(), config.getPassword().toCharArray());
                 socketProperties.setSoTimeout(config.getSocketTimeout());
                 as400.setSocketProperties(socketProperties);
                 as400.connectService(AS400.COMMAND);
@@ -176,6 +181,7 @@ public class As400RpcConnection implements AutoCloseable, Connect<AS400, IOExcep
             log.info(new StructuredMessage("current position diagnostics", 
                     Map.of("header", retrieveJournal.headerAsString(),
                             "behind", behind,
+                            "position", position,
                             "currentPosition", currentPosition,
                             "success", success)));
 
