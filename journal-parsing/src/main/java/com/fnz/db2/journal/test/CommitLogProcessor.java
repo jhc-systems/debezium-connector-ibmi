@@ -164,10 +164,10 @@ public class CommitLogProcessor {
 			log.info("finished?");
 			JournalReceiver journalNow = JournalInfoRetrieval.getReceiver(connector.connection(), journal);
             JournalProcessedPosition lastOffset = position;
-            if (lastOffset.getReciever() != null
-                    && !journalNow.equals(lastOffset.getReciever())) {
-                log.warn("journal reciever doesn't match at position {} we have journal {} and latest is {} ",
-                        position, lastOffset.getReciever(), journalNow);
+            if (lastOffset.getReceiver() != null
+                    && !journalNow.equals(lastOffset.getReceiver())) {
+                log.warn("journal receiver doesn't match at position {} we have journal {} and latest is {} ",
+                        position, lastOffset.getReceiver(), journalNow);
             }
             log.error(
                     "Lost journal at position {}. Restarting with blank journal and offset ( current journal is {} )",

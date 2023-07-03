@@ -44,7 +44,7 @@ public class RetrieveJournal {
 	private static final FirstHeaderDecoder firstHeaderDecoder = new FirstHeaderDecoder();
 	private static final EntryHeaderDecoder entryHeaderDecoder = new EntryHeaderDecoder();
 	private final SimpleDateFormat dateFormatter = new SimpleDateFormat("yyMMdd-hhmm");
-	private final JournalReceivers journalRecievers;
+	private final JournalReceivers journalReceivers;
 	private final ParameterListBuilder builder = new ParameterListBuilder();
 
 	RetrieveConfig config;
@@ -57,7 +57,7 @@ public class RetrieveJournal {
 
 	public RetrieveJournal(RetrieveConfig config, JournalInfoRetrieval journalRetrieval) {
 		this.config = config;
-		journalRecievers = new JournalReceivers(journalRetrieval, config.maxServerSideEntries(), config.journalInfo());
+		journalReceivers = new JournalReceivers(journalRetrieval, config.maxServerSideEntries(), config.journalInfo());
 
 		builder.withJournal(config.journalInfo().journalName(), config.journalInfo().journalLibrary());
 	}
@@ -90,16 +90,16 @@ public class RetrieveJournal {
 			builder.withFileFilters(config.includeFiles());
 		}
 		
-		final Optional<PositionRange> rangeOpt = journalRecievers.findRange(config.as400().connection(), retrievePosition);
+		final Optional<PositionRange> rangeOpt = journalReceivers.findRange(config.as400().connection(), retrievePosition);
 		
 		boolean startEqualsEnd = rangeOpt.map(r -> {
-			builder.withReceivers(r.start().getOffset(), r.start().getReciever().name(), r.start().getReciever().library(), r.end().getOffset(), r.end().getReciever().name(),
+			builder.withReceivers(r.start().getOffset(), r.start().getReceiver().name(), r.start().getReceiver().library(), r.end().getOffset(), r.end().getReceiver().name(),
 					r.end().receiver().library());
 			return (r.startEqualsEnd());
 		}).orElseGet(() -> {
 			if (retrievePosition.isOffsetSet()) {
 				log.warn("starting from current position to end");
-				builder.withStartReceiversToCurrentEnd(retrievePosition.getOffset(), retrievePosition.getReciever().name(), retrievePosition.getReciever().library());
+				builder.withStartReceiversToCurrentEnd(retrievePosition.getOffset(), retrievePosition.getReceiver().name(), retrievePosition.getReceiver().library());
 			} else {
 				log.warn("starting from beginning");
 				builder.withFromBeginningToEnd();
@@ -292,7 +292,7 @@ public class RetrieveJournal {
 		}
 			
 		if (entryHeader.hasReceiver()) {
-			p.setJournalReciever(entryHeader.getSequenceNumber(), entryHeader.getReceiver(),
+			p.setJournalReceiver(entryHeader.getSequenceNumber(), entryHeader.getReceiver(),
 					entryHeader.getReceiverLibrary(), entryHeader.getTime(), true);
 		} else {
 			// this happens a lot

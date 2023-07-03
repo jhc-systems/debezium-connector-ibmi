@@ -26,7 +26,7 @@ import com.fnz.db2.journal.retrieve.exception.FatalException;
 import com.fnz.db2.journal.retrieve.exception.InvalidPositionException;
 
 import io.debezium.DebeziumException;
-import io.debezium.connector.db2as400.As400RpcConnection.BlockingRecieverConsumer;
+import io.debezium.connector.db2as400.As400RpcConnection.BlockingReceiverConsumer;
 import io.debezium.data.Envelope.Operation;
 import io.debezium.pipeline.ErrorHandler;
 import io.debezium.pipeline.EventDispatcher;
@@ -181,7 +181,7 @@ public class As400StreamingChangeEventSource implements StreamingChangeEventSour
 	}
 
 	// TODO tidy up exception handling
-	private BlockingRecieverConsumer processJournalEntries(As400Partition partition, As400OffsetContext offsetContext)
+	private BlockingReceiverConsumer processJournalEntries(As400Partition partition, As400OffsetContext offsetContext)
 			throws IOException, SQLNonTransientConnectionException {
 		return (nextOffset, r, eheader) -> {
 			try {

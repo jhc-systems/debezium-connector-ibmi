@@ -94,10 +94,10 @@ public class JournalReceivers {
 		if (diff.compareTo(maxServerSideEntriesBI) > 0) {
 			BigInteger restricted = startPosition.getOffset().add(maxServerSideEntriesBI);
 			return new PositionRange(startPosition, 
-					new JournalPosition(restricted, startPosition.getReciever()));
+					new JournalPosition(restricted, startPosition.getReceiver()));
 		}
 		return new PositionRange(startPosition, 
-				new JournalPosition(endJournalPosition.end(), startPosition.getReciever()));
+				new JournalPosition(endJournalPosition.end(), startPosition.getReceiver()));
 	}
 
 	/**

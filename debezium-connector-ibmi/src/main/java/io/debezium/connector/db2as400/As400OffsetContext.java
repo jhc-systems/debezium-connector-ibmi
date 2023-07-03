@@ -116,9 +116,9 @@ public class As400OffsetContext implements OffsetContext {
 		String time = Long.toString(position.getTime().getEpochSecond());
 		return Map.of(As400OffsetContext.EVENT_SEQUENCE, offsetStr,
 				As400OffsetContext.EVENT_TIME, time,
-				As400OffsetContext.RECEIVER, position.getReciever().name(), 
+				As400OffsetContext.RECEIVER, position.getReceiver().name(), 
 				As400OffsetContext.PROCESSED, Boolean.toString(position.processed()),
-				As400OffsetContext.RECEIVER_LIBRARY, position.getReciever().library(),
+				As400OffsetContext.RECEIVER_LIBRARY, position.getReceiver().library(),
 				RelationalDatabaseConnectorConfig.TABLE_INCLUDE_LIST.name(), inclueTables,
 				As400OffsetContext.SNAPSHOT_COMPLETED_KEY, Boolean.toString(snapshotComplete));
 	}

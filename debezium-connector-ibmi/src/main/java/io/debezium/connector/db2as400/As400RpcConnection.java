@@ -124,7 +124,7 @@ public class As400RpcConnection implements AutoCloseable, Connect<AS400, IOExcep
         }
     }
 
-    public boolean getJournalEntries(ChangeEventSourceContext context, As400OffsetContext offsetCtx, BlockingRecieverConsumer consumer, WatchDog watchDog)
+    public boolean getJournalEntries(ChangeEventSourceContext context, As400OffsetContext offsetCtx, BlockingReceiverConsumer consumer, WatchDog watchDog)
             throws Exception {
         boolean success = false;
         JournalProcessedPosition position = offsetCtx.getPosition();
@@ -213,14 +213,14 @@ public class As400RpcConnection implements AutoCloseable, Connect<AS400, IOExcep
 
     private boolean isLatestJournal(JournalProcessedPosition position, JournalReceiver journalNow)
             throws Exception, IOException {
-        if (position.getReciever() == null
-                || journalNow.equals(position.getReciever())) {
+        if (position.getReceiver() == null
+                || journalNow.equals(position.getReceiver())) {
             return true;
         }
         return false;
     }
 
-    public static interface BlockingRecieverConsumer {
+    public static interface BlockingReceiverConsumer {
         void accept(BigInteger offset, RetrieveJournal r, EntryHeader eheader) throws RpcException, InterruptedException, IOException, SQLNonTransientConnectionException;
     }
 

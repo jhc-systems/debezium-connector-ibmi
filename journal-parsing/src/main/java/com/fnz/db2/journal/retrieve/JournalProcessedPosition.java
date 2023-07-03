@@ -31,7 +31,7 @@ public class JournalProcessedPosition {
     }
     
     public JournalProcessedPosition(JournalPosition p, Instant time, boolean processed) {
-    	this(p.getOffset(), p.getReciever(), time, processed);
+    	this(p.getOffset(), p.getReceiver(), time, processed);
     }
     
     public JournalPosition asJournalPosition() {
@@ -75,7 +75,7 @@ public class JournalProcessedPosition {
         return (null != offset);
     }
 
-    public JournalReceiver getReciever() {
+    public JournalReceiver getReceiver() {
         return receiver;
     }
 
@@ -125,9 +125,9 @@ public class JournalProcessedPosition {
 		return this;
 	}
 
-	public void setJournalReciever(BigInteger offset, String journalReciever, String schema, Instant time, boolean processed) {
+	public void setJournalReceiver(BigInteger offset, String journalReceiver, String schema, Instant time, boolean processed) {
 	  this.offset = offset;
-	  this.receiver = new JournalReceiver(StringHelpers.safeTrim(journalReciever), StringHelpers.safeTrim(schema));
+	  this.receiver = new JournalReceiver(StringHelpers.safeTrim(journalReceiver), StringHelpers.safeTrim(schema));
 		this.processed = processed;
 		this.time = time;
 	}

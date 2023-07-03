@@ -29,7 +29,7 @@ public record JournalPosition(
         return offset;
     }
 
-    public JournalReceiver getReciever() {
+    public JournalReceiver getReceiver() {
         return receiver();
     }
 }

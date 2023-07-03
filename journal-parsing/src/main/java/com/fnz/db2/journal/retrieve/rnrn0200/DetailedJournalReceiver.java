@@ -22,7 +22,7 @@ public record DetailedJournalReceiver(JournalReceiverInfo info, BigInteger start
 	public boolean isSameReceiver(JournalProcessedPosition position) {
 		if (info == null || position == null)
 			return false;
-		return info.receiver().equals(position.getReciever());
+		return info.receiver().equals(position.getReceiver());
 	}
 
 	public boolean isSameReceiver(DetailedJournalReceiver otherReceiver) {

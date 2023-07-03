@@ -219,7 +219,7 @@ class JournalReceiversTest {
 		JournalReceivers jreceivers = new JournalReceivers(journalInfoRetrieval, maxOffset, journalInfo);
 		
 		JournalProcessedPosition startPosition = new JournalProcessedPosition(BigInteger.ONE, new JournalReceiver("j1", "jlib"), Instant.ofEpochSecond(0), true);
-		DetailedJournalReceiver endJournalPosition = new DetailedJournalReceiver(new JournalReceiverInfo(startPosition.getReciever(), new Date(1), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.valueOf(1), BigInteger.valueOf(100), Optional.empty(), 1, 1);
+		DetailedJournalReceiver endJournalPosition = new DetailedJournalReceiver(new JournalReceiverInfo(startPosition.getReceiver(), new Date(1), JournalStatus.OnlineSavedDetached, Optional.of(1)), BigInteger.valueOf(1), BigInteger.valueOf(100), Optional.empty(), 1, 1);
 
 		PositionRange range = jreceivers.maxOffsetInSameReceiver(startPosition, endJournalPosition, maxServerSideEntriesBI);
 		assertEquals(startPosition.getOffset().add(maxServerSideEntriesBI), range.end().getOffset());
