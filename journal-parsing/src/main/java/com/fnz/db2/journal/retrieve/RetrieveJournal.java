@@ -81,15 +81,15 @@ public class RetrieveJournal {
 		this.header = new FirstHeader(0, 0, 0, OffsetStatus.NOT_CALLED, Optional.empty());
 		this.position = retrievePosition;
 
-		log.debug("Fetch journal at postion {}", retrievePosition);
 		final PositionRange range = journalReceivers.findRange(config.as400().connection(), retrievePosition);
 		
 		// will return data for both first entry and last entry but call fails if start == end
 		if (range.startEqualsEnd()) {
-			log.debug("start equals end start {} end {}", retrievePosition, range.end());
+			log.info("info equals end start {} range {}", retrievePosition, range);
 			return true;
 		}
 
+		log.info("Fetch journal at postion {} range {}", retrievePosition, range);
 		final ServiceProgramCall spc = new ServiceProgramCall(config.as400().connection());
 		spc.getServerJob().setLoggingLevel(0);
 		builder.init();
@@ -118,10 +118,13 @@ public class RetrieveJournal {
 				header.nextPosition().ifPresent(x -> retrievePosition.setPosition(x, false));
 			}
 			if (!hasData()) {
-				log.debug("setting continuation to end position {}", fetchedToJournalPosition);
 				this.header = header.withNextJournalPosition(fetchedToJournalPosition);
 				retrievePosition.setPosition(fetchedToJournalPosition, false);
+			} else if (header.nextPosition().isEmpty()) {
+				// don't update the retrieve position as that will update as we process data
+				this.header = header.withNextJournalPosition(fetchedToJournalPosition);
 			}
+
 		} else {
 			return reThrowIfFatal(retrievePosition, spc, fetchedToJournalPosition, builder);
 		}
@@ -202,10 +205,6 @@ public class RetrieveJournal {
 		this.position = position;
 	}
 
-	public boolean futureDataAvailable() {
-		return (header.hasFutureDataAvailable());
-	}
-
 	// test without moving on
 	public boolean hasData() {
 		if (header.status() == OffsetStatus.NO_MORE_DATA) {
@@ -214,10 +213,11 @@ public class RetrieveJournal {
 		if (offset < 0 && header.size() > 0) {
 			return true;
 		}
-		if (offset > 0 && entryHeader.getNextEntryOffset() > 0) {
-			return true;
-		}
-		return false;
+		return (offset > 0 && entryHeader.getNextEntryOffset() > 0);
+	}
+	
+	public boolean futureDataAvailable() {
+		return (header.hasFutureDataAvailable());
 	}
 
 	public boolean nextEntry() {
