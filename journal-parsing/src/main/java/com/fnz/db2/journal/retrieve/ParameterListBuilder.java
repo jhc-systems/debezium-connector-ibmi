@@ -171,9 +171,9 @@ public class ParameterListBuilder {
 	@Override
 	public String toString() {
 		return String.format(
-				"ParameterListBuilder [receiver=%s, receiverLibrary=%s, criteria=%s, startReceiver=%s, startLibrary=%s, endReceiver=%s, endLibrary=%s, tableFilters=%s, startOffset=%s, endOffset=%s, journalEntryTypes=%s, journalCode=%s]",
-				receiver, receiverLibrary, criteria, startReceiver, startLibrary,
-				endReceiver, endLibrary, tableFilters, startOffset, endOffset, Arrays.toString(journalEntryTypes),
-				Arrays.toString(journalCode));
+				"ParameterListBuilder [receiver=%s, receiverLibrary=%s, startReceiver=%s, startLibrary=%s, endReceiver=%s, endLibrary=%s, startOffset=%s, endOffset=%s, journalEntryTypes=%s, journalCode=%s, tableFilters=%s]",
+				receiver, receiverLibrary, startReceiver, startLibrary,
+				endReceiver, endLibrary, startOffset, endOffset, Arrays.toString(journalEntryTypes),
+				Arrays.toString(journalCode), tableFilters);
 	}
 }
