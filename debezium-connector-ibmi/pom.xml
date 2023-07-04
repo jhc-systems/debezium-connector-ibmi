@@ -92,7 +92,7 @@
 		<dependency> <!-- for instant -->
 		    <groupId>com.fasterxml.jackson.datatype</groupId>
 		    <artifactId>jackson-datatype-jsr310</artifactId>
-		</dependency>
+		</dependency>		
 
 		<dependency>
 			<groupId>org.slf4j</groupId>
