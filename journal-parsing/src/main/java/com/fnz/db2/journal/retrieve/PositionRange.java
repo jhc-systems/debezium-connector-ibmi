@@ -5,6 +5,6 @@ public record PositionRange(boolean fromBeginning, JournalProcessedPosition star
 		if (start.processed())
 			return false;
 		JournalPosition startPos = new JournalPosition(start.getOffset(), start.getReceiver());
-		return (start.processed() && startPos.equals(end));
+		return (startPos.equals(end));
 	}
 }
