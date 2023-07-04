@@ -60,8 +60,9 @@ public class CommitLogProcessor {
 
         String offset =  System.getenv("ISERIES_OFFSET");
         String receiver =  System.getenv("ISERIES_RECEIVER");
-        if (offset != null && receiver != null)
+        if (offset != null && receiver != null) {
             nextPosition = new JournalProcessedPosition(offset, receiver, journal.journalLibrary(), Instant.ofEpochSecond(0), false);
+        }
         
 		String database = JdbcFileDecoder.getDatabaseName(sqlConnect.connection());
 		fileDecoder = new JdbcFileDecoder(sqlConnect, database, schemaCache, -1);
@@ -104,7 +105,7 @@ public class CommitLogProcessor {
 			throws Exception {
 
 		boolean success = r.retrieveJournal(position);
-		log.info("success: {} position: {}", success, position);
+		log.info("success: {} position: {} header {}", success, position, r.getFirstHeader());
 
 		if (success) {
 			log.info("more journal data: {}", r.futureDataAvailable());

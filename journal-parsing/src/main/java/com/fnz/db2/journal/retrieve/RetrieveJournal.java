@@ -78,13 +78,15 @@ public class RetrieveJournal {
 	public boolean retrieveJournal(JournalProcessedPosition retrievePosition) throws Exception {
 		this.offset = -1;
 		this.entryHeader = null;
-		this.header = null;
+		this.header = new FirstHeader(0, 0, 0, OffsetStatus.NOT_CALLED, Optional.empty());
 		this.position = retrievePosition;
 
 		log.debug("Fetch journal at postion {}", retrievePosition);
 		final PositionRange range = journalReceivers.findRange(config.as400().connection(), retrievePosition);
 		
+		// will return data for both first entry and last entry but call fails if start == end
 		if (range.startEqualsEnd()) {
+			log.debug("start equals end start {} end {}", retrievePosition, range.end());
 			return true;
 		}
 
@@ -116,8 +118,8 @@ public class RetrieveJournal {
 				header.nextPosition().ifPresent(x -> retrievePosition.setPosition(x, false));
 			}
 			if (!hasData()) {
-				log.info("moving on to current position {}", fetchedToJournalPosition);
-				this.header = header.withCurrentJournalPosition(fetchedToJournalPosition);
+				log.debug("setting continuation to end position {}", fetchedToJournalPosition);
+				this.header = header.withNextJournalPosition(fetchedToJournalPosition);
 				retrievePosition.setPosition(fetchedToJournalPosition, false);
 			}
 		} else {
@@ -161,7 +163,7 @@ public class RetrieveJournal {
 						id.getText());
 				// if we're filtering we get no continuation offset just an error
 				header = new FirstHeader(0, 0, 0, OffsetStatus.NO_MORE_DATA, Optional.of(latestJournalPosition));
-				header = header.withCurrentJournalPosition(latestJournalPosition);
+				header = header.withNextJournalPosition(latestJournalPosition);
 				retrievePosition.setPosition(latestJournalPosition, false);
 				return true;
 			}
@@ -201,17 +203,7 @@ public class RetrieveJournal {
 	}
 
 	public boolean futureDataAvailable() {
-		return (header != null && header.hasFutureDataAvailable());
-	}
-
-	public String headerAsString() {
-		final StringBuilder sb = new StringBuilder();
-		if (header == null) {
-			sb.append("null header\n");
-		} else {
-			sb.append(header);
-		}
-		return sb.toString();
+		return (header.hasFutureDataAvailable());
 	}
 
 	// test without moving on

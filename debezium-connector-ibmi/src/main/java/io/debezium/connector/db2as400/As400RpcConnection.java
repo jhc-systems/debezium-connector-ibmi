@@ -173,7 +173,8 @@ public class As400RpcConnection implements AutoCloseable, Connect<AS400, IOExcep
             	receivers = receivers.subList(size-10, size);
             }
             log.info(new StructuredMessage("receiver list", 
-                    Map.of("numberOfReceivers", size, "lastTenReceivers", receivers)));
+                    Map.of("numberOfReceivers", size, 
+                    		"lastReceivers", receivers)));
         }
     }
 
@@ -184,7 +185,7 @@ public class As400RpcConnection implements AutoCloseable, Connect<AS400, IOExcep
             streamingMetrics.setJournalOffset(currentReceiver.getOffset());
             streamingMetrics.setJournalBehind(behind);
             log.info(new StructuredMessage("current position diagnostics", 
-                    Map.of("header", retrieveJournal.headerAsString(),
+                    Map.of("header", retrieveJournal.getFirstHeader(),
                             "behind", behind,
                             "position", position,
                             "currentReceiver", currentReceiver,
@@ -202,16 +203,23 @@ public class As400RpcConnection implements AutoCloseable, Connect<AS400, IOExcep
             	receivers = receivers.subList(size-10, size);
             }
             log.warn(new StructuredMessage("Detected newer receiver but no data received", 
-                    Map.of("header", retrieveJournal.headerAsString(),
+                    Map.of("header", retrieveJournal.getFirstHeader(),
                             "position", position,
                             "currentReceiver", currentReceiver,
                             "numberOfReceivers", size,
-                            "lastTenReceivers", receivers)));
+                            "lastReceivers", receivers)));
         }
         else {
             if (periodic.shouldLogRateLimted("no-data")) {
                 List<DetailedJournalReceiver> receivers = journalInfoRetrieval.getReceivers(connection(), journalInfo);
-                log.info(new StructuredMessage("We didn't get any data", Map.of("header", retrieveJournal.headerAsString(), "position", position, "receivers", receivers)));
+                int size = receivers.size();
+                if (size > 10) {
+                	receivers = receivers.subList(size-10, size);
+                }
+                log.info(new StructuredMessage("We didn't get any data", 
+                		Map.of("header", retrieveJournal.getFirstHeader(), 
+                				"position", position, 
+                				"lastReceivers", receivers)));
             }
         }
     }
