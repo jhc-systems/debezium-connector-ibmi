@@ -168,8 +168,12 @@ public class As400RpcConnection implements AutoCloseable, Connect<AS400, IOExcep
     private void logAllReceivers() throws IOException, Exception {
         if (infrequent.shouldLogRateLimted("all-receivers")) {
             List<DetailedJournalReceiver> receivers = journalInfoRetrieval.getReceivers(connection(), journalInfo);
-            log.info(new StructuredMessage("all receivers", 
-                    Map.of("receivers", receivers)));
+            int size = receivers.size();
+            if (size > 10) {
+            	receivers = receivers.subList(size-10, size);
+            }
+            log.info(new StructuredMessage("receiver list", 
+                    Map.of("numberOfReceivers", size, "lastTenReceivers", receivers)));
         }
     }
 
@@ -201,6 +205,7 @@ public class As400RpcConnection implements AutoCloseable, Connect<AS400, IOExcep
                     Map.of("header", retrieveJournal.headerAsString(),
                             "position", position,
                             "currentReceiver", currentReceiver,
+                            "numberOfReceivers", size,
                             "lastTenReceivers", receivers)));
         }
         else {

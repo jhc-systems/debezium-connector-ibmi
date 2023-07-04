@@ -4,6 +4,9 @@ import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.fnz.db2.journal.retrieve.RetrievalCriteria.JournalCode;
 import com.fnz.db2.journal.retrieve.RetrievalCriteria.JournalEntryType;
 import com.ibm.as400.access.AS400Bin4;
@@ -13,6 +16,8 @@ import com.ibm.as400.access.ProgramParameter;
 
 // mostly a wrapper for RetrievalCriteria so we can capture parameters for diagnostics
 public class ParameterListBuilder {
+	private static final Logger log = LoggerFactory.getLogger(ParameterListBuilder.class);
+
 	public static final int DEFAULT_JOURNAL_BUFFER_SIZE = 65536 * 2;
 	public static final int ERROR_CODE = 0;
 	private static final byte[] errorCodeData = new AS400Bin4().toBytes(ERROR_CODE);
@@ -47,7 +52,17 @@ public class ParameterListBuilder {
 		this.bufferLengthData = new AS400Bin4().toBytes(bufferLength);
 		return this;
 	}
-
+	
+	public ParameterListBuilder withRange(PositionRange range) {
+		if (range.fromBeginning()) {
+			log.warn("starting from beginning");
+			withFromBeginningToEnd();
+		} else {
+			withReceivers(range);
+		}
+		return this;
+	}
+	
 	public ParameterListBuilder withJournal(String receiver, String receiverLibrary) {
 		if (!this.receiver.equals(receiver) && !this.receiverLibrary.equals(receiverLibrary)) {
 			this.receiver = receiver;
@@ -69,14 +84,13 @@ public class ParameterListBuilder {
 		return this;
 	}
 
-	public ParameterListBuilder withReceivers(BigInteger start, String startReceiver, String startLibrary, BigInteger end, String endReceiver,
-			String endLibrary) {
-		withStartingSequence(start);
-		withEnd(end);
-		this.startReceiver = startReceiver;
-		this.startLibrary = startLibrary;
-		this.endReceiver = endReceiver;
-		this.endLibrary = endLibrary;
+	public ParameterListBuilder withReceivers(PositionRange range) {
+		withStartingSequence(range.start().getOffset());
+		withEnd(range.end().getOffset());
+		this.startReceiver = range.start().getReceiver().name();
+		this.startLibrary = range.start().getReceiver().library();
+		this.endReceiver = range.end().getReceiver().name();
+		this.endLibrary = range.end().receiver().library();
 		criteria.withReceiverRange(startReceiver, startLibrary, endReceiver, endLibrary);
 		return this;
 	}

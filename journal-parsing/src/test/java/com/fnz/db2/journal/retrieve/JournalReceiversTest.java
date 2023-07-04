@@ -53,10 +53,9 @@ class JournalReceiversTest {
 		when(journalInfoRetrieval.getCurrentDetailedJournalReceiver(any(), any())).thenReturn(dr1);
 		
 		JournalProcessedPosition startPosition = new JournalProcessedPosition(BigInteger.ONE, new JournalReceiver("j1", "jlib"), Instant.ofEpochSecond(0), true);
-		Optional<PositionRange> result = jreceivers.findRange(as400, startPosition);
-		assertTrue(result.isPresent());
-		PositionRange rangeAnswer = new PositionRange(startPosition, new JournalPosition(dr1.end(), dr1.info().receiver())); 
-		assertEquals(Optional.of(rangeAnswer), result);
+		PositionRange result = jreceivers.findRange(as400, startPosition);
+		PositionRange rangeAnswer = new PositionRange(false, startPosition, new JournalPosition(dr1.end(), dr1.info().receiver())); 
+		assertEquals(rangeAnswer, result);
 	}
 	
 	@Test
@@ -73,10 +72,9 @@ class JournalReceiversTest {
 		when(journalInfoRetrieval.getCurrentDetailedJournalReceiver(any(), any())).thenReturn(dr2);
 		
 		JournalProcessedPosition startPosition = new JournalProcessedPosition(BigInteger.ONE, new JournalReceiver("j1", "jlib"), Instant.ofEpochSecond(0), true);
-		Optional<PositionRange> result = jreceivers.findRange(as400, startPosition);
-		assertTrue(result.isPresent());
-		PositionRange rangeAnswer = new PositionRange(startPosition, new JournalPosition(dr2.end(), dr2.info().receiver())); 
-		assertEquals(Optional.of(rangeAnswer), result);
+		PositionRange result = jreceivers.findRange(as400, startPosition);
+		PositionRange rangeAnswer = new PositionRange(false, startPosition, new JournalPosition(dr2.end(), dr2.info().receiver())); 
+		assertEquals(rangeAnswer, result);
 	}
 	
 	@Test
@@ -99,17 +97,15 @@ class JournalReceiversTest {
 		when(journalInfoRetrieval.getCurrentDetailedJournalReceiver(any(), any())).thenReturn(detailedEnd).thenReturn(detailedEnd2);
 		
 		JournalProcessedPosition startPosition = new JournalProcessedPosition(BigInteger.ONE, new JournalReceiver("j1", "jlib"), Instant.ofEpochSecond(0), true);
-		Optional<PositionRange> result = jreceivers.findRange(as400, startPosition);
-		assertTrue(result.isPresent());
-		PositionRange rangeAnswer = new PositionRange(startPosition, new JournalPosition(BigInteger.valueOf(6), detailedEnd.info().receiver())); 
-		assertEquals(Optional.of(rangeAnswer), result);
+		PositionRange result = jreceivers.findRange(as400, startPosition);
+		PositionRange rangeAnswer = new PositionRange(false, startPosition, new JournalPosition(BigInteger.valueOf(6), detailedEnd.info().receiver())); 
+		assertEquals(rangeAnswer, result);
 		
 		
 		JournalProcessedPosition startPosition2 = new JournalProcessedPosition(BigInteger.valueOf(2), new JournalReceiver("j2", "jlib"), Instant.ofEpochSecond(0), true);
-		Optional<PositionRange> result2 = jreceivers.findRange(as400, startPosition2);
-		assertTrue(result2.isPresent());
-		PositionRange rangeAnswer2 = new PositionRange(startPosition2, new JournalPosition(BigInteger.valueOf(9), detailedEnd2.info().receiver())); 
-		assertEquals(Optional.of(rangeAnswer2), result2);
+		PositionRange result2 = jreceivers.findRange(as400, startPosition2);
+		PositionRange rangeAnswer2 = new PositionRange(false, startPosition2, new JournalPosition(BigInteger.valueOf(9), detailedEnd2.info().receiver())); 
+		assertEquals(rangeAnswer2, result2);
 
 	}
 	

@@ -82,6 +82,12 @@ public class RetrieveJournal {
 		this.position = retrievePosition;
 
 		log.debug("Fetch journal at postion {}", retrievePosition);
+		final PositionRange range = journalReceivers.findRange(config.as400().connection(), retrievePosition);
+		
+		if (range.startEqualsEnd()) {
+			return true;
+		}
+
 		final ServiceProgramCall spc = new ServiceProgramCall(config.as400().connection());
 		spc.getServerJob().setLoggingLevel(0);
 		builder.init();
@@ -89,29 +95,9 @@ public class RetrieveJournal {
 		if (config.filtering() && !config.includeFiles().isEmpty()) {
 			builder.withFileFilters(config.includeFiles());
 		}
-		
-		final Optional<PositionRange> rangeOpt = journalReceivers.findRange(config.as400().connection(), retrievePosition);
-		
-		boolean startEqualsEnd = rangeOpt.map(r -> {
-			builder.withReceivers(r.start().getOffset(), r.start().getReceiver().name(), r.start().getReceiver().library(), r.end().getOffset(), r.end().getReceiver().name(),
-					r.end().receiver().library());
-			return (r.startEqualsEnd());
-		}).orElseGet(() -> {
-			if (retrievePosition.isOffsetSet()) {
-				log.warn("starting from current position to end");
-				builder.withStartReceiversToCurrentEnd(retrievePosition.getOffset(), retrievePosition.getReceiver().name(), retrievePosition.getReceiver().library());
-			} else {
-				log.warn("starting from beginning");
-				builder.withFromBeginningToEnd();
-			}
-			return false;
-		});
 
-		if (startEqualsEnd) {
-			return true;
-		}
-
-		final Optional<JournalPosition> latestJournalPosition = rangeOpt.map(x -> x.end());
+		builder.withRange(range);
+		final JournalPosition fetchedToJournalPosition = range.end();
 
 		final ProgramParameter[] parameters = builder.build();
 		spc.setProgram(JournalInfoRetrieval.JOURNAL_SERVICE_LIB, parameters);
@@ -127,24 +113,22 @@ public class RetrieveJournal {
 			offset = -1;
 			if (header.status() == OffsetStatus.MORE_DATA_NEW_OFFSET && header.offset() == 0) {
 				log.error("buffer too small need to skip this entry {}", retrievePosition);
-				header.nextPosition().ifPresent(x -> retrievePosition.setPosition(x, false)); // TODO check we can remove this
+				header.nextPosition().ifPresent(x -> retrievePosition.setPosition(x, false));
 			}
 			if (!hasData()) {
-				log.info("moving on to current position {}", latestJournalPosition);
-				latestJournalPosition.ifPresent(l -> {
-					this.header = header.withCurrentJournalPosition(l);
-					retrievePosition.setPosition(l, false); // TODO check we can remove this
-				});
+				log.info("moving on to current position {}", fetchedToJournalPosition);
+				this.header = header.withCurrentJournalPosition(fetchedToJournalPosition);
+				retrievePosition.setPosition(fetchedToJournalPosition, false);
 			}
 		} else {
-			return reThrowIfFatal(retrievePosition, spc, latestJournalPosition, builder);
+			return reThrowIfFatal(retrievePosition, spc, fetchedToJournalPosition, builder);
 		}
 		return success;
 	}
 
 
 	private boolean reThrowIfFatal(JournalProcessedPosition retrievePosition, final ServiceProgramCall spc,
-			Optional<JournalPosition> latestJournalPosition, final ParameterListBuilder builder)
+			JournalPosition latestJournalPosition, final ParameterListBuilder builder)
 			throws InvalidPositionException, InvalidJournalFilterException, RetrieveJournalException {
 		for (final AS400Message id : spc.getMessageList()) {
 			final String idt = id.getID();
@@ -176,11 +160,9 @@ public class RetrieveJournal {
 				log.debug("Call failed position {} parameters {} no data received, probably all filtered: {}", retrievePosition, builder, 
 						id.getText());
 				// if we're filtering we get no continuation offset just an error
-				header = new FirstHeader(0, 0, 0, OffsetStatus.NO_MORE_DATA, latestJournalPosition);
-				latestJournalPosition.ifPresent(l -> {
-					header = header.withCurrentJournalPosition(l);
-					retrievePosition.setPosition(l, false);// TODO check we can remove this
-				});
+				header = new FirstHeader(0, 0, 0, OffsetStatus.NO_MORE_DATA, Optional.of(latestJournalPosition));
+				header = header.withCurrentJournalPosition(latestJournalPosition);
+				retrievePosition.setPosition(latestJournalPosition, false);
 				return true;
 			}
 			default:

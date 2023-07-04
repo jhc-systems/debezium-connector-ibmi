@@ -1,6 +1,6 @@
 package com.fnz.db2.journal.retrieve;
 
-public record PositionRange(JournalProcessedPosition start, JournalPosition end) {
+public record PositionRange(boolean fromBeginning, JournalProcessedPosition start, JournalPosition end) {
 	boolean startEqualsEnd() {
 		if (start.processed())
 			return false;
