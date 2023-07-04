@@ -111,7 +111,7 @@ public class RetrieveJournal {
 			return true;
 		}
 
-		final Optional<JournalPosition> latestJournalPosition = Optional.empty(); //rangeOpt.map(x -> x.end());
+		final Optional<JournalPosition> latestJournalPosition = rangeOpt.map(x -> x.end());
 
 		final ProgramParameter[] parameters = builder.build();
 		spc.setProgram(JournalInfoRetrieval.JOURNAL_SERVICE_LIB, parameters);
