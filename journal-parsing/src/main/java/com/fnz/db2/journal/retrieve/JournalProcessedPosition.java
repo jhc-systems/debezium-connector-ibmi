@@ -16,7 +16,7 @@ public class JournalProcessedPosition {
 	// position should be last processed record as requesting the next record will error and be indistinguishable from losing the journal 
     private BigInteger offset; // sequence number up to 18 446 644 000 000 000 000
     private JournalReceiver receiver;
-    private Instant time = Instant.ofEpochSecond(0);
+    private Instant timeOfLastProcessed = Instant.ofEpochSecond(0);
     private boolean processed = false;
     private static String[] empty = new String[]{};
 
@@ -24,7 +24,7 @@ public class JournalProcessedPosition {
         this.offset = position.offset;
         this.receiver = position.receiver;
 		this.processed = position.processed;
-		this.time = position.time;
+		this.timeOfLastProcessed = position.timeOfLastProcessed;
     }
     
     public JournalProcessedPosition() {
@@ -49,14 +49,14 @@ public class JournalProcessedPosition {
         	this.offset = new BigInteger(offsetStr);
         }
         this.receiver = new JournalReceiver(StringHelpers.safeTrim(receiver), StringHelpers.safeTrim(receiverLibrary));
-    	this.time = time;
+    	this.timeOfLastProcessed = time;
 		this.processed = processed;
     }
 
     public JournalProcessedPosition(BigInteger offset, JournalReceiver receiver, Instant time, boolean processed) {
         this.offset = offset;
         this.receiver = receiver;
-    	this.time = time;
+    	this.timeOfLastProcessed = time;
 		this.processed = processed;
     }
 
@@ -67,8 +67,8 @@ public class JournalProcessedPosition {
         return offset;
     }
     
-    public Instant getTime() {
-    	return this.time;
+    public Instant getTimeOfLastProcessed() {
+    	return this.timeOfLastProcessed;
     }
     
     public boolean isOffsetSet() {
@@ -108,15 +108,15 @@ public class JournalProcessedPosition {
 
 	@Override
 	public String toString() {
-		return String.format("JournalProcessedPosition [offset=%s, receiver=%s, time=%s, processed=%s]", offset,
-				receiver, time, processed);
+		return String.format("JournalProcessedPosition [offset=%s, receiver=%s, timeOfLastProcessed=%s, processed=%s]", offset,
+				receiver, timeOfLastProcessed, processed);
 	}
 	
 	// TODO remove all setters and convert to record
 	public JournalProcessedPosition setOffset(BigInteger offset, Instant time, boolean processed) {
 	  this.offset = offset;
 		this.processed = processed;
-		this.time = time;
+		this.timeOfLastProcessed = time;
 		return this;
 	}
 	
@@ -129,13 +129,13 @@ public class JournalProcessedPosition {
 	  this.offset = offset;
 	  this.receiver = new JournalReceiver(StringHelpers.safeTrim(journalReceiver), StringHelpers.safeTrim(schema));
 		this.processed = processed;
-		this.time = time;
+		this.timeOfLastProcessed = time;
 	}
 	
 	public void setPosition(JournalProcessedPosition newPosition) {
 	    this.offset = newPosition.offset;
     	this.receiver = newPosition.receiver;
-    	this.time = newPosition.time;
+    	this.timeOfLastProcessed = newPosition.timeOfLastProcessed;
 	    this.processed = newPosition.processed;
 	}
 

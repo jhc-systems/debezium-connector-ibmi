@@ -261,7 +261,7 @@ public class RetrieveJournal {
 	}
 
 	private static void updatePosition(JournalProcessedPosition p, EntryHeader entryHeader) {
-		if (entryHeader.getTime().isBefore(p.getTime())) {
+		if (entryHeader.getTime().isBefore(p.getTimeOfLastProcessed())) {
 			log.warn("position has gone backwards {} entry {}",p ,entryHeader);
 		}
 			

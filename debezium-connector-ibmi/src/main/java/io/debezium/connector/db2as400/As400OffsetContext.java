@@ -113,7 +113,7 @@ public class As400OffsetContext implements OffsetContext {
 		if (null != offset) {
 			offsetStr = offset.toString();
 		}
-		String time = Long.toString(position.getTime().getEpochSecond());
+		String time = Long.toString(position.getTimeOfLastProcessed().getEpochSecond());
 		return Map.of(As400OffsetContext.EVENT_SEQUENCE, offsetStr,
 				As400OffsetContext.EVENT_TIME, time,
 				As400OffsetContext.RECEIVER, position.getReceiver().name(), 

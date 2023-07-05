@@ -73,16 +73,12 @@ public class EntryHeader {
 	public BigInteger getSystemSequenceNumber() {
 		return systemSequenceNumber;
 	}
-
-//	public java.sql.Timestamp getTime() {
-//		return timestamp;//new BigDecimal(timestamp).divide(BigDecimal.valueOf(4096000), 10, RoundingMode.HALF_UP).subtract(BigDecimal.valueOf(1305118613685l)).longValue();
-//	}
 	
 	public Instant getTime() {
 		if (timestamp == null) {
 			return Instant.ofEpochSecond(0);
 		}
-		return timestamp;//new Timestamp(getTime());
+		return timestamp;
 	}
 
 	public char getJournalCode() {
