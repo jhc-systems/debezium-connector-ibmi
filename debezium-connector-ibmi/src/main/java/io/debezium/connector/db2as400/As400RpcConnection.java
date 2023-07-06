@@ -131,14 +131,10 @@ public class As400RpcConnection implements AutoCloseable, Connect<AS400, IOExcep
         success = retrieveJournal.retrieveJournal(position);
 
         logOffsets(position, success);
-        logAllReceivers();
 
         watchDog.alive();
 
         if (success) {
-            if (!retrieveJournal.hasData()) {
-                noDataDiagnostics(position);
-            }
             while (retrieveJournal.nextEntry() && context.isRunning()) {
                 watchDog.alive();
                 EntryHeader eheader = retrieveJournal.getEntryHeader();
@@ -164,19 +160,6 @@ public class As400RpcConnection implements AutoCloseable, Connect<AS400, IOExcep
 
         return success && retrieveJournal.futureDataAvailable();
     }
-    
-    private void logAllReceivers() throws IOException, Exception {
-        if (infrequent.shouldLogRateLimted("all-receivers")) {
-            List<DetailedJournalReceiver> receivers = journalInfoRetrieval.getReceivers(connection(), journalInfo);
-            int size = receivers.size();
-            if (size > 10) {
-            	receivers = receivers.subList(size-10, size);
-            }
-            log.info(new StructuredMessage("receiver list", 
-                    Map.of("numberOfReceivers", size, 
-                    		"lastReceivers", receivers)));
-        }
-    }
 
     private void logOffsets(JournalProcessedPosition position, boolean success) throws IOException, Exception {
         if (periodic.shouldLogRateLimted("offsets")) {
@@ -192,45 +175,6 @@ public class As400RpcConnection implements AutoCloseable, Connect<AS400, IOExcep
                             "success", success)));
 
         }
-    }
-
-    private void noDataDiagnostics(JournalProcessedPosition position) throws Exception, IOException {
-        JournalReceiver currentReceiver = JournalInfoRetrieval.getReceiver(connection(), journalInfo);
-        if (!isLatestJournal(position, currentReceiver)) {
-            List<DetailedJournalReceiver> receivers = journalInfoRetrieval.getReceivers(connection(), journalInfo);
-            int size = receivers.size();
-            if (size > 10) {
-            	receivers = receivers.subList(size-10, size);
-            }
-            log.warn(new StructuredMessage("Detected newer receiver but no data received", 
-                    Map.of("header", retrieveJournal.getFirstHeader(),
-                            "position", position,
-                            "currentReceiver", currentReceiver,
-                            "numberOfReceivers", size,
-                            "lastReceivers", receivers)));
-        }
-        else {
-            if (periodic.shouldLogRateLimted("no-data")) {
-                List<DetailedJournalReceiver> receivers = journalInfoRetrieval.getReceivers(connection(), journalInfo);
-                int size = receivers.size();
-                if (size > 10) {
-                	receivers = receivers.subList(size-10, size);
-                }
-                log.info(new StructuredMessage("We didn't get any data", 
-                		Map.of("header", retrieveJournal.getFirstHeader(), 
-                				"position", position, 
-                				"lastReceivers", receivers)));
-            }
-        }
-    }
-
-    private boolean isLatestJournal(JournalProcessedPosition position, JournalReceiver journalNow)
-            throws Exception, IOException {
-        if (position.getReceiver() == null
-                || journalNow.equals(position.getReceiver())) {
-            return true;
-        }
-        return false;
     }
 
     public static interface BlockingReceiverConsumer {

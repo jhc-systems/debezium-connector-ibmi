@@ -85,11 +85,11 @@ public class RetrieveJournal {
 		
 		// will return data for both first entry and last entry but call fails if start == end
 		if (range.startEqualsEnd()) {
-			log.info("info equals end start {} range {}", retrievePosition, range);
+			log.debug("start equals end - range {}", range);
 			return true;
 		}
 
-		log.info("Fetch journal at postion {} range {}", retrievePosition, range);
+		log.debug("Fetch journal at postion {} range {}", retrievePosition, range);
 		final ServiceProgramCall spc = new ServiceProgramCall(config.as400().connection());
 		spc.getServerJob().setLoggingLevel(0);
 		builder.init();
