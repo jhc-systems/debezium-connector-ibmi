@@ -115,7 +115,6 @@ public class As400StreamingChangeEventSource implements StreamingChangeEventSour
 						final JournalProcessedPosition before = new JournalProcessedPosition(offsetContext.getPosition());
 						if (!dataConnection.getJournalEntries(context, offsetContext,
 								processJournalEntries(partition, offsetContext), watchDog)) {
-							log.debug("sleep");
 							metronome.pause();
 						}
 						if (!offsetContext.getPosition().equals(before)) {
