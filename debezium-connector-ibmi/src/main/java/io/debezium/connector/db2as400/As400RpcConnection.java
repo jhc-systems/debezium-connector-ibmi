@@ -167,6 +167,7 @@ public class As400RpcConnection implements AutoCloseable, Connect<AS400, IOExcep
             BigInteger behind = currentReceiver.getOffset().subtract(position.getOffset());
             streamingMetrics.setJournalOffset(currentReceiver.getOffset());
             streamingMetrics.setJournalBehind(behind);
+            streamingMetrics.setLastProcessedMs(position.getTimeOfLastProcessed().toEpochMilli());
             log.info(new StructuredMessage("current position diagnostics", 
                     Map.of("header", retrieveJournal.getFirstHeader(),
                             "behind", behind,

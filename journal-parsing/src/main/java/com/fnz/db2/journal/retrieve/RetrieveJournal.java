@@ -162,7 +162,7 @@ public class RetrieveJournal {
 								getFullAS400MessageText(id)));
 			}
 			case "CPF7062": {
-				log.debug("Call failed position {} parameters {} no data received, probably all filtered: {}", retrievePosition, builder, 
+				log.debug("Normal when filtering, call failed position {} parameters {} no data received: {}", retrievePosition, builder, 
 						id.getText());
 				// if we're filtering we get no continuation offset just an error
 				header = new FirstHeader(0, 0, 0, OffsetStatus.NO_MORE_DATA, Optional.of(latestJournalPosition));

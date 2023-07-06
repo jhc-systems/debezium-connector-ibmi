@@ -3,6 +3,7 @@ package com.fnz.db2.journal.retrieve;
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -174,6 +175,13 @@ public class ParameterListBuilder {
 				"ParameterListBuilder [receiver=%s, receiverLibrary=%s, startReceiver=%s, startLibrary=%s, endReceiver=%s, endLibrary=%s, startOffset=%s, endOffset=%s, journalEntryTypes=%s, journalCode=%s, tableFilters=%s]",
 				receiver, receiverLibrary, startReceiver, startLibrary,
 				endReceiver, endLibrary, startOffset, endOffset, Arrays.toString(journalEntryTypes),
-				Arrays.toString(journalCode), tableFilters);
+				Arrays.toString(journalCode), filtersToShortString(tableFilters));
+	}
+	
+	public String filtersToShortString(List<FileFilter> tableFilters) {
+		if (tableFilters == null) {
+			return "null";
+		}
+		return tableFilters.stream().map(FileFilter::toShortString).collect(Collectors.joining("-", "{", "}"));
 	}
 }

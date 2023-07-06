@@ -4,6 +4,10 @@ public record FileFilter (String schema, String table) {
 
 	@Override
 	public String toString() {
-		return String.format("FileFilter [schema=%s, table=%s]", schema, table);
+		return String.format("FileFilter [%s.%s]", schema, table);
+	}
+	
+	public String toShortString() {
+		return String.format("[%s.%s]", schema, table);
 	}
 }
