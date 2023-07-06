@@ -147,9 +147,9 @@ public class JournalReceivers {
 		}
 	}
 
-	private boolean containsEndPosition(List<DetailedJournalReceiver> receivers, DetailedJournalReceiver endPosition) {
+	boolean containsEndPosition(List<DetailedJournalReceiver> receivers, DetailedJournalReceiver endPosition) {
 		boolean containsEndPosition = false;
-		for (int i=0; i < receivers.size(); i++) {
+		for (int i = receivers.size() - 1; i >= 0 ; i--) {
 			if (receivers.get(i).info().receiver().equals(endPosition.info().receiver())) {
 				containsEndPosition = true;
 			}					

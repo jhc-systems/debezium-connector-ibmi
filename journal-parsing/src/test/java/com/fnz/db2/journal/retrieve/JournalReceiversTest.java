@@ -1,6 +1,7 @@
 package com.fnz.db2.journal.retrieve;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
@@ -243,5 +244,21 @@ class JournalReceiversTest {
 		List<DetailedJournalReceiver> list = List.of(j1, j2);
 		Optional<JournalPosition> position = jreceivers.findPosition(new JournalProcessedPosition(BigInteger.valueOf(30), j1.info().receiver(), Instant.ofEpochSecond(0), true), BigInteger.valueOf(15), list, j3);
 		assertTrue(position.isEmpty());
+	}
+
+	@Test
+	void testContainsEndPosition() {
+		JournalReceivers jreceivers = new JournalReceivers(journalInfoRetrieval, 100, journalInfo);
+		List<DetailedJournalReceiver> list = List.of(dr2, dr3);
+		assertTrue(jreceivers.containsEndPosition(list, dr3), "last entry found");		
+		assertTrue(jreceivers.containsEndPosition(list, dr2), "first entry found");		
+	}
+	
+	@Test
+	void testNotContainsEndPosition() {
+		JournalReceivers jreceivers = new JournalReceivers(journalInfoRetrieval, 100, journalInfo);
+		List<DetailedJournalReceiver> list = List.of(dr2, dr3);
+		boolean found = jreceivers.containsEndPosition(list, dr1);
+		assertFalse(found, "receiver does not exist in list");		
 	}
 }

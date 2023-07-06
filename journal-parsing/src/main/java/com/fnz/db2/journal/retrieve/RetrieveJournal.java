@@ -261,10 +261,6 @@ public class RetrieveJournal {
 	}
 
 	private static void updatePosition(JournalProcessedPosition p, EntryHeader entryHeader) {
-		if (entryHeader.getTime().isBefore(p.getTimeOfLastProcessed())) {
-			log.warn("position has gone backwards {} entry {}",p ,entryHeader);
-		}
-			
 		if (entryHeader.hasReceiver()) {
 			p.setJournalReceiver(entryHeader.getSequenceNumber(), entryHeader.getReceiver(),
 					entryHeader.getReceiverLibrary(), entryHeader.getTime(), true);

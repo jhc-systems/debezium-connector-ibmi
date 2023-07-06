@@ -195,7 +195,7 @@ public class JournalInfoRetrieval {
 	 * @throws Exception
 	 */
 	public static JournalReceiver getReceiver(AS400 as400, JournalInfo journalLib) throws Exception {
-		final int rcvLen = 32000;
+		final int rcvLen = 4096;
 		final String jrnLib = padRight(journalLib.journalName(), 10) + padRight(journalLib.journalLibrary(), 10);
 		final String format = "RJRN0200";
 		final ProgramParameter[] parameters = new ProgramParameter[] {
