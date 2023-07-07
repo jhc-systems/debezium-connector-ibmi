@@ -3,6 +3,7 @@ package com.fnz.db2.journal.retrieve.rjne0200;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.math.BigInteger;
+import java.time.Instant;
 import java.util.ArrayList;
 
 import org.slf4j.Logger;
@@ -125,8 +126,9 @@ public class EntryHeaderDecoder {
 	    if (nextEntryOffset > Integer.MAX_VALUE || nullEntryOffset > Integer.MAX_VALUE) {
 	        throw new RuntimeException("Offsets too big for data, these are used as offsets into the buffer the data is in, they should never be this big nextEntryOffset "+ nextEntryOffset + ", nullEntryOffset " + nullEntryOffset);
 	    }
+	    Instant time = (timestamp == null) ? Instant.ofEpochSecond(0) : timestamp.toInstant();
 	    return new EntryHeader(nextEntryOffset.intValue(), nullEntryOffset.intValue(), entrySpecificDataOffset, sequenceNumber, systemSequenceNumber, 
-	    		timestamp, journalCode, entryType, objectName, commitCycle, endOffset, pointerHandle, receiver[0], receiver[1]);
+	    		time, journalCode, entryType, objectName, commitCycle, endOffset, pointerHandle, receiver[0], receiver[1]);
 
 	}
 
