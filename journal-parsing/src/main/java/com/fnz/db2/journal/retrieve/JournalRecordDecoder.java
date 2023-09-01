@@ -34,7 +34,7 @@ public class JournalRecordDecoder implements JournalEntryDeocder<JournalReceiver
 	public JournalReceiver decode(EntryHeader entryHeader, byte[] data, int offset) throws Exception {
 	    Object[] os = (Object[]) structure.toObject(data, offset +  ENTRY_SPECIFIC_DATA_OFFSET + entryHeader.getEntrySpecificDataOffset());
 	    JournalReceiver start = new JournalReceiver((String)os[0], (String)os[1]);
-//	    JournalReciever end = new JournalReciever((String)os[2], (String)os[3]);
+//	    JournalReceiver end = new JournalReceiver((String)os[2], (String)os[3]);
 		return start;
 	}
 

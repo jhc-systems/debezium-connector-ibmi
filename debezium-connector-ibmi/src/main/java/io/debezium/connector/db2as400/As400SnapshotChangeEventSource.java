@@ -5,6 +5,7 @@
  */
 package io.debezium.connector.db2as400;
 
+import java.time.Instant;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -16,6 +17,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.fnz.db2.journal.retrieve.JournalPosition;
+import com.fnz.db2.journal.retrieve.JournalProcessedPosition;
 
 import io.debezium.connector.db2as400.As400OffsetContext.Loader;
 import io.debezium.jdbc.MainConnectionProvidingConnectionFactory;
@@ -113,10 +115,11 @@ public class As400SnapshotChangeEventSource
 	protected void determineSnapshotOffset(
 			RelationalSnapshotContext<As400Partition, As400OffsetContext> snapshotContext,
 			As400OffsetContext previousOffset) throws Exception {
+		Instant now = Instant.now();
 		final JournalPosition position = rpcConnection.getCurrentPosition();
 		// set last entry to processed so we don't process it again
-		position.setProcessed(true);
-		snapshotContext.offset = new As400OffsetContext(connectorConfig, position);
+		JournalProcessedPosition procssedPos = new JournalProcessedPosition(position, now, true);
+		snapshotContext.offset = new As400OffsetContext(connectorConfig, procssedPos);
 	}
 
 	@Override

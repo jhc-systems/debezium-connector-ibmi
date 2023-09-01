@@ -12,6 +12,7 @@ import org.apache.logging.log4j.message.Message;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 
 final class StructuredMessageResolver implements EventResolver {
@@ -19,6 +20,9 @@ final class StructuredMessageResolver implements EventResolver {
     private static final StructuredMessageResolver INSTANCE = new StructuredMessageResolver();
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    static {
+    	OBJECT_MAPPER.registerModule(new JavaTimeModule());
+    }
 
     static StructuredMessageResolver getInstance() {
         return INSTANCE;

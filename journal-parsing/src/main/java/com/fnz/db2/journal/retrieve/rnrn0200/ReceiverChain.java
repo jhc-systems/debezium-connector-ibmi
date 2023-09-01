@@ -10,10 +10,12 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import com.fnz.db2.journal.retrieve.JournalReceiver;
+
 public	class ReceiverChain {
 	DetailedJournalReceiver details;
-	ReceiverChain next;
-	ReceiverChain previous;
+	Optional<ReceiverChain> next = Optional.empty();
+	Optional<ReceiverChain> previous = Optional.empty();
 
 	/**
 	 * assumed to be unique on DetailedJournalReceiver.info.name
@@ -22,15 +24,15 @@ public	class ReceiverChain {
 	 */
 	public ReceiverChain(DetailedJournalReceiver details) {
 		super();
-		if (details == null || details.info() == null || details.info().name() == null) {
+		if (details == null || details.info() == null || details.info().receiver() == null || details.info().receiver().name() == null) {
 			throw new IllegalArgumentException("neither head, head.info or head.info.name can be null " + details);
 		}
 		this.details = details;
 	}
 
 	@Override
-	public int hashCode() { // simplified hashcode and equals so we can lookup based on name only
-		return Objects.hash(details.info().name());
+	public int hashCode() { // simplified hashcode and equals so we can lookup based on receiver only
+		return Objects.hash(details.info().receiver());
 	}
 
 	@Override
@@ -45,7 +47,7 @@ public	class ReceiverChain {
 			return false;
 		}
 		final ReceiverChain other = (ReceiverChain) obj;
-		return this.details.info().name().equals(other.details.info().name());
+		return this.details.info().receiver().equals(other.details.info().receiver());
 	}
 	
 		@Override
@@ -54,7 +56,7 @@ public	class ReceiverChain {
 	}
 
 	public static List<DetailedJournalReceiver> chainContaining(List<DetailedJournalReceiver> l, DetailedJournalReceiver needle) {
-		final Map<String, ReceiverChain> m = availableSingleChainElement(l);
+		final Map<JournalReceiver, ReceiverChain> m = availableSingleChainElement(l);
 
 		buildReceiverChains(m);
 
@@ -63,26 +65,32 @@ public	class ReceiverChain {
 		return lastDetached.map(x ->chainToList(x)).orElse(Collections.emptyList());
 	}
 
-	static Map<String, ReceiverChain> availableSingleChainElement(List<DetailedJournalReceiver> l) {
-		final List<DetailedJournalReceiver> validReceivers = l.stream().filter(x -> {
-			return switch (x.info().status()) {
-			case Attached, OnlineSavedDetached, SavedDetchedNotFreed -> true;
-			default -> false;
-			};
-		}).toList(); // ignore any deleted or unused journals
+	static Map<JournalReceiver, ReceiverChain> availableSingleChainElement(List<DetailedJournalReceiver> l) {
+		final List<DetailedJournalReceiver> validReceivers = l.stream().filter(x -> 
+			switch (x.info().status()) {
+				case Attached, OnlineSavedDetached, SavedDetchedNotFreed -> true;
+				default -> false;
+			}
+		).toList(); // ignore any deleted or unused journals
 
-		final Map<String, ReceiverChain> m = validReceivers.stream()
-				.collect(Collectors.<DetailedJournalReceiver, String, ReceiverChain>toMap(x -> x.info().name(),
+		final Map<JournalReceiver, ReceiverChain> m = validReceivers.stream()
+				.collect(Collectors.<DetailedJournalReceiver, JournalReceiver, ReceiverChain>toMap(x -> x.info().receiver(),
 						y -> new ReceiverChain(y)));
 		return m;
 	}
 
-	static Optional<ReceiverChain> findChain(final Map<String, ReceiverChain> m, DetailedJournalReceiver needle) {
-		String key = needle.info().name();
+	/**
+	 * Finds the first element in the chain with this receiver or empty if not in map
+	 * @param m
+	 * @param needle
+	 * @return
+	 */
+	static Optional<ReceiverChain> findChain(final Map<JournalReceiver, ReceiverChain> m, DetailedJournalReceiver needle) {
+		JournalReceiver key = needle.info().receiver();
 		if (m.containsKey(key)) {
 			ReceiverChain rc = m.get(key);
-			while (rc.previous != null) {
-				rc = rc.previous;
+			while (rc.previous.isPresent()) {
+				rc = rc.previous.get();
 			}
 			return Optional.of(rc);
 		} else {
@@ -94,30 +102,27 @@ public	class ReceiverChain {
 		List<DetailedJournalReceiver> l = new ArrayList<>();
 		l.add(chain.details);
 		
-		while (chain.next != null) {
-			chain = chain.next;
+		while (chain.next.isPresent()) {
+			chain = chain.next.get();
 			l.add(chain.details);
 		}
 		return l;
 	}
 	
-	static Set<ReceiverChain> buildReceiverChains(final Map<String, ReceiverChain> m) {
+	static Set<ReceiverChain> buildReceiverChains(final Map<JournalReceiver, ReceiverChain> m) {
 		final Set<ReceiverChain> noNext = new HashSet<>(m.values()); // set of all receivers not mentioned by others
 	
 		// each receiver lookup nextReceiver in hash and add to next 
 		// references to other receivers to remove from noNext
 		for (final ReceiverChain or : m.values()) {
-			if (or.details.nextReceiver() != null) {
-				String nextReceiverName = or.details.nextReceiver();
-				if (nextReceiverName != null && !nextReceiverName.isBlank()) {
-					final ReceiverChain nr = m.get(nextReceiverName);
-					if (nr != null) {
-						noNext.remove(nr);
-						or.next = nr;
-						nr.previous = or;
-					}
+			or.details.nextReceiver().ifPresent(nextReceiver -> {
+				if (m.containsKey(nextReceiver)) {
+					final ReceiverChain nr = m.get(nextReceiver);
+					noNext.remove(nr);
+					or.next = Optional.of(nr);
+					nr.previous = Optional.of(or);
 				}
-			}
+			});
 		}
 		return noNext;
 	}

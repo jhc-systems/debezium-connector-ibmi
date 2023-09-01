@@ -17,6 +17,7 @@ import io.debezium.pipeline.source.spi.EventMetadataProvider;
 public class As400StreamingChangeEventSourceMetrics extends DefaultStreamingChangeEventSourceMetrics<As400Partition> implements As400ChangeEventSourceMetricsMXBean {
     private final AtomicLong journalBehind = new AtomicLong();
     private final AtomicLong journalOffset = new AtomicLong();
+    private final AtomicLong lastProcessedMs = new AtomicLong();
 
     public <T extends CdcSourceTaskContext> As400StreamingChangeEventSourceMetrics(T taskContext, ChangeEventQueueMetrics changeEventQueueMetrics,
             EventMetadataProvider metadataProvider) {
@@ -39,5 +40,14 @@ public class As400StreamingChangeEventSourceMetrics extends DefaultStreamingChan
 
     public void setJournalOffset(BigInteger offset) {
         this.journalOffset.lazySet(offset.longValue());
+    }
+
+    @Override
+	public long getLastProcessedMs() {
+		return lastProcessedMs.get();
+	}
+	
+    public void setLastProcessedMs(long lastProccessedMs) {
+        this.lastProcessedMs.lazySet(lastProccessedMs);
     }
 }

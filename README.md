@@ -1,4 +1,4 @@
-# Project 
+# Project
 
 Use the IBM I journal as a source of CDC events see https://bitbucket.org/jhc-systems/journal-parsing/ for the journal fetch/decoding
 
@@ -9,12 +9,12 @@ Use the IBM I journal as a source of CDC events see https://bitbucket.org/jhc-sy
 GRTOBJAUT OBJ(<JRNLIB>) OBJTYPE(*LIB) USER(<CDC_USER>) AUT(*EXECUTE)
 GRTOBJAUT OBJ(<JRNLIB>/*ALL) OBJTYPE(*JRNRCV) USER(<CDC_USER>) AUT(*USE)
 GRTOBJAUT OBJ(<JRNLIB>/<JRN>) OBJTYPE(*JRN) USER(<CDC_USER>) AUT(*USE *OBJEXIST)
- 
+
 GRTOBJAUT OBJ(<FIGLIB>) OBJTYPE(*LIB) USER(<CDC_USER>) AUT(*EXECUTE)
 GRTOBJAUT OBJ(<FIGLIB>/*ALL) OBJTYPE(*FILE) USER(<CDC_USER>) AUT(*USE)
- 
+
 Where:
- 
+
 * <JRNLIB> is the library where the journal and receivers reside
 * <JRN> is the journal name
 * <FIGLIB> is the Figaro database library
@@ -79,7 +79,7 @@ https://bitbucket.org/jhc-systems/kafka-kubernetes/src/master/runtime/source/
 
 A new connector configuration `connector-name.json`:
 
-`curl -i -X PUT -H "Accept:application/json" -H "Content-Type:application/json" http://localhost:8083/connectors/ -d '@./connector-name.json'`
+`curl -i -X POST -H "Accept:application/json" -H "Content-Type:application/json" http://localhost:8083/connectors/ -d '@./connector-name.json'`
 
 file connector-name.json:
 
@@ -108,7 +108,7 @@ file connector-name.json:
     "value.converter.schema.registry.url": "http://schema-registry:8081",
     "key.converter": "io.confluent.connect.avro.AvroConverter",
     "value.converter": "io.confluent.connect.avro.AvroConverter",
-    
+
     "snapshot.max.threads": 4
   }
 }
@@ -143,7 +143,7 @@ This issue should really be corrected and the data translated but with thousands
 
 ## Deleting a connector
 
-and deleted with 
+and deleted with
 
 `curl -i -X DELETE -H "Accept:application/json" -H "Content-Type:application/json" http://localhost:8083/connectors/connector-name`
 
@@ -157,17 +157,18 @@ The configuration can be updated with
 
 `curl -i -X PUT -H "Accept:application/json" -H "Content-Type:application/json" http://localhost:8083/connectors/connector-name/config/ -d "@connector-name-config.json"`
 
-where the update file only contains the inner config and the connector name is in the url path:
+Notes
+* the `connector-name` in the url must match the `name` in the json file
+* the update file only contains the inner `config`
 
 ```
 {
-    "name": "connector-name",
     "connector.class": "io.debezium.connector.db2as400.As400RpcConnector",
     "schema": "SCHEMA",
     "sanitize.field.names": "true",
     "tasks.max": "1",
     "hostname": "ibmiserver",
-    "dbname": "internaldbname",
+    "dbname": "database name",
     "user": "xxx",
     "password": "xxx",
     "port": "",
@@ -176,8 +177,13 @@ where the update file only contains the inner config and the connector name is i
     "transforms.unwrap.delete.handling.mode": "rewrite",
     "transforms.unwrap.drop.tombstones": "false",
     "transforms.unwrap.type": "io.debezium.transforms.ExtractNewRecordState",
-    "table.include.list": "SCHEMA.TABLE1,SCHEMA.TABLE2",
-    "snapshot.mode": "initial"
+    "table.include.list": "SCHEMA.TABLE1",
+    "snapshot.mode": "initial",
+
+    "key.converter.schema.registry.url": "http://schema-registry:8081",
+    "value.converter.schema.registry.url": "http://schema-registry:8081",
+    "key.converter": "io.confluent.connect.avro.AvroConverter",
+    "value.converter": "io.confluent.connect.avro.AvroConverter",
 }
 ```
 
@@ -187,7 +193,7 @@ Here we've added TABLE2 to the list.
 
 prometheus stats are avaialble on port 7071
 
-sample prometheus stats are in 
+sample prometheus stats are in
 
 * metrics/prometheus
 
@@ -200,16 +206,16 @@ sample grafana charts
 
 See upstream project: https://bitbucket.org/jhc-systems/journal-parsing/src/master/
 
-## No journal entries found check journalling is enabled and set to *BOTH 
+## No journal entries found check journalling is enabled and set to *BOTH
 
 `dspfd MYTABLE`
 
 ```
-    File is currently journaled . . . . . . . . :            Yes          
-    Current or last journal . . . . . . . . . . :            MYJRN       
-      Library . . . . . . . . . . . . . . . . . :            MYLIB   
-    Journal images  . . . . . . . . . . . . . . : IMAGES     *BOTH        
-    
+    File is currently journaled . . . . . . . . :            Yes
+    Current or last journal . . . . . . . . . . :            MYJRN
+      Library . . . . . . . . . . . . . . . . . :            MYLIB
+    Journal images  . . . . . . . . . . . . . . : IMAGES     *BOTH
+
 ```
 
 # Development
@@ -219,11 +225,11 @@ https://lucid.app/lucidchart/invitations/accept/inv_b0dba11e-fb73-4bfc-9efd-1c14
 
 ## Testing/debugging
 
-main class 
+main class
 * `org.apache.kafka.connect.cli.ConnectDistributed`
 
-runtime argument of the configuration e.g. for 
-* local kafka `src/test/resources/protobuf.properties` 
+runtime argument of the configuration e.g. for
+* local kafka `src/test/resources/protobuf.properties`
 * remote confluent `src/test/resources/confluent.properties`
 
 Logging - vm args `-Dlogback.configurationFile=src/test/resources/logback.xml`
@@ -261,7 +267,7 @@ To run in VS Code, configure the following launch.json file, and run from the Ru
 
 ## Release notes
 
-### 1.9 
+### 1.9
 
 additional configuration parameters required for avro in the submitted json
 

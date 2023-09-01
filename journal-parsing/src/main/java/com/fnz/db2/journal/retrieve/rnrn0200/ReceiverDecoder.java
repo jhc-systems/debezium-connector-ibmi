@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.Optional;
 
+import com.fnz.db2.journal.retrieve.JournalReceiver;
 import com.fnz.db2.journal.retrieve.StringHelpers;
 import com.ibm.as400.access.AS400Bin4;
 import com.ibm.as400.access.AS400DataType;
@@ -67,14 +68,15 @@ public class ReceiverDecoder {
 	    } catch (Exception e) { }
 	    Date attached = toDate(itime);
 	    JournalReceiverInfo jr = new JournalReceiverInfo(
-	            StringHelpers.safeTrim((String)os[0]), 
-	            StringHelpers.safeTrim((String)os[1]), 
+	    		new JournalReceiver(
+		            StringHelpers.safeTrim((String)os[0]), 
+		            StringHelpers.safeTrim((String)os[1])), 
 	            attached, 
 	            JournalStatus.valueOfString((String)os[4]),
 	            chain);
         return jr;
 	}
-	static Date toDate(String itime) {
+	public static Date toDate(String itime) {
 		try {
 			int century = 19 + Integer.valueOf(itime.substring(0,1));
 			String stime = String.format("%d%s", century, itime.substring(1));

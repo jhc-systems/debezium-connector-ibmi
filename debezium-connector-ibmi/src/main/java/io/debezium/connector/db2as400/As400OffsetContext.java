@@ -6,9 +6,9 @@
 package io.debezium.connector.db2as400;
 
 import java.math.BigInteger;
-import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.kafka.connect.data.Schema;
@@ -16,7 +16,8 @@ import org.apache.kafka.connect.data.Struct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.fnz.db2.journal.retrieve.JournalPosition;
+import com.fnz.db2.journal.retrieve.JournalProcessedPosition;
+import com.fnz.db2.journal.retrieve.JournalReceiver;
 
 import io.debezium.config.Field;
 import io.debezium.connector.SnapshotRecord;
@@ -24,13 +25,13 @@ import io.debezium.pipeline.spi.OffsetContext;
 import io.debezium.pipeline.txmetadata.TransactionContext;
 import io.debezium.relational.RelationalDatabaseConnectorConfig;
 import io.debezium.spi.schema.DataCollectionId;
-import io.debezium.util.Collect;
 
 public class As400OffsetContext implements OffsetContext {
 	private static Logger log = LoggerFactory.getLogger(As400OffsetContext.class);
 	// TODO note believe there is a per journal offset
 	private static final String SERVER_PARTITION_KEY = "server";
 	public static final String EVENT_SEQUENCE = "offset.event_sequence";
+	public static final String EVENT_TIME = "offset.time";
 	public static final String RECEIVER_LIBRARY = "offset.receiver_library";
 	public static final String PROCESSED = "offset.processed";
 	public static final String RECEIVER = "offset.receiver";
@@ -46,7 +47,7 @@ public class As400OffsetContext implements OffsetContext {
 
 	private final As400ConnectorConfig connectorConfig;
 	private final SourceInfo sourceInfo;
-	private final JournalPosition position;
+	private final JournalProcessedPosition position;
 	private final String inclueTables;
 	private boolean hasNewTables = false;
 	private volatile boolean snapshotComplete = false;
@@ -60,7 +61,7 @@ public class As400OffsetContext implements OffsetContext {
 		inclueTables = connectorConfig.tableIncludeList();
 	}
 
-	public As400OffsetContext(As400ConnectorConfig connectorConfig, JournalPosition position) {
+	public As400OffsetContext(As400ConnectorConfig connectorConfig, JournalProcessedPosition position) {
 		super();
 		partition = Collections.singletonMap(SERVER_PARTITION_KEY, connectorConfig.getLogicalName());
 		this.position = position;
@@ -69,7 +70,7 @@ public class As400OffsetContext implements OffsetContext {
 		inclueTables = connectorConfig.tableIncludeList();
 	}
 
-	public As400OffsetContext(As400ConnectorConfig connectorConfig, JournalPosition position, String includeTables,
+	public As400OffsetContext(As400ConnectorConfig connectorConfig, JournalProcessedPosition position, String includeTables,
 			boolean snapshotComplete) {
 		super();
 		partition = Collections.singletonMap(SERVER_PARTITION_KEY, connectorConfig.getLogicalName());
@@ -80,7 +81,7 @@ public class As400OffsetContext implements OffsetContext {
 		this.snapshotComplete = snapshotComplete;
 	}
 
-	public void setPosition(JournalPosition newPosition) {
+	public void setPosition(JournalProcessedPosition newPosition) {
 		this.position.setPosition(newPosition);
 	}
 
@@ -88,7 +89,7 @@ public class As400OffsetContext implements OffsetContext {
 		return this.snapshotComplete;
 	}
 
-	public JournalPosition getPosition() {
+	public JournalProcessedPosition getPosition() {
 		return position;
 	}
 
@@ -113,11 +114,14 @@ public class As400OffsetContext implements OffsetContext {
 		if (null != offset) {
 			offsetStr = offset.toString();
 		}
-		return Collect.hashMapOf(As400OffsetContext.EVENT_SEQUENCE, offsetStr, As400OffsetContext.RECEIVER,
-				position.getReciever(), As400OffsetContext.PROCESSED, Boolean.toString(position.processed()),
-				As400OffsetContext.RECEIVER_LIBRARY, position.getReceiverLibrary(),
+		String time = Long.toString(position.getTimeOfLastProcessed().getEpochSecond());
+		return new HashMap<>(Map.of(As400OffsetContext.EVENT_SEQUENCE, offsetStr,
+				As400OffsetContext.EVENT_TIME, time,
+				As400OffsetContext.RECEIVER, position.getReceiver().name(), 
+				As400OffsetContext.PROCESSED, Boolean.toString(position.processed()),
+				As400OffsetContext.RECEIVER_LIBRARY, position.getReceiver().library(),
 				RelationalDatabaseConnectorConfig.TABLE_INCLUDE_LIST.name(), inclueTables,
-				As400OffsetContext.SNAPSHOT_COMPLETED_KEY, Boolean.toString(snapshotComplete));
+				As400OffsetContext.SNAPSHOT_COMPLETED_KEY, Boolean.toString(snapshotComplete)));
 	}
 
 	@Override
@@ -125,8 +129,8 @@ public class As400OffsetContext implements OffsetContext {
 		return sourceInfo.schema();
 	}
 
-	public void setSourceTime(Timestamp time) {
-		sourceInfo.setSourceTime(time.toInstant());
+	public void setSourceTime(Instant time) {
+		sourceInfo.setSourceTime(time);
 	}
 
 	@Override
@@ -182,6 +186,7 @@ public class As400OffsetContext implements OffsetContext {
 		@Override
 		public As400OffsetContext load(Map<String, ?> map) {
 			final String offsetStr = (String) map.get(As400OffsetContext.EVENT_SEQUENCE);
+			final String TimeStr = (String) map.get(As400OffsetContext.EVENT_TIME);
 			final String complete = (String) map.get(As400OffsetContext.SNAPSHOT_COMPLETED_KEY);
 			boolean snapshotComplete = false;
 			if (null != complete) {
@@ -189,14 +194,15 @@ public class As400OffsetContext implements OffsetContext {
 			}
 			final String receiver = (String) map.get(As400OffsetContext.RECEIVER);
 			final boolean processed = Boolean.valueOf((String) map.get(As400OffsetContext.PROCESSED));
-			final String schema = (String) map.get(As400OffsetContext.RECEIVER_LIBRARY);
+			final String receiverLibrary = (String) map.get(As400OffsetContext.RECEIVER_LIBRARY);
 			final String inclueTables = (String) map.get(RelationalDatabaseConnectorConfig.TABLE_INCLUDE_LIST.name());
-			JournalPosition position = new JournalPosition();
+			JournalProcessedPosition position = new JournalProcessedPosition();
 			if ("null".equals(offsetStr)) {
 				log.warn("setting offsets to zero");
 			} else {
 				final BigInteger offset = new BigInteger(offsetStr);
-				position = new JournalPosition(offset, receiver, schema, processed);
+				Instant time = (TimeStr == null) ? Instant.ofEpochSecond(0) : Instant.ofEpochSecond(Long.parseLong(TimeStr));
+				position = new JournalProcessedPosition(offset, new JournalReceiver(receiver, receiverLibrary), time, processed);
 			}
 			return new As400OffsetContext(connectorConfig, position, inclueTables, snapshotComplete);
 		}

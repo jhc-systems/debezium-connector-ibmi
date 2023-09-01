@@ -24,7 +24,6 @@
 	</Appenders>
 
 	<Loggers>
-		<Logger name="io.debezium.connector.db2as400.As400StreamingChangeEventSource" level="debug"/>
 		<Logger name="org.reflections.Reflections" level="error" additivity="false"/>
 		<Logger name="org.apache.kafka.connect.runtime.isolation.DelegatingClassLoader" level="warn" additivity="false"/>
 		<Logger name="org.apache.kafka.clients.admin.AdminClientConfig" level="warn" additivity="false"/>
@@ -36,7 +35,8 @@
 		<Logger name="io.confluent.kafka.serializers.KafkaAvroDeserializerConfig" level="warn" additivity="false"/>
 		<Logger name="io.confluent.kafka.serializers.KafkaAvroSerializerConfig" level="warn" additivity="false"/>
 		<Logger name="io.confluent.connect.avro.AvroConverterConfig" level="warn" additivity="false"/>
-	     
+		<Logger name="org.apache.kafka.connect.runtime.rest.RestServer" level="warn" additivity="false"/>
+		<Logger name="brave.Tracing$LogSpanHandler.end" level="warn" additivity="false"/>		
 		<Root level="info">
 			<AppenderRef ref="jsonConsole" />
 		</Root>

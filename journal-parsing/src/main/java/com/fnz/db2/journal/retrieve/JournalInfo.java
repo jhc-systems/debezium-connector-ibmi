@@ -1,8 +1,6 @@
 package com.fnz.db2.journal.retrieve;
 
-public class JournalInfo {
-	public String journalName;
-	public String journalLibrary;
+public record JournalInfo(String journalName, String journalLibrary) {
 
 	public JournalInfo(String journalName, String journalLibrary) {
 		if (journalName == null || journalName.trim().length() == 0 || journalName.trim().length() > 10) {
@@ -17,8 +15,6 @@ public class JournalInfo {
 
 	@Override
 	public String toString() {
-		return "JournalLib [receiver=" + journalName + ", receiverLibrary=" + journalLibrary + "]";
+		return String.format("JournalInfo [journalName=%s, journalLibrary=%s]", journalName, journalLibrary);
 	}
-	
-	
 }

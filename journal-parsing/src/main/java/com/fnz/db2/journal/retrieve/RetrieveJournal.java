@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.math.BigInteger;
 import java.nio.file.Files;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
@@ -42,8 +43,8 @@ public class RetrieveJournal {
 			JournalEntryType.CT, JournalEntryType.CG, JournalEntryType.SC, JournalEntryType.CM };
 	private static final FirstHeaderDecoder firstHeaderDecoder = new FirstHeaderDecoder();
 	private static final EntryHeaderDecoder entryHeaderDecoder = new EntryHeaderDecoder();
-	private static final SimpleDateFormat DATE_FORMATTER = new SimpleDateFormat("yyMMdd-hhmm");
-	private final JournalReceivers journalRecievers;
+	private final SimpleDateFormat dateFormatter = new SimpleDateFormat("yyMMdd-hhmm");
+	private final JournalReceivers journalReceivers;
 	private final ParameterListBuilder builder = new ParameterListBuilder();
 
 	RetrieveConfig config;
@@ -51,14 +52,14 @@ public class RetrieveJournal {
 	private FirstHeader header = null;
 	private EntryHeader entryHeader = null;
 	private int offset = -1;
-	private JournalPosition position;
+	private JournalProcessedPosition position;
 	private long totalTransferred = 0;
 
 	public RetrieveJournal(RetrieveConfig config, JournalInfoRetrieval journalRetrieval) {
 		this.config = config;
-		journalRecievers = new JournalReceivers(journalRetrieval, config.maxServerSideEntries(), config.journalInfo());
+		journalReceivers = new JournalReceivers(journalRetrieval, config.maxServerSideEntries(), config.journalInfo());
 
-		builder.withJournal(config.journalInfo().journalName, config.journalInfo().journalLibrary);
+		builder.withJournal(config.journalInfo().journalName(), config.journalInfo().journalLibrary());
 	}
 
 	/**
@@ -74,13 +75,21 @@ public class RetrieveJournal {
 	 *                   be available if the journal is no longer available we need
 	 *                   to capture this and log an error as we may have missed data
 	 */
-	public boolean retrieveJournal(JournalPosition retrievePosition) throws Exception {
+	public boolean retrieveJournal(JournalProcessedPosition retrievePosition) throws Exception {
 		this.offset = -1;
 		this.entryHeader = null;
-		this.header = null;
+		this.header = new FirstHeader(0, 0, 0, OffsetStatus.NOT_CALLED, Optional.empty());
 		this.position = retrievePosition;
 
-		log.debug("Fetch journal at postion {}", retrievePosition);
+		final PositionRange range = journalReceivers.findRange(config.as400().connection(), retrievePosition);
+		
+		// will return data for both first entry and last entry but call fails if start == end
+		if (range.startEqualsEnd()) {
+			log.debug("start equals end - range {}", range);
+			return true;
+		}
+
+		log.debug("Fetch journal at postion {} range {}", retrievePosition, range);
 		final ServiceProgramCall spc = new ServiceProgramCall(config.as400().connection());
 		spc.getServerJob().setLoggingLevel(0);
 		builder.init();
@@ -89,33 +98,8 @@ public class RetrieveJournal {
 			builder.withFileFilters(config.includeFiles());
 		}
 
-		final Optional<PositionRange> rangeOpt = journalRecievers.findRange(config.as400().connection(), retrievePosition);
-		
-		boolean hasData = rangeOpt.map( r -> { // this can only be used at the start
-			builder.withStartingSequence(r.start().getOffset());
-			/*
-			 * Very important if *CURCHAIN or *CURVCHAIN is used then you can end up in a
-			 * loop to overcome this the start journal must be set explicitly
-			 */
-			builder.withReceivers(r.start().getReciever(), r.start().getReceiverLibrary(), r.end().getReciever(),
-					r.end().getReceiverLibrary());
-			builder.withEnd(r.end().getOffset());
-
-			if (retrievePosition.equals(r.end())) { // we are already at the end
-				header = new FirstHeader(0, 0, 0, OffsetStatus.NO_MORE_DATA, Optional.of(r.end()));
-				return false;
-			}
-			return true;
-		}).orElseGet(() -> {
-			builder.fromPositionToEnd(retrievePosition);
-			return true;
-		});
-
-		if (!hasData) {
-			return true;
-		}
-
-		final Optional<JournalPosition> latestJournalPosition = rangeOpt.map(x -> x.end());
+		builder.withRange(range);
+		final JournalPosition fetchedToJournalPosition = range.end();
 
 		final ProgramParameter[] parameters = builder.build();
 		spc.setProgram(JournalInfoRetrieval.JOURNAL_SERVICE_LIB, parameters);
@@ -130,25 +114,26 @@ public class RetrieveJournal {
 			log.debug("first header: {} ", header);
 			offset = -1;
 			if (header.status() == OffsetStatus.MORE_DATA_NEW_OFFSET && header.offset() == 0) {
-				log.error("buffer too small skipping this entry {}", retrievePosition);
-				header.nextPosition().ifPresent(retrievePosition::setPosition);
+				log.error("buffer too small need to skip this entry {}", retrievePosition);
+				header.nextPosition().ifPresent(x -> retrievePosition.setPosition(x, false));
 			}
 			if (!hasData()) {
-				log.debug("moving on to current position {}", latestJournalPosition);
-				latestJournalPosition.ifPresent(l -> {
-					header = header.withCurrentJournalPosition(l);
-					retrievePosition.setPosition(l);
-				});
+				this.header = header.withNextJournalPosition(fetchedToJournalPosition);
+				retrievePosition.setPosition(fetchedToJournalPosition, false);
+			} else if (header.nextPosition().isEmpty()) {
+				// don't update the retrieve position as that will update as we process data
+				this.header = header.withNextJournalPosition(fetchedToJournalPosition);
 			}
+
 		} else {
-			return reThrowIfFatal(retrievePosition, spc, latestJournalPosition, builder);
+			return reThrowIfFatal(retrievePosition, spc, fetchedToJournalPosition, builder);
 		}
 		return success;
 	}
 
 
-	private boolean reThrowIfFatal(JournalPosition retrievePosition, final ServiceProgramCall spc,
-			Optional<JournalPosition> latestJournalPosition, final ParameterListBuilder builder)
+	private boolean reThrowIfFatal(JournalProcessedPosition retrievePosition, final ServiceProgramCall spc,
+			JournalPosition latestJournalPosition, final ParameterListBuilder builder)
 			throws InvalidPositionException, InvalidJournalFilterException, RetrieveJournalException {
 		for (final AS400Message id : spc.getMessageList()) {
 			final String idt = id.getID();
@@ -177,14 +162,12 @@ public class RetrieveJournal {
 								getFullAS400MessageText(id)));
 			}
 			case "CPF7062": {
-				log.debug("Call failed position {} parameters {} no data received, probably all filtered: {}", retrievePosition, builder, 
+				log.debug("Normal when filtering, call failed position {} parameters {} no data received: {}", retrievePosition, builder, 
 						id.getText());
 				// if we're filtering we get no continuation offset just an error
-				header = new FirstHeader(0, 0, 0, OffsetStatus.NO_MORE_DATA, latestJournalPosition);
-				latestJournalPosition.ifPresent(l -> {
-					header = header.withCurrentJournalPosition(l);
-					retrievePosition.setPosition(l);
-				});
+				header = new FirstHeader(0, 0, 0, OffsetStatus.NO_MORE_DATA, Optional.of(latestJournalPosition));
+				header = header.withNextJournalPosition(latestJournalPosition);
+				retrievePosition.setPosition(latestJournalPosition, false);
 				return true;
 			}
 			default:
@@ -193,10 +176,6 @@ public class RetrieveJournal {
 			}
 		}
 		throw new RetrieveJournalException(String.format("Call failed position %s", retrievePosition));
-	}
-
-	private <T> String optToString(Optional<T> t) {
-		return t.map(x -> x.toString()).orElse("<null>");
 	}
 
 	boolean shouldLimitRange() {
@@ -216,28 +195,14 @@ public class RetrieveJournal {
 	 * @return the current position or the next offset for fetching data when the
 	 *         end of data is reached
 	 */
-	public JournalPosition getPosition() {
+	public JournalProcessedPosition getPosition() {
 		return position;
 	}
 
-	public void setOutputData(byte[] b, FirstHeader header, JournalPosition position) {
+	public void setOutputData(byte[] b, FirstHeader header, JournalProcessedPosition position) {
 		outputData = b;
 		this.header = header;
 		this.position = position;
-	}
-
-	public boolean futureDataAvailable() {
-		return (header != null && header.hasFutureDataAvailable());
-	}
-
-	public String headerAsString() {
-		final StringBuilder sb = new StringBuilder();
-		if (header == null) {
-			sb.append("null header\n");
-		} else {
-			sb.append(header);
-		}
-		return sb.toString();
 	}
 
 	// test without moving on
@@ -248,10 +213,11 @@ public class RetrieveJournal {
 		if (offset < 0 && header.size() > 0) {
 			return true;
 		}
-		if (offset > 0 && entryHeader.getNextEntryOffset() > 0) {
-			return true;
-		}
-		return false;
+		return (offset > 0 && entryHeader.getNextEntryOffset() > 0);
+	}
+	
+	public boolean futureDataAvailable() {
+		return (header.hasFutureDataAvailable());
 	}
 
 	public boolean nextEntry() {
@@ -260,7 +226,6 @@ public class RetrieveJournal {
 				offset = header.offset();
 				entryHeader = entryHeaderDecoder.decode(outputData, offset);
 				if (alreadyProcessed(position, entryHeader)) {
-					updatePosition(position, entryHeader);
 					return nextEntry();
 				}
 				updatePosition(position, entryHeader);
@@ -286,23 +251,22 @@ public class RetrieveJournal {
 		// after we hit the end use the continuation header for the next offset
 		header.nextPosition().ifPresent(nextOffset -> {
 			log.debug("Setting continuation offset {}", nextOffset);
-			position.setPosition(nextOffset);
+			position.setPosition(nextOffset, false);
 		});
 	}
 
-	private static boolean alreadyProcessed(JournalPosition position, EntryHeader entryHeader) {
-		final JournalPosition entryPosition = new JournalPosition(position);
-		updatePosition(entryPosition, entryHeader);
+	private static boolean alreadyProcessed(JournalProcessedPosition position, EntryHeader entryHeader) {
+		final JournalProcessedPosition entryPosition = new JournalProcessedPosition(position);
 		return position.processed() && entryPosition.equals(position);
-
 	}
 
-	private static void updatePosition(JournalPosition p, EntryHeader entryHeader) {
+	private static void updatePosition(JournalProcessedPosition p, EntryHeader entryHeader) {
 		if (entryHeader.hasReceiver()) {
-			p.setJournalReciever(entryHeader.getSequenceNumber(), entryHeader.getReceiver(),
-					entryHeader.getReceiverLibrary(), true);
+			p.setJournalReceiver(entryHeader.getSequenceNumber(), entryHeader.getReceiver(),
+					entryHeader.getReceiverLibrary(), entryHeader.getTime(), true);
 		} else {
-			p.setOffset(entryHeader.getSequenceNumber(), true);
+			// this happens a lot
+			p.setOffset(entryHeader.getSequenceNumber(), entryHeader.getTime(), true);
 		}
 	}
 
@@ -313,9 +277,7 @@ public class RetrieveJournal {
 	public void dumpEntry() {
 		final int start = offset + entryHeader.getEntrySpecificDataOffset();
 		final long end = entryHeader.getNextEntryOffset();
-		log.debug("total offset {} entry specific offset {} ", start, entryHeader.getEntrySpecificDataOffset());
-
-		log.debug("next offset {}", end);
+		log.debug("total offset {} entry specific offset {} next offset {}", start, entryHeader.getEntrySpecificDataOffset(), end);
 	}
 
 	public int getOffset() {
@@ -339,7 +301,7 @@ public class RetrieveJournal {
 			boolean created = false;
 			for (int i = 0; !created && i < 100; i++) {
 
-				final String formattedDate = DATE_FORMATTER.format(new Date());
+				final String formattedDate = dateFormatter.format(new Date());
 				final File f = new File(path, String.format("%s-%s", formattedDate, Integer.toString(i)));
 				try {
 					created = f.createNewFile();

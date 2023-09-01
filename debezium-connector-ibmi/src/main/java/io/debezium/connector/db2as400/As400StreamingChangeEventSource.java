@@ -7,8 +7,8 @@ package io.debezium.connector.db2as400;
 
 import java.io.IOException;
 import java.sql.SQLNonTransientConnectionException;
-import java.sql.Timestamp;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -21,12 +21,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.fnz.db2.journal.retrieve.JournalEntryType;
-import com.fnz.db2.journal.retrieve.JournalPosition;
+import com.fnz.db2.journal.retrieve.JournalProcessedPosition;
 import com.fnz.db2.journal.retrieve.exception.FatalException;
 import com.fnz.db2.journal.retrieve.exception.InvalidPositionException;
 
 import io.debezium.DebeziumException;
-import io.debezium.connector.db2as400.As400RpcConnection.BlockingRecieverConsumer;
+import io.debezium.connector.db2as400.As400RpcConnection.BlockingReceiverConsumer;
 import io.debezium.data.Envelope.Operation;
 import io.debezium.pipeline.ErrorHandler;
 import io.debezium.pipeline.EventDispatcher;
@@ -85,12 +85,12 @@ public class As400StreamingChangeEventSource implements StreamingChangeEventSour
 		this.database = jdbcConnection.getRealDatabaseName();
 	}
 
-	private void cacheBefore(TableId tableId, Timestamp date, Object[] dataBefore) {
+	private void cacheBefore(TableId tableId, Object[] dataBefore) {
 		final String key = String.format("%s-%s", tableId.schema(), tableId.table());
 		beforeMap.put(key, dataBefore);
 	}
 
-	private Object[] getBefore(TableId tableId, Timestamp date) {
+	private Object[] getBefore(TableId tableId) {
 		final String key = String.format("%s-%s", tableId.schema(), tableId.table());
 		final Object[] dataBefore = beforeMap.remove(key);
 		if (dataBefore == null) {
@@ -112,10 +112,9 @@ public class As400StreamingChangeEventSource implements StreamingChangeEventSour
 			while (context.isRunning()) {
 				try {
 					try {
-						final JournalPosition before = new JournalPosition(offsetContext.getPosition());
+						final JournalProcessedPosition before = new JournalProcessedPosition(offsetContext.getPosition());
 						if (!dataConnection.getJournalEntries(context, offsetContext,
 								processJournalEntries(partition, offsetContext), watchDog)) {
-							log.debug("sleep");
 							metronome.pause();
 						}
 						if (!offsetContext.getPosition().equals(before)) {
@@ -127,7 +126,7 @@ public class As400StreamingChangeEventSource implements StreamingChangeEventSour
 						throw new DebeziumException("Unable to process offset " + offsetContext.getPosition(), e);
 					} catch (final InvalidPositionException e) {
 						log.error("Invalid position resetting offsets to beginning", e);
-						offsetContext.setPosition(new JournalPosition());
+						offsetContext.setPosition(new JournalProcessedPosition());
 					} catch (final InterruptedException e) {
 						log.error("Interrupted processing offset {} retry {}", offsetContext.getPosition(), retries);
 						closeAndReconnect();
@@ -180,7 +179,8 @@ public class As400StreamingChangeEventSource implements StreamingChangeEventSour
 		connectionTime = System.currentTimeMillis();
 	}
 
-	private BlockingRecieverConsumer processJournalEntries(As400Partition partition, As400OffsetContext offsetContext)
+	// TODO tidy up exception handling
+	private BlockingReceiverConsumer processJournalEntries(As400Partition partition, As400OffsetContext offsetContext)
 			throws IOException, SQLNonTransientConnectionException {
 		return (nextOffset, r, eheader) -> {
 			try {
@@ -209,7 +209,7 @@ public class As400StreamingChangeEventSource implements StreamingChangeEventSour
 					return;
 				}
 
-				log.debug("next event: {} - {} type: {} table: {}", eheader.getTimestamp(), eheader.getSequenceNumber(),
+				log.debug("next event: {} - {} type: {} table: {}", eheader.getTime(), eheader.getSequenceNumber(),
 						eheader.getEntryType(), tableId.table());
 				switch (journalEntryType) {
 				case START_COMMIT: {
@@ -221,7 +221,7 @@ public class As400StreamingChangeEventSource implements StreamingChangeEventSour
 					txMap.put(txId, txc);
 					log.debug("start transaction id {} tx {} table {}", nextOffset, txId, tableId);
 					dispatcher.dispatchTransactionStartedEvent(partition, txId, offsetContext,
-							eheader.getTimestamp().toInstant());
+							eheader.getTime());
 				}
 					break;
 				case END_COMMIT: {
@@ -233,7 +233,7 @@ public class As400StreamingChangeEventSource implements StreamingChangeEventSour
 					if (txc != null) {
 						txc.endTransaction();
 						dispatcher.dispatchTransactionCommittedEvent(partition, offsetContext,
-								eheader.getTimestamp().toInstant());
+								eheader.getTime());
 					}
 				}
 					break;
@@ -249,16 +249,16 @@ public class As400StreamingChangeEventSource implements StreamingChangeEventSour
 					tableId.schema();
 					final Object[] dataBefore = r.decode(schema.getFileDecoder());
 
-					cacheBefore(tableId, eheader.getTimestamp(), dataBefore);
+					cacheBefore(tableId, dataBefore);
 				}
 					break;
 				case AFTER_IMAGE: {
 					// after image
 					// before image is meant to have been immediately before
-					final Object[] dataBefore = getBefore(tableId, eheader.getTimestamp());
+					final Object[] dataBefore = getBefore(tableId);
 					final Object[] dataNext = r.decode(schema.getFileDecoder());
 
-					offsetContext.setSourceTime(eheader.getTimestamp());
+					offsetContext.setSourceTime(eheader.getTime());
 
 					final String txId = eheader.getCommitCycle().toString();
 					final TransactionContext txc = txMap.get(txId);
@@ -274,7 +274,7 @@ public class As400StreamingChangeEventSource implements StreamingChangeEventSour
 				case ADD_ROW2: {
 					// record added
 					final Object[] dataNext = r.decode(schema.getFileDecoder());
-					offsetContext.setSourceTime(eheader.getTimestamp());
+					offsetContext.setSourceTime(eheader.getTime());
 
 					final String txId = eheader.getCommitCycle().toString();
 					final TransactionContext txc = txMap.get(txId);
@@ -283,7 +283,7 @@ public class As400StreamingChangeEventSource implements StreamingChangeEventSour
 						txc.event(tableId);
 					}
 
-					log.debug("insert event id {} tx {} table {}", offsetContext.getPosition().toString(), txId,
+					log.debug("insert event id {} tx {} table {}", offsetContext.getPosition(), txId,
 							tableId);
 					dispatcher.dispatchDataChangeEvent(partition, tableId, new As400ChangeRecordEmitter(partition,
 							offsetContext, Operation.CREATE, null, dataNext, clock, connectorConfig));
@@ -294,7 +294,7 @@ public class As400StreamingChangeEventSource implements StreamingChangeEventSour
 					// record deleted
 					final Object[] dataBefore = r.decode(schema.getFileDecoder());
 
-					offsetContext.setSourceTime(eheader.getTimestamp());
+					offsetContext.setSourceTime(eheader.getTime());
 
 					final String txId = eheader.getCommitCycle().toString();
 					final TransactionContext txc = txMap.get(txId);
@@ -303,7 +303,7 @@ public class As400StreamingChangeEventSource implements StreamingChangeEventSour
 						txc.event(tableId);
 					}
 
-					log.debug("delete event id {} tx {} table {}", offsetContext.getPosition().toString(), txId,
+					log.debug("delete event id {} tx {} table {}", offsetContext.getPosition(), txId,
 							tableId);
 					dispatcher.dispatchDataChangeEvent(partition, tableId, new As400ChangeRecordEmitter(partition,
 							offsetContext, Operation.DELETE, dataBefore, null, clock, connectorConfig));

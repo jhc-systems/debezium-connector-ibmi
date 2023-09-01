@@ -14,7 +14,7 @@ import com.fnz.db2.journal.data.types.Diagnostics;
 import com.fnz.db2.journal.retrieve.Connect;
 import com.fnz.db2.journal.retrieve.JournalInfo;
 import com.fnz.db2.journal.retrieve.JournalInfoRetrieval;
-import com.fnz.db2.journal.retrieve.JournalPosition;
+import com.fnz.db2.journal.retrieve.JournalProcessedPosition;
 import com.fnz.db2.journal.retrieve.JournalReceiver;
 import com.fnz.db2.journal.retrieve.JournalRecordDecoder;
 import com.fnz.db2.journal.retrieve.RetrieveConfig;
@@ -40,7 +40,7 @@ public class DebugJournal {
 		RetrieveConfig config = new RetrieveConfigBuilder().withAs400(as400Connect).withJournalInfo(journal).build();
 		RetrieveJournal rnj = new RetrieveJournal(config, new JournalInfoRetrieval());
 
-        rnj.setOutputData(data, new FirstHeader(data.length, 0, data.length, OffsetStatus.NO_MORE_DATA, Optional.empty()), new JournalPosition());
+        rnj.setOutputData(data, new FirstHeader(data.length, 0, data.length, OffsetStatus.NO_MORE_DATA, Optional.empty()), new JournalProcessedPosition());
         if (rnj.nextEntry() ) {
         	EntryHeader entry = rnj.getEntryHeader();
         	String code = String.format("%s %s", entry.getJournalCode(), entry.getEntryType());
@@ -50,6 +50,8 @@ public class DebugJournal {
         			JournalReceiver receiver = rnj.decode(new JournalRecordDecoder());
         			log.info("receiver {}", receiver);
         			break;
+    			default:
+    				break;
         		
         	}
         	log.info("header {}", rnj.getEntryHeader().toString());

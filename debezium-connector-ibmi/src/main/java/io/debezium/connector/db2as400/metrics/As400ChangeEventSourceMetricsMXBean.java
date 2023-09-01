@@ -10,4 +10,5 @@ import io.debezium.pipeline.metrics.StreamingChangeEventSourceMetricsMXBean;
 public interface As400ChangeEventSourceMetricsMXBean extends StreamingChangeEventSourceMetricsMXBean {
     long getJournalBehind();
     long getJournalOffset();
+    long getLastProcessedMs();
 }

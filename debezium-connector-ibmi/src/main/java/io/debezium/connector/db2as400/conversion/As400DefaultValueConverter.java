@@ -97,7 +97,7 @@ public class As400DefaultValueConverter implements DefaultValueConverter {
                     return null; // can't represent this as a timestamp type
                 }
                 DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-                return Long.valueOf(LocalDate.parse(stripQuotes(value), formatter).toEpochDay()).intValue();
+                return (int)(LocalDate.parse(stripQuotes(value), formatter).toEpochDay());
             }
             case Types.TIMESTAMP: {
                 if ("CURRENT_TIMESTAMP".equals(value)) {
