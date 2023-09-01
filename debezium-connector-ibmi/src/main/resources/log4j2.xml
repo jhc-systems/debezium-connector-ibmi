@@ -36,6 +36,7 @@
 		<Logger name="io.confluent.kafka.serializers.KafkaAvroSerializerConfig" level="warn" additivity="false"/>
 		<Logger name="io.confluent.connect.avro.AvroConverterConfig" level="warn" additivity="false"/>
 		<Logger name="org.apache.kafka.connect.runtime.rest.RestServer" level="warn" additivity="false"/>
+		<Logger name="brave.Tracing$LogSpanHandler.end" level="warn" additivity="false"/>		
 		<Root level="info">
 			<AppenderRef ref="jsonConsole" />
 		</Root>

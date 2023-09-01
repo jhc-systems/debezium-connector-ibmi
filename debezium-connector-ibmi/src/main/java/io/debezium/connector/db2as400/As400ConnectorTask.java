@@ -54,6 +54,7 @@ public class As400ConnectorTask extends BaseSourceTask<As400Partition, As400Offs
 		log.warn("starting connector task {}", version());
 		config = addDefaultHeartbeatToConfig(config);
 		config = addDefaultPrefixToConfig(config);
+		// TODO resolve schema FIELD_NAME_ADJUSTMENT_MODE to be SchemaNameAdjuster.AVRO_FIELD_NAMER
 		final As400ConnectorConfig connectorConfig = new As400ConnectorConfig(config);
 		@SuppressWarnings("unchecked")
 		final TopicNamingStrategy<TableId> topicNamingStrategy = connectorConfig
