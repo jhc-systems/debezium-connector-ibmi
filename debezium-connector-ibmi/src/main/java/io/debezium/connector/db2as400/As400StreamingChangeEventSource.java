@@ -267,7 +267,7 @@ public class As400StreamingChangeEventSource implements StreamingChangeEventSour
 					log.debug("update event id {} tx {} table {}", nextOffset, txId, tableId);
 
 					dispatcher.dispatchDataChangeEvent(partition, tableId, new As400ChangeRecordEmitter(partition,
-							offsetContext, Operation.UPDATE, dataBefore, dataNext, clock));
+							offsetContext, Operation.UPDATE, dataBefore, dataNext, clock, connectorConfig));
 				}
 					break;
 				case ADD_ROW1:
@@ -286,7 +286,7 @@ public class As400StreamingChangeEventSource implements StreamingChangeEventSour
 					log.debug("insert event id {} tx {} table {}", offsetContext.getPosition(), txId,
 							tableId);
 					dispatcher.dispatchDataChangeEvent(partition, tableId, new As400ChangeRecordEmitter(partition,
-							offsetContext, Operation.CREATE, null, dataNext, clock));
+							offsetContext, Operation.CREATE, null, dataNext, clock, connectorConfig));
 				}
 					break;
 				case DELETE_ROW1:
@@ -306,7 +306,7 @@ public class As400StreamingChangeEventSource implements StreamingChangeEventSour
 					log.debug("delete event id {} tx {} table {}", offsetContext.getPosition(), txId,
 							tableId);
 					dispatcher.dispatchDataChangeEvent(partition, tableId, new As400ChangeRecordEmitter(partition,
-							offsetContext, Operation.DELETE, dataBefore, null, clock));
+							offsetContext, Operation.DELETE, dataBefore, null, clock, connectorConfig));
 				}
 					break;
 				default:
