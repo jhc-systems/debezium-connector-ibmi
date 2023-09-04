@@ -92,6 +92,10 @@ public class As400OffsetContext implements OffsetContext {
 	public JournalProcessedPosition getPosition() {
 		return position;
 	}
+	
+	public boolean isPosisionSet() {
+		return position != null && position.isOffsetSet();
+	}
 
 	public void setTransaction(TransactionContext transactionContext) {
 		this.transactionContext = transactionContext;

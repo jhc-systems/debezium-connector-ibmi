@@ -115,6 +115,10 @@ public class As400SnapshotChangeEventSource
 	protected void determineSnapshotOffset(
 			RelationalSnapshotContext<As400Partition, As400OffsetContext> snapshotContext,
 			As400OffsetContext previousOffset) throws Exception {
+		if (previousOffset != null && previousOffset.isPosisionSet()) {
+			snapshotContext.offset = previousOffset;
+		}
+		
 		Instant now = Instant.now();
 		final JournalPosition position = rpcConnection.getCurrentPosition();
 		// set last entry to processed so we don't process it again
