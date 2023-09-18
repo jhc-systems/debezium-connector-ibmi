@@ -128,10 +128,12 @@ public class As400StreamingChangeEventSource implements StreamingChangeEventSour
 						log.error("Invalid position resetting offsets to beginning", e);
 						offsetContext.setPosition(new JournalProcessedPosition());
 					} catch (final InterruptedException e) {
-						log.error("Interrupted processing offset {} retry {}", offsetContext.getPosition(), retries);
-						closeAndReconnect();
-						retries++;
-						metronome.pause();
+						if (context.isRunning()) {
+							log.error("Interrupted processing offset {} retry {}", offsetContext.getPosition(), retries);
+							closeAndReconnect();
+							retries++;
+							metronome.pause();
+						}
 					} catch (IOException | SQLNonTransientConnectionException e) { // SQLNonTransientConnectionException
 																					// thrown by jt400 jdbc driver when
 																					// connection errors
@@ -147,7 +149,9 @@ public class As400StreamingChangeEventSource implements StreamingChangeEventSour
 						metronome.pause();
 					}
 				} catch (final InterruptedException e) { // handle InterruptedException during the exception handling
-					log.debug("Interrupted", e);
+					if (context.isRunning()) {
+						log.debug("Interrupted", e);
+					}
 				}
 			}
 		} finally {
