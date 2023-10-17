@@ -63,7 +63,7 @@ public class As400ConnectorTask extends BaseSourceTask<As400Partition, As400Offs
 		final As400ConnectorConfig connectorConfig = new As400ConnectorConfig(config);
 		@SuppressWarnings("unchecked")
 		final TopicNamingStrategy<TableId> topicNamingStrategy = connectorConfig
-				.getTopicNamingStrategy(As400ConnectorConfig.TOPIC_NAMING_STRATEGY, true);
+		.getTopicNamingStrategy(As400ConnectorConfig.TOPIC_NAMING_STRATEGY, true);
 
 		final SchemaNameAdjuster schemaNameAdjuster = SchemaNameAdjuster.AVRO;
 
@@ -74,7 +74,7 @@ public class As400ConnectorTask extends BaseSourceTask<As400Partition, As400Offs
 		this.schema = new As400DatabaseSchema(connectorConfig, jdbcConnection, topicNamingStrategy, schemaNameAdjuster);
 
 		final CdcSourceTaskContext ctx = new CdcSourceTaskContext(connectorConfig.getContextName(),
-				connectorConfig.getLogicalName(), schema::tableIds);
+				connectorConfig.getLogicalName(), connectorConfig.getCustomMetricTags(), schema::tableIds);
 
 		// Set up the task record queue ...
 		this.queue = new ChangeEventQueue.Builder<DataChangeEvent>().pollInterval(connectorConfig.getPollInterval())
@@ -93,7 +93,8 @@ public class As400ConnectorTask extends BaseSourceTask<As400Partition, As400Offs
 
 		final As400EventMetadataProvider metadataProvider = new As400EventMetadataProvider();
 
-		final As400TaskContext taskContext = new As400TaskContext(connectorConfig, schema);
+		final As400TaskContext taskContext = new As400TaskContext(connectorConfig, schema,
+				connectorConfig.getCustomMetricTags());
 		final As400ConnectorConfig newConfig = taskContext.getConfig();
 
 		final As400StreamingChangeEventSourceMetrics streamingMetrics = new As400StreamingChangeEventSourceMetrics(
@@ -127,18 +128,18 @@ public class As400ConnectorTask extends BaseSourceTask<As400Partition, As400Offs
 
 		final Clock clock = Clock.system();
 
-		As400ChangeEventSourceFactory changeFactory = new As400ChangeEventSourceFactory(newConfig, snapshotConnectorConfig, rpcConnection,
+		final As400ChangeEventSourceFactory changeFactory = new As400ChangeEventSourceFactory(newConfig, snapshotConnectorConfig, rpcConnection,
 				jdbcConnectionFactory, errorHandler, dispatcher, clock, schema);
-		
-        SignalProcessor<As400Partition, As400OffsetContext> signalProcessor = new SignalProcessor<>(
-        		As400RpcConnector.class, connectorConfig, Map.of(),
-                getAvailableSignalChannels(),
-                DocumentReader.defaultReader(),
-                previousOffsetPartition);
-        
-        NotificationService<As400Partition, As400OffsetContext> notificationService = new NotificationService<>(getNotificationChannels(),
-                connectorConfig, SchemaFactory.get(), dispatcher::enqueueNotification);
-		
+
+		final SignalProcessor<As400Partition, As400OffsetContext> signalProcessor = new SignalProcessor<>(
+				As400RpcConnector.class, connectorConfig, Map.of(),
+				getAvailableSignalChannels(),
+				DocumentReader.defaultReader(),
+				previousOffsetPartition);
+
+		final NotificationService<As400Partition, As400OffsetContext> notificationService = new NotificationService<>(getNotificationChannels(),
+				connectorConfig, SchemaFactory.get(), dispatcher::enqueueNotification);
+
 		final ChangeEventSourceCoordinator<As400Partition, As400OffsetContext> coordinator = new ChangeEventSourceCoordinator<>(
 				previousOffsetPartition, errorHandler, As400JdbcConnector.class, newConfig, changeFactory,
 				new As400ChangeEventSourceMetricsFactory(streamingMetrics), dispatcher, schema,

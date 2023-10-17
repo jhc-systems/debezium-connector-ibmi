@@ -8,7 +8,6 @@ package io.debezium.connector.db2as400;
 import java.io.IOException;
 import java.sql.SQLNonTransientConnectionException;
 import java.time.Duration;
-import java.time.Instant;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -135,8 +134,8 @@ public class As400StreamingChangeEventSource implements StreamingChangeEventSour
 							metronome.pause();
 						}
 					} catch (IOException | SQLNonTransientConnectionException e) { // SQLNonTransientConnectionException
-																					// thrown by jt400 jdbc driver when
-																					// connection errors
+						// thrown by jt400 jdbc driver when
+						// connection errors
 						log.error("Connection failed offset {} retry {}", offsetContext.getPosition(), retries, e);
 						closeAndReconnect();
 
@@ -207,8 +206,8 @@ public class As400StreamingChangeEventSource implements StreamingChangeEventSour
 						.isIncluded(tableId);
 
 				if (!alwaysProcess.contains(eheader.getJournalCode()) && !includeTable) { // always process journal J
-																							// and transaction C
-																							// messages
+					// and transaction C
+					// messages
 					log.debug("excluding table {} journal code {}", tableId, eheader.getJournalCode());
 					return;
 				}
@@ -227,7 +226,7 @@ public class As400StreamingChangeEventSource implements StreamingChangeEventSour
 					dispatcher.dispatchTransactionStartedEvent(partition, txId, offsetContext,
 							eheader.getTime());
 				}
-					break;
+				break;
 				case END_COMMIT: {
 					// end commit
 					// TOOD transaction must be provided by the OffsetContext
@@ -240,14 +239,13 @@ public class As400StreamingChangeEventSource implements StreamingChangeEventSour
 								eheader.getTime());
 					}
 				}
-					break;
-				case FILE_CHANGE:
-				case FILE_CREATED: {
+				break;
+				case FILE_CHANGE, FILE_CREATED: {
 					// table has changed - reload schema
 					schema.clearCache(tableId.table(), tableId.schema());
 					schema.getRecordFormat(tableId.table(), tableId.schema());
 				}
-					break;
+				break;
 				case BEFORE_IMAGE: {
 					// before image
 					tableId.schema();
@@ -255,7 +253,7 @@ public class As400StreamingChangeEventSource implements StreamingChangeEventSour
 
 					cacheBefore(tableId, dataBefore);
 				}
-					break;
+				break;
 				case AFTER_IMAGE: {
 					// after image
 					// before image is meant to have been immediately before
@@ -273,9 +271,8 @@ public class As400StreamingChangeEventSource implements StreamingChangeEventSour
 					dispatcher.dispatchDataChangeEvent(partition, tableId, new As400ChangeRecordEmitter(partition,
 							offsetContext, Operation.UPDATE, dataBefore, dataNext, clock, connectorConfig));
 				}
-					break;
-				case ADD_ROW1:
-				case ADD_ROW2: {
+				break;
+				case ADD_ROW1, ADD_ROW2: {
 					// record added
 					final Object[] dataNext = r.decode(schema.getFileDecoder());
 					offsetContext.setSourceTime(eheader.getTime());
@@ -292,9 +289,8 @@ public class As400StreamingChangeEventSource implements StreamingChangeEventSour
 					dispatcher.dispatchDataChangeEvent(partition, tableId, new As400ChangeRecordEmitter(partition,
 							offsetContext, Operation.CREATE, null, dataNext, clock, connectorConfig));
 				}
-					break;
-				case DELETE_ROW1:
-				case DELETE_ROW2: {
+				break;
+				case DELETE_ROW1, DELETE_ROW2: {
 					// record deleted
 					final Object[] dataBefore = r.decode(schema.getFileDecoder());
 
@@ -312,7 +308,7 @@ public class As400StreamingChangeEventSource implements StreamingChangeEventSour
 					dispatcher.dispatchDataChangeEvent(partition, tableId, new As400ChangeRecordEmitter(partition,
 							offsetContext, Operation.DELETE, dataBefore, null, clock, connectorConfig));
 				}
-					break;
+				break;
 				default:
 					break;
 				}

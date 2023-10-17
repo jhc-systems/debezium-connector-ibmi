@@ -8,6 +8,7 @@ package io.debezium.connector.db2as400;
 import io.debezium.jdbc.MainConnectionProvidingConnectionFactory;
 import io.debezium.pipeline.ErrorHandler;
 import io.debezium.pipeline.EventDispatcher;
+import io.debezium.pipeline.notification.NotificationService;
 import io.debezium.pipeline.source.spi.ChangeEventSourceFactory;
 import io.debezium.pipeline.source.spi.SnapshotChangeEventSource;
 import io.debezium.pipeline.source.spi.SnapshotProgressListener;
@@ -43,9 +44,10 @@ public class As400ChangeEventSourceFactory implements ChangeEventSourceFactory<A
 
 	@Override
 	public SnapshotChangeEventSource<As400Partition, As400OffsetContext> getSnapshotChangeEventSource(
-			SnapshotProgressListener<As400Partition> snapshotProgressListener) {
+			SnapshotProgressListener<As400Partition> snapshotProgressListener,
+			NotificationService<As400Partition, As400OffsetContext> notificationService) {
 		return new As400SnapshotChangeEventSource(snapshotConfig, rpcConnection, jdbcConnectionFactory, schema,
-				dispatcher, clock, snapshotProgressListener);
+				dispatcher, clock, snapshotProgressListener, notificationService);
 	}
 
 	@Override
