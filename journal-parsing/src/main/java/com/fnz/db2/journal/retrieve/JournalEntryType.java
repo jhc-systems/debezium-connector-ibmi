@@ -4,36 +4,39 @@ import java.util.HashMap;
 import java.util.Map;
 
 public enum JournalEntryType {
-    
-    ADD_ROW2("R.PT"),
-    ADD_ROW1("R.PX"),
-    AFTER_IMAGE("R.UP"),
-    BEFORE_IMAGE("R.UB"),
-    DELETE_ROW1("R.DR"),
-    DELETE_ROW2("R.DL"),
+
+	ADD_ROW2("R.PT"),
+	ADD_ROW1("R.PX"),
+	AFTER_IMAGE("R.UP"),
+	ROLLBACK_AFTER_IMAGE("R.UR"),
+	BEFORE_IMAGE("R.UB"),
+	ROLLBACK_BEFORE_IMAGE("R.BR"),
+	DELETE_ROW1("R.DR"),
+	DELETE_ROW2("R.DL"),
+	ROLLBACK_DELETE_ROW("R.DR"),
 	FILE_CREATED("D.CT"),
 	FILE_CHANGE("D.CG"),
 	START_COMMIT("C.SC"),
 	END_COMMIT("C.CM"),
-    OPEN("F.OP"),
-    CLOSE("F.CL");
-	
-    public final String code;
+	OPEN("F.OP"),
+	CLOSE("F.CL");
+
+	public final String code;
 	private JournalEntryType(String code) {
-	    this.code = code;
+		this.code = code;
 	}
-	
-    private static final Map<String, JournalEntryType> BY_LABEL = new HashMap<>();
-    
-    static {
-        for (JournalEntryType e: values()) {
-            BY_LABEL.put(e.code, e);
-        }
-    }
+
+	private static final Map<String, JournalEntryType> BY_LABEL = new HashMap<>();
+
+	static {
+		for (final JournalEntryType e: values()) {
+			BY_LABEL.put(e.code, e);
+		}
+	}
 	public static JournalEntryType toValue(String code) {
-	    if (code == null) {
-	        return null;
-	    }
-        return BY_LABEL.get(code);
+		if (code == null) {
+			return null;
+		}
+		return BY_LABEL.get(code);
 	}
 }

@@ -12,7 +12,7 @@ import com.ibm.as400.access.AS400;
 
 public class JournalReceivers {
 	static final Logger log = LoggerFactory.getLogger(JournalReceivers.class);
-	
+
 	private final JournalInfoRetrieval journalInfoRetrieval;
 	private final JournalInfo journalInfo;
 	private final BigInteger maxServerSideEntriesBI;
@@ -24,19 +24,19 @@ public class JournalReceivers {
 		maxServerSideEntriesBI = BigInteger.valueOf(maxServerSideEntries);
 		this.journalInfo=  journalInfo;
 	}
-	
+
 	PositionRange findRange(AS400 as400, JournalProcessedPosition startPosition) throws Exception {
-		BigInteger start = startPosition.getOffset();
+		final BigInteger start = startPosition.getOffset();
 		final boolean fromBeginning = !startPosition.isOffsetSet() || start.equals(BigInteger.ZERO);
-		
-		DetailedJournalReceiver endPosition = journalInfoRetrieval.getCurrentDetailedJournalReceiver(as400, journalInfo);
+
+		final DetailedJournalReceiver endPosition = journalInfoRetrieval.getCurrentDetailedJournalReceiver(as400, journalInfo);
 		if (fromBeginning) {
 			return new PositionRange(fromBeginning, startPosition, new JournalPosition(endPosition.end(), endPosition.info().receiver()));
 		}
-		
-		
+
+
 		if (cachedEndPosition == null) {
-			cachedEndPosition = endPosition; 
+			cachedEndPosition = endPosition;
 		}
 
 		if (cachedReceivers == null) {
@@ -67,11 +67,11 @@ public class JournalReceivers {
 				() -> new PositionRange(fromBeginning, startPosition, new JournalPosition(endPosition.end(), endPosition.info().receiver())));
 	}
 
-	
+
 	static void updateEndPosition(List<DetailedJournalReceiver> list, DetailedJournalReceiver endPosition) {
 		// should be last entry
 		for (int i = list.size()-1; i >= 0 ; i--) {
-			DetailedJournalReceiver d = list.get(i);
+			final DetailedJournalReceiver d = list.get(i);
 			if (d.isSameReceiver(endPosition)) {
 				list.set(i, endPosition);
 				return;
@@ -79,65 +79,71 @@ public class JournalReceivers {
 		}
 		list.add(endPosition);
 	}
-	
+
 	/**
 	 * only valid when startPosition and endJournalPosition are the same receiver and library
 	 * @param startPosition
 	 * @param endJournalPosition
 	 * @param maxServerSideEntriesBI
 	 * @return
-	 * @throws Exception 
+	 * @throws Exception
 	 */
 	PositionRange maxOffsetInSameReceiver(JournalProcessedPosition startPosition, DetailedJournalReceiver endJournalPosition, BigInteger maxServerSideEntriesBI) throws Exception {
 		if (!startPosition.isSameReceiver(endJournalPosition)) {
 			throw new Exception(String.format("Error this method is only valid for same receiver start %s, end %s", startPosition, endJournalPosition));
 		}
-		BigInteger diff = endJournalPosition.end().subtract(startPosition.getOffset());
+		final BigInteger diff = endJournalPosition.end().subtract(startPosition.getOffset());
 		if (diff.compareTo(maxServerSideEntriesBI) > 0) {
-			BigInteger restricted = startPosition.getOffset().add(maxServerSideEntriesBI);
-			return new PositionRange(false, startPosition, 
+			final BigInteger restricted = startPosition.getOffset().add(maxServerSideEntriesBI);
+			return new PositionRange(false, startPosition,
 					new JournalPosition(restricted, startPosition.getReceiver()));
 		}
-		return new PositionRange(false, startPosition, 
+		return new PositionRange(false, startPosition,
 				new JournalPosition(endJournalPosition.end(), startPosition.getReceiver()));
 	}
 
 	/**
 	 * should handle reset offset numbers between subsequent entries in the list
 	 * @param start
-	 * @param offsetFromStart
+	 * @param maxEntries
 	 * @param receivers
-	 * @return try and find end position at most offsetFromStart from start using the receiver list 
+	 * @return try and find end position at most offsetFromStart from start using the receiver list
 	 */
-	Optional<JournalPosition> findPosition(JournalProcessedPosition start, BigInteger offsetFromStart, List<DetailedJournalReceiver> receivers, DetailedJournalReceiver endPosition) {
-		BigInteger remaining = offsetFromStart;
+	Optional<JournalPosition> findPosition(JournalProcessedPosition start, BigInteger maxEntries, List<DetailedJournalReceiver> receivers, DetailedJournalReceiver endPosition) {
+		BigInteger remaining = maxEntries;
 		boolean found = false;
 		DetailedJournalReceiver last = null;
-		
+
 		if (!containsEndPosition(receivers, endPosition)) {
 			log.warn("unable to find active journal {} in receiver list", endPosition);
 			return Optional.empty();
 		}
-		
+		// adding one to the range and then adding as we include both ends
+		// but we must not use the add one when setting the end point
+		// i.e. 1-> 10 is a total of 10 entries but the range can only go to 10
 		for (int i=0; i < receivers.size(); i++) {
 			last = receivers.get(i);
 			if (found) {
-				BigInteger toEnd = last.end().subtract(last.start()).add(BigInteger.ONE); // add one include end offset 1 -> 100 we get back 1 and 100
-				if (remaining.compareTo(toEnd) <= 0) {
-					BigInteger endOffset = last.start().add(remaining);
+				final BigInteger difference = last.end().subtract(last.start());
+				final BigInteger entriesInJournal = difference.add(BigInteger.ONE); // add one as range is inclusive
+				if (remaining.compareTo(difference) <= 0) { // range is inclusive but don't go past end when adding
+					// remaining
+					final BigInteger endOffset = last.start().add(remaining);
 					return Optional.of(new JournalPosition(endOffset, last.info().receiver()));
 				}
-				remaining = remaining.subtract(toEnd);
+				remaining = remaining.subtract(entriesInJournal);
 			}
 			if (last.isSameReceiver(start)) {
 				found = true;
-				BigInteger toEnd = last.end().subtract(start.getOffset()).add(BigInteger.ONE); // add one include end offset 1 -> 100 we get back 1 and 100
-				if (remaining.compareTo(toEnd) <= 0) {
-					BigInteger offset = start.getOffset().add(remaining);
+				final BigInteger difference = last.end().subtract(start.getOffset());
+				final BigInteger entriesInJournal = difference.add(BigInteger.ONE); // add one as range is inclusive
+				if (remaining.compareTo(difference) <= 0) { // range is inclusive but don't go past end when adding
+					// remaining
+					final BigInteger offset = start.getOffset().add(remaining);
 					return Optional.of(new JournalPosition(offset, last.info().receiver()));
 				}
-				remaining = remaining.subtract(toEnd);
-			}			
+				remaining = remaining.subtract(entriesInJournal);
+			}
 		}
 		if (found && last != null) {
 			return Optional.of(new JournalPosition(last.end(), last.info().receiver()));
@@ -152,7 +158,7 @@ public class JournalReceivers {
 		for (int i = receivers.size() - 1; i >= 0 ; i--) {
 			if (receivers.get(i).info().receiver().equals(endPosition.info().receiver())) {
 				containsEndPosition = true;
-			}					
+			}
 		}
 		return containsEndPosition;
 	}

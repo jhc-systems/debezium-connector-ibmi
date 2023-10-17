@@ -51,7 +51,7 @@ public class JournalInfoRetrieval {
 	private static final AS400Bin8 AS400_BIN8 = new AS400Bin8();
 	private static final AS400Bin4 AS400_BIN4 = new AS400Bin4();
 	private static final int KEY_HEADER_LENGTH = 20;
-	private DetailedJournalReceiverCache cache = new DetailedJournalReceiverCache();
+	private final DetailedJournalReceiverCache cache = new DetailedJournalReceiverCache();
 
 
 	public JournalInfoRetrieval() {
@@ -89,34 +89,34 @@ public class JournalInfoRetrieval {
 		}
 		throw new IllegalStateException("Journal not found");
 	}
-	
+
 	public static JournalInfo getJournal(AS400 as400, String schema, List<FileFilter> includes)  throws IllegalStateException {
 		if (includes.isEmpty()) {
 			return getJournal(as400, schema);
 		}
-        try {
-			Set<JournalInfo> jis = new HashSet<>();
-			for (FileFilter f: includes) {
+		try {
+			final Set<JournalInfo> jis = new HashSet<>();
+			for (final FileFilter f: includes) {
 				if (!schema.equals(f.schema())) {
 					throw new IllegalArgumentException(String.format("schema %s does not match for filter: %s", schema, f));
 				}
-				JournalInfo ji = getJournal(as400, f.schema(), f.table());
+				final JournalInfo ji = getJournal(as400, f.schema(), f.table());
 				jis.add(ji);
 			}
 			if (jis.size() > 1) {
 				throw new IllegalArgumentException(String.format("more than one journal for the set of tables journals: %s", jis));
 			}
 			return jis.iterator().next();
-		} catch (Exception e) {
+		} catch (final Exception e) {
 			throw new IllegalStateException("unable to retrieve journal details", e);
 		}
 	}
-	
-	
+
+
 
 	public static JournalInfo getJournal(AS400 as400, String schema, String table) throws Exception {
 		final int rcvLen = 32768;
-		String filename = padRight(table, 10) + padRight(schema, 10);
+		final String filename = padRight(table.toUpperCase(), 10) + padRight(schema.toUpperCase(), 10);
 
 		final ProgramParameter[] parameters = new ProgramParameter[] {
 				new ProgramParameter(ProgramParameter.PASS_BY_REFERENCE, rcvLen), // 1 Receiver variable (output)
@@ -129,21 +129,21 @@ public class JournalInfoRetrieval {
 				new ProgramParameter(ProgramParameter.PASS_BY_REFERENCE, AS400_TEXT_10.toBytes("*LCL")), // 8 System
 				new ProgramParameter(ProgramParameter.PASS_BY_REFERENCE, AS400_TEXT_10.toBytes("*INT")), // 9 Format type
 				new ProgramParameter(ProgramParameter.PASS_BY_REFERENCE, AS400_BIN4.toBytes(0)), // 10 Error Code
-				};
-		
-		ProgramCall pc = new ProgramCall();
+		};
+
+		final ProgramCall pc = new ProgramCall();
 		pc.setSystem(as400);
-		QSYSObjectPathName programName = new QSYSObjectPathName("QSYS", "QDBRTVFD", "PGM");
+		final QSYSObjectPathName programName = new QSYSObjectPathName("QSYS", "QDBRTVFD", "PGM");
 		pc.setProgram(programName.getPath(), parameters);
-		boolean success = pc.run();
+		final boolean success = pc.run();
 		if (success) {
-			byte[] data = parameters[0].getOutputData();
-			int offsetJournalHeader = decodeInt(data, 378);
+			final byte[] data = parameters[0].getOutputData();
+			final int offsetJournalHeader = decodeInt(data, 378);
 			int offsetJournalOrn = decodeInt(data, offsetJournalHeader + 378);
 			offsetJournalOrn += offsetJournalHeader;
-			
-			String journalName = decodeString(data, offsetJournalOrn, 10);
-			String journalLib = decodeString(data, offsetJournalOrn+10, 10);
+
+			final String journalName = decodeString(data, offsetJournalOrn, 10);
+			final String journalLib = decodeString(data, offsetJournalOrn+10, 10);
 			return new JournalInfo(journalName, journalLib);
 		} else {
 			final String msg = Arrays.asList(pc.getMessageList()).stream().map(AS400Message::getText).reduce("",
@@ -151,7 +151,7 @@ public class JournalInfoRetrieval {
 			throw new IllegalStateException(String.format("Journal not found for %s.%s error %s", schema, table, msg));
 		}
 	}
-	
+
 
 	public static class JournalRetrievalCriteria {
 		private static final AS400Text AS400_TEXT_1 = new AS400Text(1);
@@ -186,7 +186,7 @@ public class JournalInfoRetrieval {
 
 	/**
 	 * uses the current attached journal information in the header
-	 * 
+	 *
 	 * @see https://www.ibm.com/support/knowledgecenter/ssw_ibm_i_74/apis/QJORJRNI.htm
 	 * @param as400
 	 * @param journalLibrary
@@ -216,7 +216,7 @@ public class JournalInfoRetrieval {
 					return new JournalReceiver(journalReceiver, journalLibrary);
 				});
 	}
- 
+
 	private byte[] getReceiversForJournal(AS400 as400, JournalInfo journalLib, int bufSize) throws Exception {
 		final String jrnLib = padRight(journalLib.journalName(), 10) + padRight(journalLib.journalLibrary(), 10);
 		final String format = "RJRN0200";
@@ -236,7 +236,7 @@ public class JournalInfoRetrieval {
 
 	/**
 	 * requests the list of receivers and orders them in attach time
-	 * 
+	 *
 	 * @see https://www.ibm.com/support/knowledgecenter/ssw_ibm_i_74/apis/QJORJRNI.htm
 	 * @param as400
 	 * @param journalLibrary
@@ -248,14 +248,14 @@ public class JournalInfoRetrieval {
 		final int defaultSize = 32768; // 4k takes 31ms 32k takes 85ms must be a multiple of 4k and 0 not allowed
 		byte[] data = getReceiversForJournal(as400, journalLib, defaultSize);
 		final int actualSizeRequired = decodeInt(data, 4) * 4096; // bytes available - value returned for rjrn0200 is 4k
-																	// pages
+		// pages
 		if (actualSizeRequired > defaultSize) {
 			data = getReceiversForJournal(as400, journalLib, actualSizeRequired+4096); // allow for any growth since call
 		}
 
 		final Integer keyOffset = decodeInt(data, 8) + 4;
 		final Integer totalKeys = decodeInt(data, keyOffset);
-		
+
 		final KeyDecoder keyDecoder = new KeyDecoder();
 
 		final List<DetailedJournalReceiver> l = new ArrayList<>();
@@ -267,7 +267,7 @@ public class JournalInfoRetrieval {
 				final ReceiverDecoder dec = new ReceiverDecoder();
 				for (int i = 0; i < kheader.getNumberOfEntries(); i++) {
 					final int kioffset = keyOffset + kheader.getOffset() + kheader.getLengthOfHeader()
-							+ i * kheader.getLengthOfKeyInfo();
+					+ i * kheader.getLengthOfKeyInfo();
 
 					final JournalReceiverInfo r = dec.decode(data, kioffset);
 					final DetailedJournalReceiver details = getReceiverDetails(as400, r);
@@ -277,7 +277,7 @@ public class JournalInfoRetrieval {
 			}
 		}
 		cache.keepOnly(l);
-		
+
 		return DetailedJournalReceiver.lastJoined(l);
 	}
 
@@ -285,7 +285,7 @@ public class JournalInfoRetrieval {
 		return getReceiverDetails(as400,
 				new JournalReceiverInfo(receiver, null, null, Optional.empty()));
 	}
-	
+
 	/**
 	 * @see https://www.ibm.com/support/knowledgecenter/ssw_ibm_i_74/apis/QJORRCVI.htm
 	 * @param as400
@@ -297,7 +297,7 @@ public class JournalInfoRetrieval {
 		final int rcvLen = 32768;
 		final String receiverNameLib = padRight(receiverInfo.receiver().name(), 10) + padRight(receiverInfo.receiver().library(), 10);
 		if (cache.containsKey(receiverInfo)) {
-			DetailedJournalReceiver r = cache.getUpdatingStatus(receiverInfo);			
+			final DetailedJournalReceiver r = cache.getUpdatingStatus(receiverInfo);
 			if ( ! r.isAttached() ) { // don't use attached journal cache
 				return r;
 			}
@@ -328,15 +328,15 @@ public class JournalInfoRetrieval {
 								receiverInfo.receiver().name(), journalName);
 						throw new Exception(msg);
 					}
-					Date attachTime = ReceiverDecoder.toDate(attachTimeStr);
-					JournalReceiverInfo updatedInfo = new JournalReceiverInfo(receiverInfo.receiver(), attachTime, status, receiverInfo.chain());
-					
-					Optional<JournalReceiver> nextReceiver = (nextReceiverName == null) ? Optional.empty() : Optional.of(new JournalReceiver(nextReceiverName, nextReceiverLib));
-					
-					DetailedJournalReceiver dr = new DetailedJournalReceiver(updatedInfo, firstSequence, lastSequence, 
+					final Date attachTime = ReceiverDecoder.toDate(attachTimeStr);
+					final JournalReceiverInfo updatedInfo = new JournalReceiverInfo(receiverInfo.receiver(), attachTime, status, receiverInfo.chain());
+
+					final Optional<JournalReceiver> nextReceiver = (nextReceiverName == null) ? Optional.empty() : Optional.of(new JournalReceiver(nextReceiverName, nextReceiverLib));
+
+					final DetailedJournalReceiver dr = new DetailedJournalReceiver(updatedInfo, firstSequence, lastSequence,
 							nextReceiver,
 							maxEntryLength, numberOfEntries);
-					
+
 					cache.put(dr);
 					return dr;
 				});
@@ -372,7 +372,7 @@ public class JournalInfoRetrieval {
 			throw new Exception(msg);
 		}
 	}
-	
+
 	/**
 	 *
 	 * @param <T>            return type of processor
@@ -411,7 +411,7 @@ public class JournalInfoRetrieval {
 	public interface ProcessDataAllParamaterData<T> {
 		public T process(ProgramParameter[] parameters) throws Exception;
 	}
-	
+
 	public interface ProcessFirstParamaterData<T> {
 		public T process(byte[] data) throws Exception;
 	}
