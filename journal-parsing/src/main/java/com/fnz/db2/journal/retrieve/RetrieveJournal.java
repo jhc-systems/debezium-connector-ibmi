@@ -86,7 +86,7 @@ public class RetrieveJournal {
 			throws Exception {
 		this.offset = -1;
 		this.entryHeader = null;
-		this.position = previousPosition;
+		this.position = new JournalProcessedPosition(previousPosition);
 
 		// will return data for both first entry and last entry
 		// but call fails if start == end
@@ -127,10 +127,10 @@ public class RetrieveJournal {
 			offset = -1;
 			if (header.status() == OffsetStatus.MORE_DATA_NEW_OFFSET && header.offset() == 0) {
 				log.error("buffer too small need to skip this entry {}", previousPosition);
-				previousPosition.setPosition(header.nextPosition());
+				this.position.setPosition(header.nextPosition());
 			}
 			if (!hasData()) {
-				previousPosition.setPosition(end);
+				this.position.setPosition(end);
 			}
 		} else {
 			return reThrowIfFatal(previousPosition, spc, end, builder);
@@ -172,7 +172,7 @@ public class RetrieveJournal {
 						id.getText());
 				// if we're filtering we get no continuation offset just an error
 				header = new FirstHeader(0, 0, 0, OffsetStatus.NO_DATA, latestJournalPosition);
-				retrievePosition.setPosition(latestJournalPosition);
+				this.position.setPosition(latestJournalPosition);
 				return true;
 			}
 			default:
