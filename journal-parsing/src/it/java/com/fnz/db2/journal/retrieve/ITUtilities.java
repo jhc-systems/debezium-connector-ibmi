@@ -46,6 +46,7 @@ public class ITUtilities {
 		final List<String> tables = allTables(con, schema);
 		try (final Statement stable = con.createStatement()) {
 			for (final String table : tables) {
+				log.info("truncating {}.{}", schema, table);
 				stable.executeUpdate(String.format("truncate table %s.%s", schema, table));
 			}
 		}
@@ -100,12 +101,12 @@ public class ITUtilities {
 		as400Command(as400,
 				String.format("ENDJRNPF FILE(*ALL) JRN(%s/%s)", journal.journalLibrary(), journal.journalName()));
 
+		as400Command(as400, String.format("DLTJRN JRN(%s/%s)", journal.journalLibrary(), journal.journalName()));
+
 		for (final DetailedJournalReceiver djr : receviers) {
 			as400Command(as400, String.format("DLTJRNRCV JRNRCV(%s/%s) DLTOPT(*IGNINQMSG)", journal.journalLibrary(),
 					djr.info().receiver().name()));
 		}
-
-		as400Command(as400, String.format("DLTJRN JRN(%s/%s)", journal.journalLibrary(), journal.journalName()));
 
 		try (final Statement st = con.createStatement()) {
 			st.executeUpdate(String.format("drop schema %s", journal.journalLibrary()));

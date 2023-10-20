@@ -135,6 +135,10 @@ When the library is pointing to the wrong journal, it can be fixed with:
 STRJRNLIB LIB(<library>) JRN(<journal)
 ```
 
+## Filtering on tables does not work properly across delete and create
+
+Testing suggests that the filtering only applies to the table that exists during the call to fetch entries
+
 # gotyas
 
 From the documentation: https://www.ibm.com/docs/en/i/7.5?topic=ssw_ibm_i_75/apis/QJORJRNE.html

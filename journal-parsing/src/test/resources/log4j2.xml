@@ -17,10 +17,10 @@
 	</Appenders>
 
 	<Loggers>
-		<Logger name="com.fnz.db2.journal.retrieve.RetrieveJournal" level="info" additivity="true"/>
+		<Logger name="com.fnz.db2.journal.retrieve.RetrieveJournal" level="debug" additivity="true"/>
 		<Logger name="com.fnz.db2.journal.retrieve.rjne0200.FirstHeaderDecoder" level="debug" additivity="true"/>
 		
-		<Root level="info">
+		<Root level="debug">
 			<AppenderRef ref="console" />
 			<AppenderRef ref="fileLog" />
 		</Root>

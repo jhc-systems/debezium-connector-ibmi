@@ -138,7 +138,9 @@ public class JournalProcessedPosition {
 	public void setPosition(JournalProcessedPosition newPosition) {
 		this.offset = newPosition.offset;
 		this.receiver = newPosition.receiver;
-		this.timeOfLastProcessed = newPosition.timeOfLastProcessed;
+		if (!newPosition.timeOfLastProcessed.equals(Instant.EPOCH)) {
+			this.timeOfLastProcessed = newPosition.timeOfLastProcessed;
+		}
 		this.processed = newPosition.processed;
 	}
 
