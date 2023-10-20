@@ -6,7 +6,7 @@
 				pattern="%d{HH:mm:ss.SSS} [%t] [%level] %logger - %msg%n" />
 		</Console>
 
-		<RollingFile name="fileLog" fileName="ibmi.log"
+		<RollingFile name="fileLog" fileName="logs/journalParsing.log"
 			filePattern="./archive/ibmi.log-%d{yyyy-MM-dd}.gz">
 			<PatternLayout
 				pattern="%d{HH:mm:ss.SSS} [%t] [%level] %logger - %msg%n" />
@@ -17,8 +17,12 @@
 	</Appenders>
 
 	<Loggers>
-		<Root level="debug">
+		<Logger name="com.fnz.db2.journal.retrieve.RetrieveJournal" level="info" additivity="true"/>
+		<Logger name="com.fnz.db2.journal.retrieve.rjne0200.FirstHeaderDecoder" level="debug" additivity="true"/>
+		
+		<Root level="info">
 			<AppenderRef ref="console" />
+			<AppenderRef ref="fileLog" />
 		</Root>
 	</Loggers>
 </Configuration>

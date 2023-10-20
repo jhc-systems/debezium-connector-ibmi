@@ -7,9 +7,9 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.text.SimpleDateFormat;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Date;
-import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,8 +29,8 @@ import com.ibm.as400.access.ProgramParameter;
 import com.ibm.as400.access.ServiceProgramCall;
 
 /**
- * based on the work of Stanley Vong
- *
+ * based on the work of Stanley Vong see
+ * https://www.ibm.com/docs/en/i/7.5?topic=ssw_ibm_i_75/apis/QJORJRNE.html
  */
 public class RetrieveJournal {
 	private static final Logger log = LoggerFactory.getLogger(RetrieveJournal.class);
@@ -64,7 +64,7 @@ public class RetrieveJournal {
 	/**
 	 * retrieves a block of journal data
 	 *
-	 * @param retrievePosition
+	 * @param previousPosition
 	 * @return true if the journal was read successfully false if there was some
 	 *         problem reading the journal
 	 * @throws Exception
@@ -74,33 +74,46 @@ public class RetrieveJournal {
 	 *                   be available if the journal is no longer available we need
 	 *                   to capture this and log an error as we may have missed data
 	 */
-	public boolean retrieveJournal(JournalProcessedPosition retrievePosition) throws Exception {
+	public boolean retrieveJournal(JournalProcessedPosition previousPosition) throws Exception {
+
+		final PositionRange range = journalReceivers.findRange(config.as400().connection(), config.filtering(),
+				previousPosition);
+
+		return retrieveJournal(previousPosition, range);
+	}
+
+	public boolean retrieveJournal(JournalProcessedPosition previousPosition, final PositionRange range)
+			throws Exception {
 		this.offset = -1;
 		this.entryHeader = null;
-		this.header = new FirstHeader(0, 0, 0, OffsetStatus.NOT_CALLED, Optional.empty());
-		this.position = retrievePosition;
+		this.position = previousPosition;
 
-		final PositionRange range = journalReceivers.findRange(config.as400().connection(), retrievePosition);
-
-		// will return data for both first entry and last entry but call fails if start == end
+		// will return data for both first entry and last entry
+		// but call fails if start == end
 		if (range.startEqualsEnd()) {
+			this.header = new FirstHeader(0, 0, 0, OffsetStatus.NOT_CALLED,
+					new JournalProcessedPosition(range.end(), Instant.EPOCH, true));
+
 			log.debug("start equals end - range {}", range);
 			return true;
 		}
 
-		log.debug("Fetch journal at postion {} range {}", retrievePosition, range);
+		// TODO end could be optional for filtering or use same mechanism as non
+		// filtering?
+		final JournalProcessedPosition end = new JournalProcessedPosition(range.end(), Instant.EPOCH, true);
+
 		final ServiceProgramCall spc = new ServiceProgramCall(config.as400().connection());
 		spc.getServerJob().setLoggingLevel(0);
 		builder.init();
+		builder.withBufferLenth(config.journalBufferSize());
 		builder.withJournalEntryType(JournalEntryType.ALL);
 		if (config.filtering() && !config.includeFiles().isEmpty()) {
 			builder.withFileFilters(config.includeFiles());
 		}
-
 		builder.withRange(range);
-		final JournalPosition fetchedToJournalPosition = range.end();
-
 		final ProgramParameter[] parameters = builder.build();
+
+		log.debug("Fetch journal position {} parameters {}", previousPosition, builder);
 		spc.setProgram(JournalInfoRetrieval.JOURNAL_SERVICE_LIB, parameters);
 		spc.setProcedureName("QjoRetrieveJournalEntries");
 		spc.setAlignOn16Bytes(true);
@@ -108,31 +121,25 @@ public class RetrieveJournal {
 		final boolean success = spc.run();
 		if (success) {
 			outputData = parameters[0].getOutputData();
-			header = firstHeaderDecoder.decode(outputData);
+			header = firstHeaderDecoder.decode(outputData, end);
 			totalTransferred += header.totalBytes();
 			log.debug("first header: {} ", header);
 			offset = -1;
 			if (header.status() == OffsetStatus.MORE_DATA_NEW_OFFSET && header.offset() == 0) {
-				log.error("buffer too small need to skip this entry {}", retrievePosition);
-				header.nextPosition().ifPresent(x -> retrievePosition.setPosition(x, false));
+				log.error("buffer too small need to skip this entry {}", previousPosition);
+				previousPosition.setPosition(header.nextPosition());
 			}
 			if (!hasData()) {
-				this.header = header.withNextJournalPosition(fetchedToJournalPosition);
-				retrievePosition.setPosition(fetchedToJournalPosition, false);
-			} else if (header.nextPosition().isEmpty()) {
-				// don't update the retrieve position as that will update as we process data
-				this.header = header.withNextJournalPosition(fetchedToJournalPosition);
+				previousPosition.setPosition(end);
 			}
-
 		} else {
-			return reThrowIfFatal(retrievePosition, spc, fetchedToJournalPosition, builder);
+			return reThrowIfFatal(previousPosition, spc, end, builder);
 		}
 		return success;
 	}
 
-
 	private boolean reThrowIfFatal(JournalProcessedPosition retrievePosition, final ServiceProgramCall spc,
-			JournalPosition latestJournalPosition, final ParameterListBuilder builder)
+			JournalProcessedPosition latestJournalPosition, final ParameterListBuilder builder)
 					throws InvalidPositionException, InvalidJournalFilterException, RetrieveJournalException {
 		for (final AS400Message id : spc.getMessageList()) {
 			final String idt = id.getID();
@@ -164,9 +171,8 @@ public class RetrieveJournal {
 				log.debug("Normal when filtering, call failed position {} parameters {} no data received: {}", retrievePosition, builder,
 						id.getText());
 				// if we're filtering we get no continuation offset just an error
-				header = new FirstHeader(0, 0, 0, OffsetStatus.NO_MORE_DATA, Optional.of(latestJournalPosition));
-				header = header.withNextJournalPosition(latestJournalPosition);
-				retrievePosition.setPosition(latestJournalPosition, false);
+				header = new FirstHeader(0, 0, 0, OffsetStatus.NO_DATA, latestJournalPosition);
+				retrievePosition.setPosition(latestJournalPosition);
 				return true;
 			}
 			default:
@@ -206,7 +212,7 @@ public class RetrieveJournal {
 
 	// test without moving on
 	public boolean hasData() {
-		if (header.status() == OffsetStatus.NO_MORE_DATA) {
+		if (header.status() == OffsetStatus.NO_DATA) {
 			return false;
 		}
 		if (offset < 0 && header.size() > 0) {
@@ -225,6 +231,7 @@ public class RetrieveJournal {
 				offset = header.offset();
 				entryHeader = entryHeaderDecoder.decode(outputData, offset);
 				if (alreadyProcessed(position, entryHeader)) {
+					log.debug("skipping already seen entry {} {}", position, entryHeader);
 					return nextEntry();
 				}
 				updatePosition(position, entryHeader);
@@ -248,10 +255,9 @@ public class RetrieveJournal {
 
 	private void updateOffsetFromContinuation() {
 		// after we hit the end use the continuation header for the next offset
-		header.nextPosition().ifPresent(nextOffset -> {
-			log.debug("Setting continuation offset {}", nextOffset);
-			position.setPosition(nextOffset, false);
-		});
+		final JournalProcessedPosition nextOffset = header.nextPosition();
+		log.debug("Setting continuation offset {}", nextOffset);
+		position.setPosition(nextOffset);
 	}
 
 	private static boolean alreadyProcessed(JournalProcessedPosition position, EntryHeader entryHeader) {

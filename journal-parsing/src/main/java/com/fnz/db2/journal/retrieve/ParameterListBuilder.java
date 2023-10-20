@@ -32,7 +32,7 @@ public class ParameterListBuilder {
 	private String receiverLibrary = "";
 	private final RetrievalCriteria criteria = new RetrievalCriteria();
 	private byte[] journalData;
-	
+
 	// for diagnostics
 	private String startReceiver;
 	private String startLibrary;
@@ -53,7 +53,7 @@ public class ParameterListBuilder {
 		this.bufferLengthData = new AS400Bin4().toBytes(bufferLength);
 		return this;
 	}
-	
+
 	public ParameterListBuilder withRange(PositionRange range) {
 		if (range.fromBeginning()) {
 			log.warn("starting from beginning");
@@ -63,7 +63,7 @@ public class ParameterListBuilder {
 		}
 		return this;
 	}
-	
+
 	public ParameterListBuilder withJournal(String receiver, String receiverLibrary) {
 		if (!this.receiver.equals(receiver) && !this.receiverLibrary.equals(receiverLibrary)) {
 			this.receiver = receiver;
@@ -95,7 +95,7 @@ public class ParameterListBuilder {
 		criteria.withReceiverRange(startReceiver, startLibrary, endReceiver, endLibrary);
 		return this;
 	}
-	
+
 	private ParameterListBuilder withStartingSequence(BigInteger start) {
 		startOffset = start.toString();
 		criteria.withFromEnt(start);
@@ -113,18 +113,18 @@ public class ParameterListBuilder {
 		criteria.withEnd(end);
 		return this;
 	}
-	
+
 	public ParameterListBuilder withStartReceiversToCurrentEnd(BigInteger start, String startReceiver, String startLibrary) {
 		withStartingSequence(start);
 		this.startReceiver = startReceiver;
 		this.startLibrary = startLibrary;
 		this.endReceiver = "*CURRENT";
-		this.endLibrary = "";		
+		this.endLibrary = "";
 		criteria.withReceiverRange(startReceiver, startLibrary, endReceiver, endLibrary);
 		this.withEnd();
 		return this;
 	}
-	
+
 	public ParameterListBuilder withFromBeginningToEnd() {
 		this.startReceiver = "*CURCHAIN";
 		this.startLibrary = "";
@@ -134,7 +134,7 @@ public class ParameterListBuilder {
 		this.startOffset = "*FIRST";
 		criteria.withStart();
 		this.withEnd();
-		return this;		
+		return this;
 	}
 
 	public ParameterListBuilder filterJournalCodes(JournalCode[] journalCode) {
@@ -158,14 +158,14 @@ public class ParameterListBuilder {
 	public ProgramParameter[] build() {
 		final byte[] criteriaData = new AS400Structure(criteria.getStructure()).toBytes(criteria.getObject());
 		return new ProgramParameter[] { new ProgramParameter(ProgramParameter.PASS_BY_REFERENCE, bufferLength), // 1
-																												// Receiver
-																												// variable
+				// Receiver
+				// variable
 				new ProgramParameter(ProgramParameter.PASS_BY_REFERENCE, bufferLengthData), // 2 Length of receiver
-																							// variable
+				// variable
 				new ProgramParameter(ProgramParameter.PASS_BY_REFERENCE, journalData), // 3 Qualified journal name
 				new ProgramParameter(ProgramParameter.PASS_BY_REFERENCE, formatNameData), // 4 Format name
 				new ProgramParameter(ProgramParameter.PASS_BY_REFERENCE, criteriaData), // 5 Journal entries to
-																						// retrieve
+				// retrieve
 				new ProgramParameter(ProgramParameter.PASS_BY_REFERENCE, errorCodeData) }; // 6 Error code
 	}
 
@@ -177,7 +177,7 @@ public class ParameterListBuilder {
 				endReceiver, endLibrary, startOffset, endOffset, Arrays.toString(journalEntryTypes),
 				Arrays.toString(journalCode), filtersToShortString(tableFilters));
 	}
-	
+
 	public String filtersToShortString(List<FileFilter> tableFilters) {
 		if (tableFilters == null) {
 			return "null";
