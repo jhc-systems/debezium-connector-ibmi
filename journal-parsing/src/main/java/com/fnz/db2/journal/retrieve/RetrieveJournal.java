@@ -5,7 +5,6 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.math.BigInteger;
 import java.nio.file.Files;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
@@ -82,7 +81,7 @@ public class RetrieveJournal {
 		this.position = retrievePosition;
 
 		final PositionRange range = journalReceivers.findRange(config.as400().connection(), retrievePosition);
-		
+
 		// will return data for both first entry and last entry but call fails if start == end
 		if (range.startEqualsEnd()) {
 			log.debug("start equals end - range {}", range);
@@ -134,7 +133,7 @@ public class RetrieveJournal {
 
 	private boolean reThrowIfFatal(JournalProcessedPosition retrievePosition, final ServiceProgramCall spc,
 			JournalPosition latestJournalPosition, final ParameterListBuilder builder)
-			throws InvalidPositionException, InvalidJournalFilterException, RetrieveJournalException {
+					throws InvalidPositionException, InvalidJournalFilterException, RetrieveJournalException {
 		for (final AS400Message id : spc.getMessageList()) {
 			final String idt = id.getID();
 			if (idt == null) {
@@ -162,7 +161,7 @@ public class RetrieveJournal {
 								getFullAS400MessageText(id)));
 			}
 			case "CPF7062": {
-				log.debug("Normal when filtering, call failed position {} parameters {} no data received: {}", retrievePosition, builder, 
+				log.debug("Normal when filtering, call failed position {} parameters {} no data received: {}", retrievePosition, builder,
 						id.getText());
 				// if we're filtering we get no continuation offset just an error
 				header = new FirstHeader(0, 0, 0, OffsetStatus.NO_MORE_DATA, Optional.of(latestJournalPosition));
@@ -171,7 +170,7 @@ public class RetrieveJournal {
 				return true;
 			}
 			default:
-				log.error("Call failed position {} parameters {} with error code {} message {}", retrievePosition, idt, 
+				log.error("Call failed position {} parameters {} with error code {} message {}", retrievePosition, idt,
 						builder, getFullAS400MessageText(id));
 			}
 		}
@@ -215,7 +214,7 @@ public class RetrieveJournal {
 		}
 		return (offset > 0 && entryHeader.getNextEntryOffset() > 0);
 	}
-	
+
 	public boolean futureDataAvailable() {
 		return (header.hasFutureDataAvailable());
 	}
@@ -262,10 +261,12 @@ public class RetrieveJournal {
 
 	private static void updatePosition(JournalProcessedPosition p, EntryHeader entryHeader) {
 		if (entryHeader.hasReceiver()) {
+			log.debug("offset with receiver {}", entryHeader.getReceiver());
 			p.setJournalReceiver(entryHeader.getSequenceNumber(), entryHeader.getReceiver(),
 					entryHeader.getReceiverLibrary(), entryHeader.getTime(), true);
 		} else {
 			// this happens a lot
+			log.debug("offset no receiver {}", entryHeader);
 			p.setOffset(entryHeader.getSequenceNumber(), entryHeader.getTime(), true);
 		}
 	}
@@ -285,7 +286,7 @@ public class RetrieveJournal {
 	}
 
 	public <T> T decode(JournalEntryDeocder<T> decoder) throws Exception {
-//		Diagnostics.dump(outputData, start);
+		//		Diagnostics.dump(outputData, start);
 		try {
 			final T t = decoder.decode(entryHeader, outputData, offset);
 			return t;
@@ -356,6 +357,6 @@ public class RetrieveJournal {
 			super(message);
 		}
 	}
-	
+
 
 }
