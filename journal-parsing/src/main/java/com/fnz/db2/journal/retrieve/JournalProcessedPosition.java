@@ -150,6 +150,10 @@ public class JournalProcessedPosition {
 		this.processed = processed;
 	}
 
+	public JournalProcessedPosition withOffset(BigInteger offset, boolean processed) {
+		return new JournalProcessedPosition(offset, this.receiver, this.timeOfLastProcessed, processed);
+	}
+
 	public boolean isSameReceiver(DetailedJournalReceiver other) {
 		if (receiver == null || other.info() == null) {
 			return false;

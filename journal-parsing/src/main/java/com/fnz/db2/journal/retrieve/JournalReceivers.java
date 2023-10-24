@@ -31,6 +31,8 @@ public class JournalReceivers {
 		final boolean fromBeginning = !startPosition.isOffsetSet() || start.equals(BigInteger.ZERO);
 
 		final DetailedJournalReceiver endPosition = journalInfoRetrieval.getCurrentDetailedJournalReceiver(as400, journalInfo);
+		log.info("end {}", endPosition);
+
 		if (fromBeginning) {
 			return new PositionRange(fromBeginning, startPosition,
 					new JournalPosition(endPosition.end(), endPosition.info().receiver()));
@@ -44,13 +46,12 @@ public class JournalReceivers {
 			cachedReceivers = journalInfoRetrieval.getReceivers(as400, journalInfo);
 		}
 		if (cachedEndPosition.isSameReceiver(endPosition)) {
+			// refresh end position in cached list
+			updateEndPosition(cachedReceivers, endPosition);
 			// we're currently on the same journal just check the relative offset is within range
 			// don't update the cache as we are not going to know the real end offset for this journal receiver until we move on to the next
 			if (startPosition.isSameReceiver(endPosition)) {
 				return maxOffsetInSameReceiver(startPosition, endPosition, maxServerSideEntriesBI);
-			} else {
-				// refresh end position in cached list
-				updateEndPosition(cachedReceivers, endPosition);
 			}
 		} else {
 			// last call to current position won't include the correct end offset so we need to refresh the list
@@ -66,6 +67,9 @@ public class JournalReceivers {
 			cachedReceivers = journalInfoRetrieval.getReceivers(as400, journalInfo);
 			endOpt = findPosition(startPosition, maxServerSideEntriesBI, cachedReceivers, endPosition);
 		}
+
+		log.info("journals {}", cachedReceivers);
+
 		return endOpt.orElseGet(
 				() -> new PositionRange(fromBeginning, startPosition,
 						new JournalPosition(endPosition.end(), endPosition.info().receiver())));
@@ -97,7 +101,7 @@ public class JournalReceivers {
 			throw new Exception(String.format("Error this method is only valid for same receiver start %s, end %s", startPosition, endJournalPosition));
 		}
 		final BigInteger diff = endJournalPosition.end().subtract(startPosition.getOffset());
-		if (diff.compareTo(maxServerSideEntriesBI) > 0) { // TODO check this for off by one
+		if (diff.compareTo(maxServerSideEntriesBI) > 0) {
 			final BigInteger restricted = startPosition.getOffset().add(maxServerSideEntriesBI);
 			return new PositionRange(false, startPosition,
 					new JournalPosition(restricted, startPosition.getReceiver()));

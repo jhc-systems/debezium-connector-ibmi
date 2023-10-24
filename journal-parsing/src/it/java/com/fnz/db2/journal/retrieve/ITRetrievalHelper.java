@@ -34,6 +34,7 @@ public class ITRetrievalHelper {
 	JdbcFileDecoder fileDecoder;
 	SchemaCacheHash schemaCache = new SchemaCacheHash();
 	JournalProcessedPosition nextPosition;
+	RetrieveJournal rj;
 
 	public ITRetrievalHelper(TestConnector connector, JournalInfo journal, List<FileFilter> includes, int bufferSize,
 			int maxEntries, BiFunction<Object[], TableInfo, Void> journalEntryFunction,
@@ -47,6 +48,10 @@ public class ITRetrievalHelper {
 		tables = includes.stream().map(FileFilter::table).collect(Collectors.toSet());
 		fileDecoder = new JdbcFileDecoder(connector.getJdbc(), "databasename", schemaCache, -1);
 		this.fetchedEntries = fetchedEntries;
+		final RetrieveConfig config = new RetrieveConfigBuilder().withAs400(connector.getAs400())
+				.withJournalInfo(journal).withJournalBufferSize(bufferSize).withServerFiltering(true)
+				.withIncludeFiles(includes).withMaxServerSideEntries(maxEntries).build();
+		rj = new RetrieveJournal(config, journalInfoRetrieval);
 	}
 
 	public void setStartPositionToNow() throws Exception {
@@ -56,15 +61,9 @@ public class ITRetrievalHelper {
 	}
 
 	public void retrieveJournalEntries(Function<Boolean, Boolean> finished) throws Exception {
-		final Connect<AS400, IOException> as400Connect = connector.getAs400();
 		JournalProcessedPosition lastPosition = null;
 
 		log.debug("process entries");
-
-		final RetrieveConfig config = new RetrieveConfigBuilder().withAs400(as400Connect).withJournalInfo(journal)
-				.withJournalBufferSize(bufferSize).withServerFiltering(true).withIncludeFiles(includes)
-				.withMaxServerSideEntries(maxEntries).build();
-		final RetrieveJournal rj = new RetrieveJournal(config, journalInfoRetrieval);
 		do {
 			lastPosition = new JournalProcessedPosition(nextPosition);
 			nextPosition = retrieveJournal(rj, nextPosition);
@@ -83,7 +82,6 @@ public class ITRetrievalHelper {
 
 				position.setPosition(r.getPosition());
 				final JournalEntryType entryType = eheader.getJournalEntryType();
-				// log.info("{}.{}", eheader.getJournalCode(), eheader.getEntryType());
 
 				if (entryType == null) {
 					continue;
@@ -91,24 +89,32 @@ public class ITRetrievalHelper {
 				final String file = eheader.getFile();
 				final String lib = eheader.getLibrary();
 
+				log.info("code {}.{} table {}.{} sequence {}", eheader.getJournalCode(), eheader.getEntryType(), lib,
+						file, eheader.getSequenceNumber());
+
 				assertTrue(tables.contains(file), "filtering working");
 
 				switch (entryType) {
 				case AFTER_IMAGE, ROLLBACK_AFTER_IMAGE: {
 					final Optional<TableInfo> tableInfoOpt = fileDecoder.getRecordFormat(eheader.getFile(),
 							eheader.getLibrary());
-					tableInfoOpt.ifPresent(tableInfo -> {
+					tableInfoOpt.ifPresentOrElse(tableInfo -> {
 						try {
+							log.info("found data structure");
 							final Object[] fields = r.decode(fileDecoder);
 							journalEntryFunction.apply(fields, tableInfo);
 						} catch (final Exception e) {
 							log.error("failed to decode journal entry", e);
 							fail("faild to decode journal entry");
 						}
+					}, () -> {
+						log.error("unexpected empty table info");
 					});
 				}
-				break;
+				case BEFORE_IMAGE:
+					break;
 				default:
+					log.error("unexpected journal entry type {}", entryType);
 					break;
 				}
 

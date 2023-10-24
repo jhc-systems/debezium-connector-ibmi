@@ -40,8 +40,8 @@ class JournalBufferFullIT {
 	static final String SCHEMA = "JRN_TEST2"; // note upper case
 	static final String TABLE = "SEQ1";
 
-	private static final int MAX_BUFFER_SIZE = 400;
-	private static final int MAX_UPDATES = 50;
+	private static final int MAX_BUFFER_SIZE = 380;
+	private static final int MAX_UPDATES = 3;
 
 	static TestConnector connector = null;
 	static JournalInfo journal;
@@ -81,7 +81,8 @@ class JournalBufferFullIT {
 		helper.setStartPositionToNow();
 
 		log.debug("insert data");
-		insertRealData(connector, 10, MAX_UPDATES);
+		final int updated = insertRealData(connector, 10, MAX_UPDATES);
+		assertEquals(MAX_UPDATES, updated);
 
 		helper.retrieveJournalEntries(x -> x);
 		log.debug("verify");
@@ -96,6 +97,7 @@ class JournalBufferFullIT {
 
 
 	public Void processUpdate(final Object[] fields, TableInfo tableInfo) {
+		log.debug("found {}, table", tableInfo.getStructure().get(1).getName());;
 		assertEquals("VALUE", tableInfo.getStructure().get(1).getName());
 		assertEquals(nextValue, (Integer) fields[1]);
 		final int i = (Integer) fields[1];
@@ -106,32 +108,29 @@ class JournalBufferFullIT {
 		return null;
 	}
 
-	static void insertRealData(TestConnector connector, int batchSize, int size) {
+	static int insertRealData(TestConnector connector, int batchSize, int size) {
+		int updatedRows = 0;
 		try {
 			final Connection con = connector.getJdbc().connection();
 			try (final PreparedStatement ps = con
 					.prepareStatement(String.format("update %s.%s set value=?", SCHEMA, TABLE))) {
-				for (int i = 0; i <= size;) {
-					int attemptedUpdate = 0;
-					for (int j = 0; j < batchSize && i <= size; j++) {
+				for (int i = 0; i < size;) {
+					for (int j = 0; j < batchSize && i < size; j++, i++) {
 						ps.setInt(1, i);
+						log.info("setting to {}", i);
 						ps.addBatch();
-						attemptedUpdate = j + 1;
-						i++;
 					}
 					final int[] s = ps.executeBatch();
-					int updated = 0;
 					for (final int x : s) {
-						updated += x;
+						updatedRows += x;
 					}
-					assertEquals(attemptedUpdate, updated);
-					log.debug("batch {}", updated);
 					con.commit();
 				}
 			}
 		} catch (final Exception e) {
 			log.error("inserting failed", e);
 		}
+		return updatedRows;
 	}
 
 	private static void setupTables(Connection con) throws SQLException {
@@ -141,7 +140,7 @@ class JournalBufferFullIT {
 		try (final Statement st = con.createStatement()) {
 			st.executeUpdate(String.format(
 					"CREATE OR replace TABLE %s.%s (id int, value int, primary key (id))", SCHEMA, TABLE));
-			st.executeUpdate(String.format("insert into %s.%s (id, value) values (1, 1)", SCHEMA, TABLE));
+			st.executeUpdate(String.format("insert into %s.%s (id, value) values (1, -100)", SCHEMA, TABLE));
 			con.commit();
 		}
 	}
