@@ -96,7 +96,7 @@ class JournalBufferFullIT {
 	}
 
 
-	public Void processUpdate(final Object[] fields, TableInfo tableInfo) {
+	public Void processUpdate(final Object[] fields, TableInfo tableInfo, String tableName) {
 		log.debug("found {}, table", tableInfo.getStructure().get(1).getName());;
 		assertEquals("VALUE", tableInfo.getStructure().get(1).getName());
 		assertEquals(nextValue, (Integer) fields[1]);

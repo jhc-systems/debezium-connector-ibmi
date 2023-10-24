@@ -79,7 +79,7 @@ public class ITUtilities {
 		}
 	}
 
-	private static boolean as400Command(AS400 as400, String command) throws AS400SecurityException,
+	public static boolean as400Command(AS400 as400, String command) throws AS400SecurityException,
 	ErrorCompletingRequestException, IOException, InterruptedException, PropertyVetoException {
 		final CommandCall call = new CommandCall(as400);
 		final boolean result = call.run(command);

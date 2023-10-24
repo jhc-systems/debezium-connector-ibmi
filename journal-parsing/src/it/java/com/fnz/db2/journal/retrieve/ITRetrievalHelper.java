@@ -8,7 +8,6 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -29,7 +28,7 @@ public class ITRetrievalHelper {
 	Set<String> tables;
 	int bufferSize;
 	int maxEntries;
-	BiFunction<Object[], TableInfo, Void> journalEntryFunction;
+	TriFunction<Object[], TableInfo, String, Void> journalEntryFunction;
 	Function<RetrieveJournal, Void> fetchedEntries;
 	JdbcFileDecoder fileDecoder;
 	SchemaCacheHash schemaCache = new SchemaCacheHash();
@@ -37,7 +36,7 @@ public class ITRetrievalHelper {
 	RetrieveJournal rj;
 
 	public ITRetrievalHelper(TestConnector connector, JournalInfo journal, List<FileFilter> includes, int bufferSize,
-			int maxEntries, BiFunction<Object[], TableInfo, Void> journalEntryFunction,
+			int maxEntries, TriFunction<Object[], TableInfo, String, Void> journalEntryFunction,
 			Function<RetrieveJournal, Void> fetchedEntries) {
 		this.connector = connector;
 		this.journal = journal;
@@ -102,7 +101,7 @@ public class ITRetrievalHelper {
 						try {
 							log.info("found data structure");
 							final Object[] fields = r.decode(fileDecoder);
-							journalEntryFunction.apply(fields, tableInfo);
+							journalEntryFunction.apply(fields, tableInfo, file);
 						} catch (final Exception e) {
 							log.error("failed to decode journal entry", e);
 							fail("faild to decode journal entry");

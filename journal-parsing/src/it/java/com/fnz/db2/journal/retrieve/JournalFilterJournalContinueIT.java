@@ -21,22 +21,20 @@ import org.slf4j.LoggerFactory;
 import com.fnz.db2.journal.retrieve.SchemaCacheIF.TableInfo;
 import com.fnz.db2.journal.test.TestConnector;
 import com.ibm.as400.access.AS400;
-import com.ibm.as400.access.AS400Message;
 import com.ibm.as400.access.AS400SecurityException;
-import com.ibm.as400.access.CommandCall;
 import com.ibm.as400.access.ErrorCompletingRequestException;
 
-class JournalConcurrentUpdatesIT {
+class JournalFilterJournalContinueIT {
+	private static final Logger log = LoggerFactory.getLogger(JournalFilterJournalContinueIT.class);
+
 	private static final int MAX_BUFFER_SIZE = 1024 * 64;
 	private static final int MAX_ENTRIES_TO_FETCH = 200;
 
-	private static final Logger log = LoggerFactory.getLogger(JournalConcurrentUpdatesIT.class);
-
-	static final String SCHEMA = "JRN_CUP"; // note upper case
+	static final String SCHEMA = "FILTER"; // note upper case
 	static final String TABLE = "SEQ1"; // note upper case
-	static final String IGNORE_TABLE = "IGNORE";
+	static final String IGNORE_TABLE = "IGNORE"; // note upper case
 
-	private static final int MAX_UPDATES = 500;
+	private static final int MAX_UPDATES = 50;
 
 	static TestConnector connector = null;
 	static JournalInfo journal;
@@ -44,10 +42,8 @@ class JournalConcurrentUpdatesIT {
 	final static List<FileFilter> includes = List.of(new FileFilter(SCHEMA, TABLE));
 
 	int nextValue = 0;
-	volatile int dummyUpdates = 0;
-	volatile int realUpdates = 0;
-
-	// TODO test journal changeover
+	int dummyUpdates = 0;
+	int realUpdates = 0;
 
 	@BeforeAll
 	public static void setup() throws Exception {
@@ -64,38 +60,58 @@ class JournalConcurrentUpdatesIT {
 
 	@AfterAll
 	public static void teardown() throws Exception {
-		cleanup(connector.getJdbc().connection(), connector.getAs400().connection(), journal);
 	}
 
-	public JournalConcurrentUpdatesIT() {
+	public JournalFilterJournalContinueIT() {
 	}
+
 
 	@Test
-	void testConcurrentUpdatesAndJournalReset() throws Exception {
-
+	void filterUpdates() throws Exception {
+		dummyUpdates = 0;
+		realUpdates = 0;
 		final ITRetrievalHelper helper = new ITRetrievalHelper(connector, journal, includes, MAX_BUFFER_SIZE,
 				MAX_ENTRIES_TO_FETCH, this::processUpdate, r -> null);
 
 		helper.setStartPositionToNow();
 
 		log.debug("insert data");
-		final Thread t = new Thread(() -> insertingRealData(connector, 51, journal));
-		t.start();
+		insertData(connector.getJdbc().connection());
 
-		final Thread dt = new Thread(() -> insertingDummyData(connector, 51, journal));
-		dt.start();
-
-		helper.retrieveJournalEntries(x -> (nextValue != MAX_UPDATES));
+		helper.retrieveJournalEntries(x -> x);
 		log.debug("verify");
 		assertEquals(MAX_UPDATES, nextValue);
 		assertEquals(realUpdates, MAX_UPDATES);
 		assertTrue(dummyUpdates > 0);
 	}
 
-	public Void processUpdate(final Object[] fields, TableInfo tableInfo) {
+
+
+	@Test
+	void filterUpdatesWithNewReceivers() throws Exception {
+		dummyUpdates = 0;
+		realUpdates = 0;
+		final ITRetrievalHelper helper = new ITRetrievalHelper(connector, journal, includes, MAX_BUFFER_SIZE,
+				MAX_ENTRIES_TO_FETCH, this::processUpdate, r -> null);
+
+		helper.setStartPositionToNow();
+
+		log.debug("insert data");
+		updateDataCreateReceiversContinue(connector.getJdbc().connection(), connector.getAs400().connection(), 50,
+				journal);
+
+		helper.retrieveJournalEntries(x -> x);
+		log.debug("verify");
+		assertEquals(MAX_UPDATES, nextValue);
+		assertEquals(MAX_UPDATES, realUpdates);
+		assertTrue(dummyUpdates > 0);
+	}
+
+	public Void processUpdate(final Object[] fields, TableInfo tableInfo, String tableName) {
 		log.debug("found {}, table", tableInfo.getStructure().get(1).getName());
 		;
 		assertEquals("VALUE", tableInfo.getStructure().get(1).getName());
+		assertEquals(TABLE, tableName);
 		assertEquals(nextValue, (Integer) fields[1]);
 		final int i = (Integer) fields[1];
 		log.debug("found {} expecting {}", i, nextValue);
@@ -105,32 +121,22 @@ class JournalConcurrentUpdatesIT {
 		return null;
 	}
 
-	private boolean as400Command(AS400 as400, String command)
-			throws AS400SecurityException, ErrorCompletingRequestException, IOException,
+
+	void updateDataCreateReceiversContinue(Connection con, AS400 as400, int recevierAfter, JournalInfo journal)
+			throws SQLException, AS400SecurityException, ErrorCompletingRequestException, IOException,
 			InterruptedException, PropertyVetoException {
-		final CommandCall call = new CommandCall(as400);
-		final boolean result = call.run(command);
-		log.info("connamd {}", result);
-		final AS400Message[] messagelist = call.getMessageList();
-		for (int j = 0; j < messagelist.length; ++j) {
-			// Show each message.
-			log.info("command {} reponse {}", command, messagelist[j].getText());
-		}
-		return result;
-	}
 
-	void insertingRealData(TestConnector connector, int maxBatchSize, JournalInfo journal) {
-		try {
-			final Connection con = connector.getJdbc().connection();
-			final AS400 as400 = connector.getAs400().connection();
-			final Random r = new Random();
+		final Random r = new Random();
 
-			try (final PreparedStatement ps = con
-					.prepareStatement(String.format("update %s.%s set value=?", SCHEMA, TABLE))) {
+		try (final PreparedStatement ps = con
+				.prepareStatement(String.format("update %s.%s set value=?", SCHEMA, TABLE))) {
+			try (final PreparedStatement ps2 = con
+					.prepareStatement(String.format("update %s.%s set value=?", SCHEMA, IGNORE_TABLE))) {
 				for (int i = 0; i < MAX_UPDATES;) {
 
-					final int n1 = r.nextInt(maxBatchSize);
+					final int n1 = r.nextInt(51);
 					for (int j = 0; j < n1 && i < MAX_UPDATES; j++, i++) {
+						log.info("update {}", i);
 						ps.setInt(1, i);
 						ps.addBatch();
 					}
@@ -138,44 +144,46 @@ class JournalConcurrentUpdatesIT {
 					for (final int x : s) {
 						realUpdates += x;
 					}
-					// as400Command(as400, "sudo/powerup");
-					//					log.info("add new receiver {}", i);
-					as400Command(as400, String.format("CHGJRN JRN(%s/%s) JRNRCV(*GEN) SEQOPT(*RESET)",
+					randomPad(ps2, r.nextInt(51), i);
+					log.info("add new receiver {}", i);
+					ITUtilities.as400Command(as400, String.format("CHGJRN JRN(%s/%s) JRNRCV(*GEN) SEQOPT(*CONT)",
 							journal.journalLibrary(), journal.journalName()));
-					//					final int d = r.nextInt(50);
-					//					Thread.sleep(d);
-					// as400Command(as400, "sudo/powerdown");
+					randomPad(ps2, r.nextInt(51), i);
+					log.info("add new receiver {}", i);
+					ITUtilities.as400Command(as400, String.format("CHGJRN JRN(%s/%s) JRNRCV(*GEN) SEQOPT(*CONT)",
+							journal.journalLibrary(), journal.journalName()));
 				}
 			}
-		} catch (final Exception e) {
-			log.error("inserting failed", e);
 		}
 	}
 
-	void insertingDummyData(TestConnector connector, int maxBatchSize, JournalInfo journal) {
-		try {
-			final Connection con = connector.getJdbc().connection();
-			final Random r = new Random();
+	private void randomPad(final PreparedStatement ps, int updates, int count) throws SQLException {
+		log.info("padding with ignored updates {}", count);
+		for (int j = 0; j <= updates; j++) {
+			ps.setInt(1, -count - j);
+			ps.addBatch();
+		}
+		final int[] s = ps.executeBatch();
+		for (final int x : s) {
+			dummyUpdates += x;
+		}
+	}
 
-			try (final PreparedStatement ps = con
+	void insertData(Connection con) throws SQLException {
+		final Random r = new Random();
+
+		try (final PreparedStatement ps = con
+				.prepareStatement(String.format("update %s.%s set value=?", SCHEMA, TABLE))) {
+			try (final PreparedStatement ps2 = con
 					.prepareStatement(String.format("update %s.%s set value=?", SCHEMA, IGNORE_TABLE))) {
-				for (int i = 0; i < MAX_UPDATES;) {
-
-					final int n1 = r.nextInt(maxBatchSize);
-					for (int j = 0; j < n1 && i < MAX_UPDATES; j++, i++) {
-						ps.setInt(1, -i);
-						ps.addBatch();
-					}
-					final int[] s = ps.executeBatch();
-					for (final int x : s) {
-						dummyUpdates += x;
-					}
-					con.commit();
+				for (int i = 0; i < MAX_UPDATES; i++) {
+					ps.setInt(1, i);
+					realUpdates += ps.executeUpdate();
+					randomPad(ps2, r.nextInt(51), i);
 				}
 			}
-		} catch (final Exception e) {
-			log.error("inserting failed", e);
 		}
+		con.commit();
 	}
 
 	private static void setupTables(Connection con) throws SQLException {
@@ -186,7 +194,8 @@ class JournalConcurrentUpdatesIT {
 			st.executeUpdate(String.format("CREATE OR replace TABLE %s.%s (id int, value int, primary key (id))",
 					SCHEMA, TABLE));
 			st.executeUpdate(String.format("insert into %s.%s (id, value) values (1, -100)", SCHEMA, TABLE));
-			st.executeUpdate(String.format("CREATE OR replace TABLE %s.%s (id int, value int, primary key (id))", SCHEMA, IGNORE_TABLE));
+			st.executeUpdate(String.format("CREATE OR replace TABLE %s.%s (id int, value int, primary key (id))",
+					SCHEMA, IGNORE_TABLE));
 			st.executeUpdate(String.format("insert into %s.%s (id, value) values (0, 0)", SCHEMA, IGNORE_TABLE));
 			con.commit();
 		}
