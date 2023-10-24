@@ -1,22 +1,16 @@
 package com.fnz.db2.journal.retrieve;
 
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.beans.PropertyVetoException;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Optional;
 import java.util.Random;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -25,7 +19,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.fnz.db2.journal.retrieve.SchemaCacheIF.TableInfo;
-import com.fnz.db2.journal.retrieve.rjne0200.EntryHeader;
 import com.fnz.db2.journal.test.TestConnector;
 import com.ibm.as400.access.AS400;
 import com.ibm.as400.access.AS400Message;
@@ -34,136 +27,82 @@ import com.ibm.as400.access.CommandCall;
 import com.ibm.as400.access.ErrorCompletingRequestException;
 
 class JournalConcurrentUpdatesIT {
-
-	// TODO test journal changeover
-
-	private static final int MAX_UPDATES = 100;
-
-	private static SchemaCacheHash schemaCache = new SchemaCacheHash();
-	static JdbcFileDecoder fileDecoder = null;
+	private static final int MAX_BUFFER_SIZE = 1024 * 64;
+	private static final int MAX_ENTRIES_TO_FETCH = 200;
 
 	private static final Logger log = LoggerFactory.getLogger(JournalConcurrentUpdatesIT.class);
 
-	static TestConnector connector = null;
-	static String database;
-
-	static final String SCHEMA = "JRN_TEST4"; // note upper case
-	static final String TABLE = "SEQ1";
+	static final String SCHEMA = "JRN_CUP"; // note upper case
+	static final String TABLE = "SEQ1"; // note upper case
 	static final String IGNORE_TABLE = "IGNORE";
-	int nextValue = 0;
 
-	List<Integer> expected = new LinkedList<>();
-	List<Integer> seen = new LinkedList<>();
+	private static final int MAX_UPDATES = 500;
+
+	static TestConnector connector = null;
+	static JournalInfo journal;
+
+	final static List<FileFilter> includes = List.of(new FileFilter(SCHEMA, TABLE));
+
+	int nextValue = 0;
+	volatile int dummyUpdates = 0;
+	volatile int realUpdates = 0;
+
+	// TODO test journal changeover
 
 	@BeforeAll
 	public static void setup() throws Exception {
+		log.debug("setting up");
 		connector = new TestConnector(SCHEMA);
-		final Connection con = connector.getJdbc().connection();
-		database = JdbcFileDecoder.getDatabaseName(con);
-		setupTables(con);
-		fileDecoder = new JdbcFileDecoder(connector.getJdbc(), database, schemaCache, -1);
+		final Connect<Connection, SQLException> jdbcCon = connector.getJdbc();
+		setupTables(jdbcCon.connection());
+
+		journal = JournalInfoRetrieval.getJournal(connector.getAs400().connection(), SCHEMA, includes);
+		log.debug("journal {}", journal);
+
+		log.debug("set up");
 	}
 
 	@AfterAll
 	public static void teardown() throws Exception {
+		cleanup(connector.getJdbc().connection(), connector.getAs400().connection(), journal);
 	}
 
 	public JournalConcurrentUpdatesIT() {
 	}
 
-	//	@Test
-	//	void findMissing() throws Exception {
-	//		final AS400 as400 = connector.getAs400().connection();
-	//		// as400Command(as400, "sudo/powerup");
-	//
-	//		JournalProcessedPosition lastPosition = null;
-	//		final Connect<AS400, IOException> as400Connect = connector.getAs400();
-	//		final Connect<Connection, SQLException> sqlConnect = connector.getJdbc();
-	//
-	//		final String schema = connector.getSchema();
-	//
-	//		final JournalInfoRetrieval journalInfoRetrieval = new JournalInfoRetrieval();
-	//		final List<FileFilter> includes = List.of(new FileFilter(SCHEMA, TABLE));
-	//		final JournalInfo journal = JournalInfoRetrieval.getJournal(as400Connect.connection(), schema, includes);
-	//		log.info("journal {}", journal);
-	//		//		final JournalPosition endPosition = journalInfoRetrieval.getCurrentPosition(as400Connect.connection(), journal);
-	//
-	//		// 76, receiver=JournalReceiver[name=QSQJRN0288
-	//		final JournalPosition sp = new JournalPosition(BigInteger.valueOf(3l),
-	//				new JournalReceiver("QSQJRN0288", SCHEMA));
-	//		JournalProcessedPosition nextPosition = new JournalProcessedPosition(sp, Instant.now(), false);
-	//
-	//		//		final JournalPosition endPosition = new JournalPosition(BigInteger.valueOf(3l),
-	//		//				new JournalReceiver("QSQJRN0289", SCHEMA));
-	//
-	//		//		final PositionRange range = new PositionRange(false, nextPosition, endPosition);
-	//
-	//		final AtomicBoolean active = new AtomicBoolean(true);
-	//
-	//		final RetrieveConfig config = new RetrieveConfigBuilder().withAs400(as400Connect).withJournalInfo(journal)
-	//				.withServerFiltering(true).withIncludeFiles(includes).withMaxServerSideEntries(7).build();
-	//		final RetrieveJournal rj = new RetrieveJournal(config, journalInfoRetrieval);
-	//		final long start = System.currentTimeMillis();
-	//		do {
-	//			lastPosition = new JournalProcessedPosition(nextPosition);
-	//			nextPosition = retrieveJorunal(as400Connect, journal, rj, nextPosition);
-	//			if (nextPosition.equals(lastPosition)) {
-	//				log.info("caught up");
-	//			}
-	//		} while (!nextPosition.equals(lastPosition));
-	//		active.set(false);
-	//	}
-
 	@Test
-	void countUpdates() throws Exception {
-		final AS400 as400 = connector.getAs400().connection();
-		// as400Command(as400, "sudo/powerup");
+	void testConcurrentUpdatesAndJournalReset() throws Exception {
 
-		JournalProcessedPosition lastPosition = null;
-		final Connect<AS400, IOException> as400Connect = connector.getAs400();
-		final Connect<Connection, SQLException> sqlConnect = connector.getJdbc();
+		final ITRetrievalHelper helper = new ITRetrievalHelper(connector, journal, includes, MAX_BUFFER_SIZE,
+				MAX_ENTRIES_TO_FETCH, this::processUpdate, r -> null);
 
-		final String schema = connector.getSchema();
+		helper.setStartPositionToNow();
 
-		final JournalInfoRetrieval journalInfoRetrieval = new JournalInfoRetrieval();
-		final List<FileFilter> includes = List.of(new FileFilter(SCHEMA, TABLE));
-		final JournalInfo journal = JournalInfoRetrieval.getJournal(as400Connect.connection(), schema, includes);
-		log.info("journal {}", journal);
-		final JournalPosition endPosition = journalInfoRetrieval.getCurrentPosition(as400Connect.connection(), journal);
-		JournalProcessedPosition nextPosition = new JournalProcessedPosition(endPosition, Instant.now(), true);
-
-		final AtomicBoolean active = new AtomicBoolean(true);
-
-		final Thread t = new Thread(() -> insertingRealData(connector, 51, journal, active));
+		log.debug("insert data");
+		final Thread t = new Thread(() -> insertingRealData(connector, 51, journal));
 		t.start();
 
-		final Thread dt = new Thread(() -> insertingDummyData(connector, 51, journal, active));
+		final Thread dt = new Thread(() -> insertingDummyData(connector, 51, journal));
 		dt.start();
 
-		final RetrieveConfig config = new RetrieveConfigBuilder().withAs400(as400Connect).withJournalInfo(journal)
-				.withServerFiltering(true).withIncludeFiles(includes).withMaxServerSideEntries(7).build();
-		final RetrieveJournal rj = new RetrieveJournal(config, journalInfoRetrieval);
-		final long start = System.currentTimeMillis();
-		do {
-			lastPosition = new JournalProcessedPosition(nextPosition);
-			nextPosition = retrieveJorunal(as400Connect, journal, rj, nextPosition);
-			if (nextPosition.equals(lastPosition)) {
-				log.info("caught up");
-			}
-		} while (System.currentTimeMillis() - start < 60000l);
+		helper.retrieveJournalEntries(x -> (nextValue != MAX_UPDATES));
+		log.debug("verify");
+		assertEquals(MAX_UPDATES, nextValue);
+		assertEquals(realUpdates, MAX_UPDATES);
+		assertTrue(dummyUpdates > 0);
+	}
 
-		active.set(false);
-		Thread.sleep(100);
+	public Void processUpdate(final Object[] fields, TableInfo tableInfo) {
+		log.debug("found {}, table", tableInfo.getStructure().get(1).getName());
+		;
+		assertEquals("VALUE", tableInfo.getStructure().get(1).getName());
+		assertEquals(nextValue, (Integer) fields[1]);
+		final int i = (Integer) fields[1];
+		log.debug("found {} expecting {}", i, nextValue);
+		assertEquals(nextValue, i);
+		nextValue++;
 
-		do {
-			lastPosition = new JournalProcessedPosition(nextPosition);
-			nextPosition = retrieveJorunal(as400Connect, journal, rj, nextPosition);
-			if (nextPosition.equals(lastPosition)) {
-				log.info("caught up");
-			}
-		} while (!nextPosition.equals(lastPosition));
-		assertArrayEquals(new ArrayList<>(expected).toArray(), new ArrayList<>(seen).toArray(), "found all entries");
-		// as400Command(as400, "sudo/powerdown");
+		return null;
 	}
 
 	private boolean as400Command(AS400 as400, String command)
@@ -180,84 +119,32 @@ class JournalConcurrentUpdatesIT {
 		return result;
 	}
 
-	private JournalProcessedPosition retrieveJorunal(Connect<AS400, IOException> connector, JournalInfo journal,
-			RetrieveJournal r, JournalProcessedPosition position) throws Exception {
-
-		final boolean success = r.retrieveJournal(position);
-		log.info("success: {} position: {} header {}", success, position, r.getFirstHeader());
-
-		if (success) {
-			while (r.nextEntry()) {
-				final EntryHeader eheader = r.getEntryHeader();
-
-				position.setPosition(r.getPosition());
-				final JournalEntryType entryType = eheader.getJournalEntryType();
-				//				log.info("{}.{}", eheader.getJournalCode(), eheader.getEntryType());
-
-				if (entryType == null) {
-					continue;
-				}
-				final String file = eheader.getFile();
-				final String lib = eheader.getLibrary();
-				final String member = eheader.getMember();
-
-				assertEquals(TABLE, file);
-				//				log.info("receiver {}", eheader.getReceiver());
-
-				switch (entryType) {
-				case AFTER_IMAGE, ROLLBACK_AFTER_IMAGE:
-					if (!"DL".equals(eheader.getEntryType()) && !"DR".equals(eheader.getEntryType())) {
-						//				String recordFileName = "/QSYS.LIB/" + lib + ".LIB/" + file + ".FILE/" + member + ".MBR";
-						final Optional<TableInfo> tableInfoOpt = fileDecoder.getRecordFormat(eheader.getFile(), eheader.getLibrary());
-						tableInfoOpt.ifPresent(tableInfo -> {
-							try {
-								final Object[] fields = r.decode(fileDecoder);
-
-								assertEquals("VALUE", tableInfo.getStructure().get(1).getName());
-								assertEquals(nextValue, (Integer) fields[1]);
-								final int i = (Integer) fields[1];
-								seen.add(i);
-								//								log.info("found {} expecting {} {} {}", i, nextValue, member, r.getPosition());
-								assertEquals(nextValue, i);
-								nextValue++;
-							} catch (final Exception e) {
-								log.error("failed to decode journal entry {}", nextValue, e);
-							}
-						});
-					}
-				break;
-				default:
-					break;
-				}
-
-			}
-			position.setPosition(r.getPosition());
-		}
-		return position;
-	}
-
-	void insertingRealData(TestConnector connector, int maxBatchSize, JournalInfo journal, AtomicBoolean active) {
+	void insertingRealData(TestConnector connector, int maxBatchSize, JournalInfo journal) {
 		try {
 			final Connection con = connector.getJdbc().connection();
 			final AS400 as400 = connector.getAs400().connection();
 			final Random r = new Random();
 
-			try (final PreparedStatement ps = con.prepareStatement("update JRN_TEST4.SEQ1 set value=?")) {
-				for (int i = 0; active.get();) {
+			try (final PreparedStatement ps = con
+					.prepareStatement(String.format("update %s.%s set value=?", SCHEMA, TABLE))) {
+				for (int i = 0; i < MAX_UPDATES;) {
 
 					final int n1 = r.nextInt(maxBatchSize);
-					for (int j = 0; j < n1; j++) {
-						expected.add(i);
+					for (int j = 0; j < n1 && i < MAX_UPDATES; j++, i++) {
 						ps.setInt(1, i);
 						ps.addBatch();
-						i++;
 					}
-					ps.executeBatch();
+					final int[] s = ps.executeBatch();
+					for (final int x : s) {
+						realUpdates += x;
+					}
+					// as400Command(as400, "sudo/powerup");
 					//					log.info("add new receiver {}", i);
 					as400Command(as400, String.format("CHGJRN JRN(%s/%s) JRNRCV(*GEN) SEQOPT(*RESET)",
 							journal.journalLibrary(), journal.journalName()));
 					//					final int d = r.nextInt(50);
 					//					Thread.sleep(d);
+					// as400Command(as400, "sudo/powerdown");
 				}
 			}
 		} catch (final Exception e) {
@@ -265,24 +152,25 @@ class JournalConcurrentUpdatesIT {
 		}
 	}
 
-	void insertingDummyData(TestConnector connector, int maxBatchSize, JournalInfo journal, AtomicBoolean active) {
+	void insertingDummyData(TestConnector connector, int maxBatchSize, JournalInfo journal) {
 		try {
 			final Connection con = connector.getJdbc().connection();
-			final AS400 as400 = connector.getAs400().connection();
 			final Random r = new Random();
 
-			try (final PreparedStatement ps = con.prepareStatement("update JRN_TEST4.IGNORE set value=?")) {
-				for (int i = 0; active.get();) {
+			try (final PreparedStatement ps = con
+					.prepareStatement(String.format("update %s.%s set value=?", SCHEMA, IGNORE_TABLE))) {
+				for (int i = 0; i < MAX_UPDATES;) {
 
 					final int n1 = r.nextInt(maxBatchSize);
-					for (int j = 0; j < n1; j++) {
+					for (int j = 0; j < n1 && i < MAX_UPDATES; j++, i++) {
 						ps.setInt(1, -i);
 						ps.addBatch();
-						i++;
 					}
-					ps.executeBatch();
-					//					final int d = r.nextInt(50);
-					//					Thread.sleep(d);
+					final int[] s = ps.executeBatch();
+					for (final int x : s) {
+						dummyUpdates += x;
+					}
+					con.commit();
 				}
 			}
 		} catch (final Exception e) {
@@ -291,47 +179,20 @@ class JournalConcurrentUpdatesIT {
 	}
 
 	private static void setupTables(Connection con) throws SQLException {
-		boolean exists = false;
-		try (final PreparedStatement ps = con
-				.prepareStatement("select table_name, SYSTEM_TABLE from qsys2.systables where table_schema=?")) {
-			ps.setString(1, SCHEMA);
-			try (ResultSet rs = ps.executeQuery()) {
-				try (final Statement stable = con.createStatement()) {
-					while (rs.next()) {
-						final String table = rs.getString(1);
-						final String system = rs.getString(2);
-						if ("N".equals(system)) {
-							stable.executeUpdate(String.format("truncate table %s.%s", SCHEMA, table));
-						}
-					}
-				}
-			}
-		}
-		try (final PreparedStatement ps = con
-				.prepareStatement("SELECT * FROM TABLE (QSYS2.OBJECT_STATISTICS(?,'LIB')) AS A")) {
-			ps.setString(1, SCHEMA);
-			try (ResultSet rs = ps.executeQuery()) {
-				if (rs.next()) {
-					exists = true;
-				}
-			}
-		}
+		ITUtilities.createSchema(con, SCHEMA);
+		ITUtilities.truncateAllTables(con, SCHEMA); // if tables still exist
+
 		try (final Statement st = con.createStatement()) {
-			if (!exists) {
-				st.executeUpdate(String.format("create schema %s", SCHEMA));
-			}
-			st.executeUpdate("CREATE OR replace TABLE JRN_TEST4.SEQ1 (id int, value int, primary key (id))");
-			st.executeUpdate("CREATE OR replace TABLE JRN_TEST4.IGNORE (id int, value int, primary key (id))");
-			st.executeUpdate("insert into JRN_TEST4.SEQ1 (id, value) values (1, 1)");
-			st.executeUpdate("insert into JRN_TEST4.IGNORE (id, value) values (0, 0)");
+			st.executeUpdate(String.format("CREATE OR replace TABLE %s.%s (id int, value int, primary key (id))",
+					SCHEMA, TABLE));
+			st.executeUpdate(String.format("insert into %s.%s (id, value) values (1, -100)", SCHEMA, TABLE));
+			st.executeUpdate(String.format("CREATE OR replace TABLE %s.%s (id int, value int, primary key (id))", SCHEMA, IGNORE_TABLE));
+			st.executeUpdate(String.format("insert into %s.%s (id, value) values (0, 0)", SCHEMA, IGNORE_TABLE));
+			con.commit();
 		}
 	}
 
-	private static void dropSchema(Connection con) {
-		try (final Statement st = con.createStatement()) {
-			st.executeUpdate(String.format("drop schema %s RESTRICT", SCHEMA));
-		} catch (final SQLException e) {
-			log.debug("failed to drop schema {}", SCHEMA, e);
-		}
+	static void cleanup(Connection con, AS400 as400, JournalInfo journal) throws Exception {
+		ITUtilities.deleteReceiversDropSchema(con, as400, journal);
 	}
 }

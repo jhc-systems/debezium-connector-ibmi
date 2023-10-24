@@ -86,12 +86,12 @@ public class ParameterListBuilder {
 	}
 
 	public ParameterListBuilder withReceivers(PositionRange range) {
-		withStartingSequence(range.start().getOffset());
-		withEnd(range.end().getOffset());
 		this.startReceiver = range.start().getReceiver().name();
 		this.startLibrary = range.start().getReceiver().library();
+		withStartingSequence(range.start().getOffset());
 		this.endReceiver = range.end().getReceiver().name();
 		this.endLibrary = range.end().receiver().library();
+		withEnd(range.end().getOffset());
 		criteria.withReceiverRange(startReceiver, startLibrary, endReceiver, endLibrary);
 		return this;
 	}

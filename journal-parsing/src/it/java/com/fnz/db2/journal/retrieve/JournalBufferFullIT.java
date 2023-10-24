@@ -37,8 +37,8 @@ class JournalBufferFullIT {
 
 	private static final Logger log = LoggerFactory.getLogger(JournalBufferFullIT.class);
 
-	static final String SCHEMA = "JRN_TEST2"; // note upper case
-	static final String TABLE = "SEQ1";
+	static final String SCHEMA = "BUF_FULL"; // note upper case
+	static final String TABLE = "SEQ1"; // note upper case
 
 	private static final int MAX_BUFFER_SIZE = 380;
 	private static final int MAX_UPDATES = 3;

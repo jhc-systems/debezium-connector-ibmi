@@ -186,6 +186,7 @@ public class JournalReceivers {
 
 	private Optional<PositionRange> rangeWhenResetAtEnd(JournalProcessedPosition start,
 			DetailedJournalReceiver receiver, DetailedJournalReceiver last) {
+		// TODO remove start = end condition?
 		if (last.start().equals(last.end())) {
 			// only one entry in this receiver use this receiver and next both with offset 1
 			return Optional.of(new PositionRange(false, start,
