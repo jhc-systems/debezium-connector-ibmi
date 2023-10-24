@@ -37,7 +37,7 @@ import io.debezium.util.Clock;
 
 public class As400SnapshotChangeEventSource
 extends RelationalSnapshotChangeEventSource<As400Partition, As400OffsetContext> {
-	private static Logger log = LoggerFactory.getLogger(As400SnapshotChangeEventSource.class);
+	private static final Logger log = LoggerFactory.getLogger(As400SnapshotChangeEventSource.class);
 
 	private final As400ConnectorConfig connectorConfig;
 	private final As400JdbcConnection jdbcConnection;
@@ -131,9 +131,9 @@ extends RelationalSnapshotChangeEventSource<As400Partition, As400OffsetContext> 
 
 		final Instant now = Instant.now();
 		final JournalPosition position = rpcConnection.getCurrentPosition();
-		// set last entry to processed so we don't process it again
-		final JournalProcessedPosition procssedPos = new JournalProcessedPosition(position, now, true);
-		snapshotContext.offset = new As400OffsetContext(connectorConfig, procssedPos);
+		// set last entry to processed, so we don't process it again
+		final JournalProcessedPosition processedPos = new JournalProcessedPosition(position, now, true);
+		snapshotContext.offset = new As400OffsetContext(connectorConfig, processedPos);
 	}
 
 	@Override
@@ -204,15 +204,12 @@ extends RelationalSnapshotChangeEventSource<As400Partition, As400OffsetContext> 
 
 		// found a previous offset and the earlier snapshot has completed
 		if (previousOffset != null && previousOffset.isSnapshotCompplete()) {
-			if (previousOffset instanceof As400OffsetContext) { // remove and simply return the new Snapshotting task
-				// when control tables in place
-				final As400OffsetContext ctx = previousOffset;
-				if (!ctx.hasNewTables()) {
-					log.info(
-							"A previous offset indicating a completed snapshot has been found. Neither schema nor data will be snapshotted.");
-					return new SnapshottingTask(false, false, dataCollectionsToBeSnapshotted,
-							snapshotSelectOverridesByTable, false);
-				}
+			// when control tables in place
+			if (!previousOffset.hasNewTables()) {
+				log.info(
+						"A previous offset indicating a completed snapshot has been found. Neither schema nor data will be snapshotted.");
+				return new SnapshottingTask(false, false, dataCollectionsToBeSnapshotted,
+						snapshotSelectOverridesByTable, false);
 			}
 		}
 
