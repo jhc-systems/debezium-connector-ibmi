@@ -25,7 +25,7 @@ public class JournalReceivers {
 		this.journalInfo=  journalInfo;
 	}
 
-	PositionRange findRange(AS400 as400, boolean isFiltering, JournalProcessedPosition startPosition) throws Exception {
+	PositionRange findRange(AS400 as400, JournalProcessedPosition startPosition) throws Exception {
 		final BigInteger start = startPosition.getOffset();
 		final boolean fromBeginning = !startPosition.isOffsetSet() || start.equals(BigInteger.ZERO);
 
@@ -49,14 +49,13 @@ public class JournalReceivers {
 			// we're currently on the same journal just check the relative offset is within range
 			// don't update the cache as we are not going to know the real end offset for this journal receiver until we move on to the next
 			if (startPosition.isSameReceiver(endPosition)) {
-				return maxOffsetInSameReceiver(startPosition, endPosition, maxServerSideEntriesBI);
+				return paginateInSameReceiver(startPosition, endPosition, maxServerSideEntriesBI);
 			}
 		} else {
 			// last call to current position won't include the correct end offset so we need to refresh the list
 			cachedReceivers = journalInfoRetrieval.getReceivers(as400, journalInfo);
 			cachedEndPosition = endPosition;
 		}
-		log.debug("recievers {}", cachedReceivers);
 
 		Optional<PositionRange> endOpt = findPosition(startPosition, maxServerSideEntriesBI, cachedReceivers,
 				cachedEndPosition);
@@ -94,7 +93,7 @@ public class JournalReceivers {
 	 * @return
 	 * @throws Exception
 	 */
-	PositionRange maxOffsetInSameReceiver(JournalProcessedPosition startPosition, DetailedJournalReceiver endJournalPosition, BigInteger maxServerSideEntriesBI) throws Exception {
+	PositionRange paginateInSameReceiver(JournalProcessedPosition startPosition, DetailedJournalReceiver endJournalPosition, BigInteger maxServerSideEntriesBI) throws Exception {
 		if (!startPosition.isSameReceiver(endJournalPosition)) {
 			throw new Exception(String.format("Error this method is only valid for same receiver start %s, end %s", startPosition, endJournalPosition));
 		}
@@ -158,9 +157,6 @@ public class JournalReceivers {
 			this.startPosition = startPosition;
 		}
 
-		// adding one to the range and then adding as we include both ends
-		// but we must not use the add one when setting the end point
-		// i.e. 1-> 10 is a total of 10 entries but the range can only go to 10
 		public Optional<PositionRange> next(DetailedJournalReceiver nextReceiver) {
 			if (found) {
 				// if the next journal has wrapped use just go to the end
@@ -169,6 +165,14 @@ public class JournalReceivers {
 					if (startEqualsEndAndProcessed(startPosition, lastReceiver)) {
 						startPosition.setPosition(new JournalPosition(nextReceiver.start(), nextReceiver.info().receiver()), false);
 					} else {
+						// the only way we can get here is if we have already checked for pagination
+						// when we found the start so we should never need to paginate
+						// it is inexpensive and safer to check
+						final Optional<PositionRange> paginated = rangeWithinCurrentPosition(lastReceiver,
+								startPosition.getOffset());
+						if (paginated.isPresent()) {
+							return paginated;
+						}
 						return Optional.of(new PositionRange(false, startPosition,
 								new JournalPosition(lastReceiver.end(), lastReceiver.info().receiver())));
 					}
@@ -190,6 +194,9 @@ public class JournalReceivers {
 			return Optional.empty();
 		}
 
+		// adding one to the range and then adding as we include both ends
+		// but we must not use the add one when setting the end point
+		// i.e. 1-> 10 is a total of 10 entries but the range can only go to 10
 		private Optional<PositionRange> rangeWithinCurrentPosition(DetailedJournalReceiver nextReceiver,
 				BigInteger currentOffset) {
 			final BigInteger difference = nextReceiver.end().subtract(currentOffset);
