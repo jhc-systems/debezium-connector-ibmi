@@ -30,7 +30,6 @@ public class JournalReceivers {
 		final boolean fromBeginning = !startPosition.isOffsetSet() || start.equals(BigInteger.ZERO);
 
 		final DetailedJournalReceiver endPosition = journalInfoRetrieval.getCurrentDetailedJournalReceiver(as400, journalInfo);
-		log.info("end {}", endPosition);
 
 		if (fromBeginning) {
 			return new PositionRange(fromBeginning, startPosition,
@@ -67,7 +66,7 @@ public class JournalReceivers {
 			endOpt = findPosition(startPosition, maxServerSideEntriesBI, cachedReceivers, endPosition);
 		}
 
-		log.info("journals {}", cachedReceivers);
+		log.debug("end {} journals {}", endPosition, cachedReceivers);
 
 		return endOpt.orElseGet(
 				() -> new PositionRange(fromBeginning, startPosition,

@@ -102,56 +102,59 @@ class JournalConcurrentUpdatesResetJournalsIT {
 
 	void insertingRealData(TestConnector connector, int maxBatchSize, JournalInfo journal) {
 		try {
-			final Connection con = connector.getJdbc().connection();
-			final AS400 as400 = connector.getAs400().connection();
-			final Random r = new Random();
+			try (Connection con = connector.getNewJdbcConnection()) {
+				final AS400 as400 = connector.getAs400().connection();
+				final Random r = new Random();
 
-			try (final PreparedStatement ps = con
-					.prepareStatement(String.format("update %s.%s set value=?", SCHEMA, TABLE))) {
-				for (int i = 0; i < MAX_UPDATES;) {
+				try (final PreparedStatement ps = con
+						.prepareStatement(String.format("update %s.%s set value=?", SCHEMA, TABLE))) {
+					for (int i = 0; i < MAX_UPDATES;) {
 
-					final int n1 = r.nextInt(maxBatchSize);
-					for (int j = 0; j < n1 && i < MAX_UPDATES; j++, i++) {
-						ps.setInt(1, i);
-						ps.addBatch();
+						final int n1 = r.nextInt(maxBatchSize);
+						for (int j = 0; j < n1 && i < MAX_UPDATES; j++, i++) {
+							ps.setInt(1, i);
+							ps.addBatch();
+						}
+						final int[] s = ps.executeBatch();
+						for (final int x : s) {
+							realUpdates += x;
+						}
+						// ITUtilities.as400Command(as400, "sudo/powerup");
+						//					log.info("add new receiver {}", i);
+						ITUtilities.as400Command(as400, String.format("CHGJRN JRN(%s/%s) JRNRCV(*GEN) SEQOPT(*RESET)",
+								journal.journalLibrary(), journal.journalName()));
+						//					final int d = r.nextInt(50);
+						//					Thread.sleep(d);
+						// ITUtilities.as400Command(as400, "sudo/powerdown");
 					}
-					final int[] s = ps.executeBatch();
-					for (final int x : s) {
-						realUpdates += x;
-					}
-					// ITUtilities.as400Command(as400, "sudo/powerup");
-					//					log.info("add new receiver {}", i);
-					ITUtilities.as400Command(as400, String.format("CHGJRN JRN(%s/%s) JRNRCV(*GEN) SEQOPT(*RESET)",
-							journal.journalLibrary(), journal.journalName()));
-					//					final int d = r.nextInt(50);
-					//					Thread.sleep(d);
-					// ITUtilities.as400Command(as400, "sudo/powerdown");
 				}
 			}
 		} catch (final Exception e) {
 			log.error("inserting failed", e);
 		}
+
 	}
 
 	void insertingDummyData(TestConnector connector, int maxBatchSize, JournalInfo journal) {
 		try {
-			final Connection con = connector.getJdbc().connection();
-			final Random r = new Random();
+			try (Connection con = connector.getNewJdbcConnection()) {
+				final Random r = new Random();
 
-			try (final PreparedStatement ps = con
-					.prepareStatement(String.format("update %s.%s set value=?", SCHEMA, IGNORE_TABLE))) {
-				for (int i = 0; i < MAX_UPDATES;) {
+				try (final PreparedStatement ps = con
+						.prepareStatement(String.format("update %s.%s set value=?", SCHEMA, IGNORE_TABLE))) {
+					for (int i = 0; i < MAX_UPDATES;) {
 
-					final int n1 = r.nextInt(maxBatchSize);
-					for (int j = 0; j < n1 && i < MAX_UPDATES; j++, i++) {
-						ps.setInt(1, -i);
-						ps.addBatch();
+						final int n1 = r.nextInt(maxBatchSize);
+						for (int j = 0; j < n1 && i < MAX_UPDATES; j++, i++) {
+							ps.setInt(1, -i);
+							ps.addBatch();
+						}
+						final int[] s = ps.executeBatch();
+						for (final int x : s) {
+							dummyUpdates += x;
+						}
+						con.commit();
 					}
-					final int[] s = ps.executeBatch();
-					for (final int x : s) {
-						dummyUpdates += x;
-					}
-					con.commit();
 				}
 			}
 		} catch (final Exception e) {

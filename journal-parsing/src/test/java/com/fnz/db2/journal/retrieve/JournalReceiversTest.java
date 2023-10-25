@@ -390,4 +390,78 @@ class JournalReceiversTest {
 		final boolean found = jreceivers.containsEndPosition(list, dr1);
 		assertFalse(found, "receiver does not exist in list");
 	}
+
+	@Test
+	void testStartEqualsEndNotProcessed() {
+		final JournalReceivers jreceivers = new JournalReceivers(journalInfoRetrieval, 100, journalInfo);
+		final DetailedJournalReceiver j1 = new DetailedJournalReceiver(
+				new JournalReceiverInfo(new JournalReceiver("j1", "jlib"), new Date(1),
+						JournalStatus.OnlineSavedDetached, Optional.of(1)),
+				BigInteger.valueOf(1), BigInteger.valueOf(10), Optional.empty(), 1, 1);
+		final List<DetailedJournalReceiver> list = List.of(j1);
+
+		final JournalProcessedPosition start = new JournalProcessedPosition(BigInteger.valueOf(10),
+				j1.info().receiver(), Instant.ofEpochSecond(0), false);
+
+		final Optional<PositionRange> found = jreceivers.findPosition(start, BigInteger.valueOf(15), list, j1);
+		assertEquals(start, found.get().start());
+		assertEquals(start.asJournalPosition(), found.get().end());
+		assertFalse(found.get().startEqualsEnd());
+	}
+
+	@Test
+	void testStartEqualsEndProcessed() {
+		final JournalReceivers jreceivers = new JournalReceivers(journalInfoRetrieval, 100, journalInfo);
+		final DetailedJournalReceiver j1 = new DetailedJournalReceiver(
+				new JournalReceiverInfo(new JournalReceiver("j1", "jlib"), new Date(1),
+						JournalStatus.OnlineSavedDetached, Optional.of(1)),
+				BigInteger.valueOf(1), BigInteger.valueOf(10), Optional.empty(), 1, 1);
+		final List<DetailedJournalReceiver> list = List.of(j1);
+
+		final JournalProcessedPosition start = new JournalProcessedPosition(BigInteger.valueOf(10),
+				j1.info().receiver(), Instant.ofEpochSecond(0), true);
+
+		final Optional<PositionRange> found = jreceivers
+				.findPosition(start, BigInteger.valueOf(15), list, j1);
+		assertEquals(start, found.get().start());
+		assertEquals(start.asJournalPosition(), found.get().end());
+		assertTrue(found.get().startEqualsEnd());
+	}
+
+	@Test
+	void testStartEqualsEndNotProcessedNextReceiver() {
+		final JournalReceivers jreceivers = new JournalReceivers(journalInfoRetrieval, 100, journalInfo);
+		final DetailedJournalReceiver j1 = new DetailedJournalReceiver(
+				new JournalReceiverInfo(new JournalReceiver("j1", "jlib"), new Date(1),
+						JournalStatus.OnlineSavedDetached, Optional.of(1)),
+				BigInteger.valueOf(1), BigInteger.valueOf(10), Optional.empty(), 1, 1);
+		final List<DetailedJournalReceiver> list = List.of(j1);
+
+		final JournalProcessedPosition start = new JournalProcessedPosition(BigInteger.valueOf(10),
+				j1.info().receiver(), Instant.ofEpochSecond(0), false);
+
+		final Optional<PositionRange> found = jreceivers.findPosition(start, BigInteger.valueOf(15), list, j1);
+		assertEquals(start, found.get().start());
+		assertEquals(start.asJournalPosition(), found.get().end());
+		assertFalse(found.get().startEqualsEnd());
+	}
+
+	//	@Test
+	//	void testStartEqualsEndProcessed() {
+	//		final JournalReceivers jreceivers = new JournalReceivers(journalInfoRetrieval, 100, journalInfo);
+	//		final DetailedJournalReceiver j1 = new DetailedJournalReceiver(
+	//				new JournalReceiverInfo(new JournalReceiver("j1", "jlib"), new Date(1),
+	//						JournalStatus.OnlineSavedDetached, Optional.of(1)),
+	//				BigInteger.valueOf(1), BigInteger.valueOf(10), Optional.empty(), 1, 1);
+	//		final List<DetailedJournalReceiver> list = List.of(j1);
+	//
+	//		final JournalProcessedPosition start = new JournalProcessedPosition(BigInteger.valueOf(10),
+	//				j1.info().receiver(), Instant.ofEpochSecond(0), true);
+	//
+	//		final Optional<PositionRange> found = jreceivers
+	//				.findPosition(start, BigInteger.valueOf(15), list, j1);
+	//		assertEquals(start, found.get().start());
+	//		assertEquals(start.asJournalPosition(), found.get().end());
+	//		assertTrue(found.get().startEqualsEnd());
+	//	}
 }
