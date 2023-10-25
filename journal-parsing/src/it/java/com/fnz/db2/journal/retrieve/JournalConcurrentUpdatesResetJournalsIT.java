@@ -78,7 +78,10 @@ class JournalConcurrentUpdatesResetJournalsIT {
 		final Thread dt = new Thread(() -> insertingDummyData(connector, 51, journal));
 		dt.start();
 
-		helper.retrieveJournalEntries(x -> (nextValue != MAX_UPDATES));
+		helper.retrieveJournalEntries(x -> {
+			log.debug("waiting for {}={}", nextValue, MAX_UPDATES);
+			return (nextValue != MAX_UPDATES);
+		});
 		log.debug("verify");
 		assertEquals(MAX_UPDATES, nextValue);
 		assertEquals(realUpdates, MAX_UPDATES);
@@ -87,7 +90,6 @@ class JournalConcurrentUpdatesResetJournalsIT {
 
 	public Void processUpdate(final Object[] fields, TableInfo tableInfo, String tableName) {
 		log.debug("found {}, table", tableInfo.getStructure().get(1).getName());
-		;
 		assertEquals("VALUE", tableInfo.getStructure().get(1).getName());
 		assertEquals(nextValue, (Integer) fields[1]);
 		final int i = (Integer) fields[1];
