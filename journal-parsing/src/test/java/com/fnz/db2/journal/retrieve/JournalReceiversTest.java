@@ -429,39 +429,48 @@ class JournalReceiversTest {
 	}
 
 	@Test
-	void testStartEqualsEndNotProcessedNextReceiver() {
+	void testStartEqualsEndProcessedResetReceiver() {
 		final JournalReceivers jreceivers = new JournalReceivers(journalInfoRetrieval, 100, journalInfo);
 		final DetailedJournalReceiver j1 = new DetailedJournalReceiver(
 				new JournalReceiverInfo(new JournalReceiver("j1", "jlib"), new Date(1),
 						JournalStatus.OnlineSavedDetached, Optional.of(1)),
-				BigInteger.valueOf(1), BigInteger.valueOf(10), Optional.empty(), 1, 1);
-		final List<DetailedJournalReceiver> list = List.of(j1);
+				BigInteger.valueOf(1), BigInteger.valueOf(10), Optional.of(new JournalReceiver("j2", "jlib")), 1, 1);
+		final DetailedJournalReceiver j2 = new DetailedJournalReceiver(
+				new JournalReceiverInfo(new JournalReceiver("j2", "jlib"), new Date(2),
+						JournalStatus.OnlineSavedDetached, Optional.of(1)),
+				BigInteger.valueOf(1), BigInteger.valueOf(1), Optional.empty(), 1, 1);
+		final List<DetailedJournalReceiver> list = List.of(j1, j2);
 
 		final JournalProcessedPosition start = new JournalProcessedPosition(BigInteger.valueOf(10),
-				j1.info().receiver(), Instant.ofEpochSecond(0), false);
+				j1.info().receiver(), Instant.ofEpochSecond(10), true);
 
-		final Optional<PositionRange> found = jreceivers.findPosition(start, BigInteger.valueOf(15), list, j1);
-		assertEquals(start, found.get().start());
-		assertEquals(start.asJournalPosition(), found.get().end());
+		final Optional<PositionRange> found = jreceivers.findPosition(start, BigInteger.valueOf(20), list, j2);
+		assertEquals(
+				new JournalProcessedPosition(JournalPosition.startPosition(j2), start.getTimeOfLastProcessed(), false),
+				found.get().start());
+		assertEquals(JournalPosition.endPosition(j2), found.get().end());
 		assertFalse(found.get().startEqualsEnd());
 	}
 
-	//	@Test
-	//	void testStartEqualsEndProcessed() {
-	//		final JournalReceivers jreceivers = new JournalReceivers(journalInfoRetrieval, 100, journalInfo);
-	//		final DetailedJournalReceiver j1 = new DetailedJournalReceiver(
-	//				new JournalReceiverInfo(new JournalReceiver("j1", "jlib"), new Date(1),
-	//						JournalStatus.OnlineSavedDetached, Optional.of(1)),
-	//				BigInteger.valueOf(1), BigInteger.valueOf(10), Optional.empty(), 1, 1);
-	//		final List<DetailedJournalReceiver> list = List.of(j1);
-	//
-	//		final JournalProcessedPosition start = new JournalProcessedPosition(BigInteger.valueOf(10),
-	//				j1.info().receiver(), Instant.ofEpochSecond(0), true);
-	//
-	//		final Optional<PositionRange> found = jreceivers
-	//				.findPosition(start, BigInteger.valueOf(15), list, j1);
-	//		assertEquals(start, found.get().start());
-	//		assertEquals(start.asJournalPosition(), found.get().end());
-	//		assertTrue(found.get().startEqualsEnd());
-	//	}
+	@Test
+	void testStartEqualsEndNotProcessedResetReceivers() {
+		final JournalReceivers jreceivers = new JournalReceivers(journalInfoRetrieval, 100, journalInfo);
+		final DetailedJournalReceiver j1 = new DetailedJournalReceiver(
+				new JournalReceiverInfo(new JournalReceiver("j1", "jlib"), new Date(1),
+						JournalStatus.OnlineSavedDetached, Optional.of(1)),
+				BigInteger.valueOf(1), BigInteger.valueOf(10), Optional.of(new JournalReceiver("j2", "jlib")), 1, 1);
+		final DetailedJournalReceiver j2 = new DetailedJournalReceiver(
+				new JournalReceiverInfo(new JournalReceiver("j2", "jlib"), new Date(2),
+						JournalStatus.OnlineSavedDetached, Optional.of(1)),
+				BigInteger.valueOf(1), BigInteger.valueOf(1), Optional.empty(), 1, 1);
+		final List<DetailedJournalReceiver> list = List.of(j1, j2);
+
+		final JournalProcessedPosition start = new JournalProcessedPosition(BigInteger.valueOf(10),
+				j1.info().receiver(), Instant.ofEpochSecond(10), false);
+
+		final Optional<PositionRange> found = jreceivers.findPosition(start, BigInteger.valueOf(20), list, j2);
+		assertEquals(start, found.get().start());
+		assertEquals(JournalPosition.endPosition(j1), found.get().end());
+		assertFalse(found.get().startEqualsEnd());
+	}
 }
