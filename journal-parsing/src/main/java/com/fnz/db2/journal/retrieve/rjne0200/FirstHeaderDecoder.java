@@ -1,10 +1,14 @@
 package com.fnz.db2.journal.retrieve.rjne0200;
 
 import java.math.BigInteger;
+import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Optional;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.fnz.db2.journal.retrieve.JournalPosition;
+import com.fnz.db2.journal.retrieve.JournalProcessedPosition;
 import com.fnz.db2.journal.retrieve.JournalReceiver;
 import com.fnz.db2.journal.retrieve.StringHelpers;
 import com.ibm.as400.access.AS400Bin4;
@@ -16,10 +20,12 @@ import com.ibm.as400.access.CharacterFieldDescription;
 import com.ibm.as400.access.FieldDescription;
 
 public class FirstHeaderDecoder {
-    private final static AS400Structure structure;
+	private static final Logger log = LoggerFactory.getLogger(FirstHeaderDecoder.class);
+
+	private final static AS400Structure structure;
 	static {
-	    ArrayList<AS400DataType> dataTypes = new ArrayList<AS400DataType>();
-		FieldDescription[] fds = new FieldDescription[] {
+		final ArrayList<AS400DataType> dataTypes = new ArrayList<>();
+		final FieldDescription[] fds = new FieldDescription[] {
 				new BinaryFieldDescription(new AS400Bin4(), "0 bytes returned"),
 				new BinaryFieldDescription(new AS400Bin4(), "1 offset to first journal entry"),
 				new BinaryFieldDescription(new AS400Bin4(), "2 number of entries retrieved"),
@@ -27,33 +33,38 @@ public class FirstHeaderDecoder {
 				new CharacterFieldDescription(new AS400Text(10), "4 continuation starting receiver"),
 				new CharacterFieldDescription(new AS400Text(10), "5 continuation starting receiver library"),
 				new CharacterFieldDescription(new AS400Text(20), "6 continutation starting sequence number"),
-				//new CharacterFieldDescription(new AS400Text(11), "7 reserved"), 
-				};
-	    for (int i = 0; i < fds.length; i++) {
-	        dataTypes.add(fds[i].getDataType());
-	    }
-	    structure = new AS400Structure(dataTypes.toArray(new AS400DataType[dataTypes.size()]));
+				//new CharacterFieldDescription(new AS400Text(11), "7 reserved"),
+		};
+		for (int i = 0; i < fds.length; i++) {
+			dataTypes.add(fds[i].getDataType());
+		}
+		structure = new AS400Structure(dataTypes.toArray(new AS400DataType[dataTypes.size()]));
 	}
 
-	public FirstHeader decode(byte[] data) {
-	    Object[] os = (Object[]) structure.toObject(data);
-	    
-	    Optional<JournalPosition> pos = Optional.<JournalPosition>empty();
-	    OffsetStatus status = OffsetStatus.NO_MORE_DATA;
-	    if ("1".equals((String)os[3])) {
-	        status = OffsetStatus.MORE_DATA_NEW_OFFSET;
-	        String receiver = StringHelpers.safeTrim((String)os[4]); 
-	        String library = StringHelpers.safeTrim((String)os[5]);
-	        String offsetStr = StringHelpers.safeTrim((String)os[6]);
-	        BigInteger offset = new BigInteger(offsetStr);
-	        pos = Optional.of(new JournalPosition(offset, new JournalReceiver(receiver, library)));
-	    }
-	    
-	    return new FirstHeader(
-	            (Integer)os[0], 
-	            (Integer)os[1], 
-	            (Integer)os[2], 
-	            status, 
-	            pos);
+	public FirstHeader decode(byte[] data, JournalProcessedPosition fetchedToJournalPosition) {
+		final Object[] os = (Object[]) structure.toObject(data);
+
+		JournalProcessedPosition pos = fetchedToJournalPosition;
+		final Integer offset = (Integer) os[1];
+		OffsetStatus status = (offset != null && offset > 0) ? OffsetStatus.DATA
+				: OffsetStatus.NO_DATA;
+
+		if ("1".equals(os[3])) {
+			status = OffsetStatus.MORE_DATA_NEW_OFFSET;
+			final String receiver = StringHelpers.safeTrim((String)os[4]);
+			final String library = StringHelpers.safeTrim((String)os[5]);
+			final String offsetStr = StringHelpers.safeTrim((String)os[6]);
+			final BigInteger nextOffset = new BigInteger(offsetStr);
+			log.debug("continuation offset {} {}", receiver, nextOffset);
+			final JournalPosition jp = new JournalPosition(nextOffset, new JournalReceiver(receiver, library));
+			pos = new JournalProcessedPosition(jp, Instant.EPOCH, false);
+		}
+
+		return new FirstHeader(
+				(Integer)os[0],
+				offset,
+				(Integer)os[2],
+				status,
+				pos);
 	}
 }

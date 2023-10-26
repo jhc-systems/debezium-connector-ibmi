@@ -160,7 +160,7 @@ public class JdbcFileDecoder extends JournalFileEntryDecoder {
 					final boolean autoInc = "YES".equalsIgnoreCase(columnMetadata.getString(23));
 
 					jdbcStructure
-							.add(new Structure(name, type, jdcbType, length, precision, optional, position, autoInc));
+					.add(new Structure(name, type, jdcbType, length, precision, optional, position, autoInc));
 					final AS400DataType dataType = toDataType(schema, longTableName, name, type, length, precision);
 
 					as400structure.add(dataType);
@@ -359,8 +359,8 @@ public class JdbcFileDecoder extends JournalFileEntryDecoder {
 			return new AS400VarBin(length);
 		case "XML":
 			return AS400_XML;
-//			case "CLOB":
-//				return new AS400Clob(as400);
+			//			case "CLOB":
+			//				return new AS400Clob(as400);
 		default:
 			final Optional<Integer> varLength = bitDataLengthFromRegex(type, length, VAR_BIT_DATA);
 			if (varLength.isPresent()) {

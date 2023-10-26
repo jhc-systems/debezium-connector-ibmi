@@ -19,6 +19,8 @@ public class TestConnector {
 	private Connect<AS400, IOException> as400Connect;
 	private Connect<Connection, SQLException> sqlConnect;
 	private final String schema;
+	private final Properties props;
+	private final String url;
 
 	public TestConnector() throws SQLException {
 		this(System.getenv("ISERIES_SCHEMA"));
@@ -33,9 +35,9 @@ public class TestConnector {
 		final String toCcsid =  System.getenv("TO_CCSID");
 
 
-		final String url = String.format("jdbc:as400:%s", host);
+		url = String.format("jdbc:as400:%s", host);
 
-		final Properties props = new Properties();
+		props = new Properties();
 		props.setProperty("user", user);
 		props.setProperty("password", password);
 		if (fromCcsid != null && toCcsid != null) {
@@ -70,6 +72,16 @@ public class TestConnector {
 
 	public Connect<Connection, SQLException> getJdbc() {
 		return sqlConnect;
+	}
+
+	/**
+	 * used for testing with multiple connections
+	 *
+	 * @return
+	 * @throws SQLException
+	 */
+	public Connection getNewJdbcConnection() throws SQLException {
+		return DriverManager.getConnection(url, props);
 	}
 
 	public String getSchema() {

@@ -267,6 +267,12 @@ To run in VS Code, configure the following launch.json file, and run from the Ru
 
 ## Release notes
 
+### 1.10.2
+
+Fixes data loss bugs:
+* * when receivers reset
+* * after receiving a continuation offset the first entry is occasionally lost (when the next request doesn't contain a continuation offset)
+
 ### 1.9
 
 additional configuration parameters required for avro in the submitted json

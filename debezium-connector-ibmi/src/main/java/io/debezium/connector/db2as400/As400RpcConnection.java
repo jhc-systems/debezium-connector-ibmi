@@ -21,7 +21,6 @@ import com.fnz.db2.journal.retrieve.JournalInfo;
 import com.fnz.db2.journal.retrieve.JournalInfoRetrieval;
 import com.fnz.db2.journal.retrieve.JournalPosition;
 import com.fnz.db2.journal.retrieve.JournalProcessedPosition;
-import com.fnz.db2.journal.retrieve.JournalReceiver;
 import com.fnz.db2.journal.retrieve.RetrieveConfig;
 import com.fnz.db2.journal.retrieve.RetrieveConfigBuilder;
 import com.fnz.db2.journal.retrieve.RetrieveJournal;
@@ -39,14 +38,13 @@ public class As400RpcConnection implements AutoCloseable, Connect<AS400, IOExcep
     private static Logger log = LogManager.getLogger(As400RpcConnection.class);
     private final As400StreamingChangeEventSourceMetrics streamingMetrics;
 
-    private As400ConnectorConfig config;
+    private final As400ConnectorConfig config;
     private JournalInfo journalInfo;
     private RetrieveJournal retrieveJournal;
     private AS400 as400;
     private static SocketProperties socketProperties = new SocketProperties();
     private final LogLimmiting periodic = new LogLimmiting(5 * 60 * 1000l);
-    private final LogLimmiting infrequent = new LogLimmiting(60 * 60 * 1000l);
-    private JournalInfoRetrieval journalInfoRetrieval = new JournalInfoRetrieval();
+    private final JournalInfoRetrieval journalInfoRetrieval = new JournalInfoRetrieval();
 
 
     public As400RpcConnection(As400ConnectorConfig config, As400StreamingChangeEventSourceMetrics streamingMetrics, List<FileFilter> includes) {
@@ -61,7 +59,7 @@ public class As400RpcConnection implements AutoCloseable, Connect<AS400, IOExcep
     		} else {
     			journalInfo = JournalInfoRetrieval.getJournal(connection(), config.getSchema(), includes);
     		}
-			RetrieveConfig rconfig = new RetrieveConfigBuilder().withAs400(this)
+			final RetrieveConfig rconfig = new RetrieveConfigBuilder().withAs400(this)
 					.withJournalBufferSize(config.getJournalBufferSize())
 					.withJournalInfo(journalInfo)
 					.withMaxServerSideEntries(config.getMaxServerSideEntries())
@@ -69,7 +67,7 @@ public class As400RpcConnection implements AutoCloseable, Connect<AS400, IOExcep
 					.withIncludeFiles(includes).build();
 			retrieveJournal = new RetrieveJournal(rconfig, journalInfoRetrieval);
         }
-        catch (IOException e) {
+        catch (final IOException e) {
             log.error("Failed to fetch library", e);
         }
     }
@@ -82,7 +80,7 @@ public class As400RpcConnection implements AutoCloseable, Connect<AS400, IOExcep
                 this.as400.disconnectAllServices();
             }
         }
-        catch (Exception e) {
+        catch (final Exception e) {
             log.debug("Problem closing connection", e);
         }
 
@@ -94,7 +92,8 @@ public class As400RpcConnection implements AutoCloseable, Connect<AS400, IOExcep
 
     }
 
-    public AS400 connection() throws IOException {
+    @Override
+	public AS400 connection() throws IOException {
         if (as400 == null || !as400.isConnectionAlive(AS400.COMMAND)) {
             log.info("create new as400 connection");
             try {
@@ -105,7 +104,7 @@ public class As400RpcConnection implements AutoCloseable, Connect<AS400, IOExcep
                 as400.setSocketProperties(socketProperties);
                 as400.connectService(AS400.COMMAND);
             }
-            catch (Exception e) {
+            catch (final Exception e) {
                 log.error("Failed to reconnect", e);
                 throw new IOException("Failed to reconnect", e);
             }
@@ -115,11 +114,11 @@ public class As400RpcConnection implements AutoCloseable, Connect<AS400, IOExcep
 
     public JournalPosition getCurrentPosition() throws RpcException {
         try {
-            JournalPosition position = journalInfoRetrieval.getCurrentPosition(connection(), journalInfo);
+            final JournalPosition position = journalInfoRetrieval.getCurrentPosition(connection(), journalInfo);
 
             return new JournalPosition(position);
         }
-        catch (Exception e) {
+        catch (final Exception e) {
             throw new RpcException("Failed to find offset", e);
         }
     }
@@ -127,7 +126,7 @@ public class As400RpcConnection implements AutoCloseable, Connect<AS400, IOExcep
     public boolean getJournalEntries(ChangeEventSourceContext context, As400OffsetContext offsetCtx, BlockingReceiverConsumer consumer, WatchDog watchDog)
             throws Exception {
         boolean success = false;
-        JournalProcessedPosition position = offsetCtx.getPosition();
+        final JournalProcessedPosition position = offsetCtx.getPosition();
         success = retrieveJournal.retrieveJournal(position);
 
         logOffsets(position, success);
@@ -137,8 +136,8 @@ public class As400RpcConnection implements AutoCloseable, Connect<AS400, IOExcep
         if (success) {
             while (retrieveJournal.nextEntry() && context.isRunning()) {
                 watchDog.alive();
-                EntryHeader eheader = retrieveJournal.getEntryHeader();
-                BigInteger processingOffset = eheader.getSequenceNumber();
+                final EntryHeader eheader = retrieveJournal.getEntryHeader();
+                final BigInteger processingOffset = eheader.getSequenceNumber();
 
                 consumer.accept(processingOffset, retrieveJournal, eheader);
                 // while processing journal entries getPosistion is the current position
@@ -151,7 +150,7 @@ public class As400RpcConnection implements AutoCloseable, Connect<AS400, IOExcep
         }
         else {
             // this is bad, we've probably lost data
-            List<DetailedJournalReceiver> receivers = journalInfoRetrieval.getReceivers(connection(), journalInfo);
+            final List<DetailedJournalReceiver> receivers = journalInfoRetrieval.getReceivers(connection(), journalInfo);
             log.error(new StructuredMessage("Failed to fetch journal entries, resetting journal to blank",
                     Map.of("position", position, 
                             "receivers", receivers)));
@@ -163,8 +162,8 @@ public class As400RpcConnection implements AutoCloseable, Connect<AS400, IOExcep
 
     private void logOffsets(JournalProcessedPosition position, boolean success) throws IOException, Exception {
         if (periodic.shouldLogRateLimted("offsets")) {
-            JournalPosition currentReceiver = getCurrentPosition();
-            BigInteger behind = currentReceiver.getOffset().subtract(position.getOffset());
+            final JournalPosition currentReceiver = getCurrentPosition();
+            final BigInteger behind = currentReceiver.getOffset().subtract(position.getOffset());
             streamingMetrics.setJournalOffset(currentReceiver.getOffset());
             streamingMetrics.setJournalBehind(behind);
             streamingMetrics.setLastProcessedMs(position.getTimeOfLastProcessed().toEpochMilli());
