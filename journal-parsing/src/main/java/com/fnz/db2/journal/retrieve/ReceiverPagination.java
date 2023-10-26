@@ -10,8 +10,8 @@ import org.slf4j.LoggerFactory;
 import com.fnz.db2.journal.retrieve.rnrn0200.DetailedJournalReceiver;
 import com.ibm.as400.access.AS400;
 
-public class JournalReceivers {
-	static final Logger log = LoggerFactory.getLogger(JournalReceivers.class);
+public class ReceiverPagination {
+	static final Logger log = LoggerFactory.getLogger(ReceiverPagination.class);
 
 	private final JournalInfoRetrieval journalInfoRetrieval;
 	private final JournalInfo journalInfo;
@@ -19,7 +19,7 @@ public class JournalReceivers {
 	private DetailedJournalReceiver cachedEndPosition;
 	private List<DetailedJournalReceiver> cachedReceivers = null;
 
-	JournalReceivers(JournalInfoRetrieval journalInfoRetrieval, int maxServerSideEntries, JournalInfo journalInfo) {
+	ReceiverPagination(JournalInfoRetrieval journalInfoRetrieval, int maxServerSideEntries, JournalInfo journalInfo) {
 		this.journalInfoRetrieval = journalInfoRetrieval;
 		maxServerSideEntriesBI = BigInteger.valueOf(maxServerSideEntries);
 		this.journalInfo=  journalInfo;

@@ -43,7 +43,7 @@ public class RetrieveJournal {
 	private static final FirstHeaderDecoder firstHeaderDecoder = new FirstHeaderDecoder();
 	private static final EntryHeaderDecoder entryHeaderDecoder = new EntryHeaderDecoder();
 	private final SimpleDateFormat dateFormatter = new SimpleDateFormat("yyMMdd-hhmm");
-	private final JournalReceivers journalReceivers;
+	private final ReceiverPagination journalReceivers;
 	private final ParameterListBuilder builder = new ParameterListBuilder();
 
 	RetrieveConfig config;
@@ -56,7 +56,7 @@ public class RetrieveJournal {
 
 	public RetrieveJournal(RetrieveConfig config, JournalInfoRetrieval journalRetrieval) {
 		this.config = config;
-		journalReceivers = new JournalReceivers(journalRetrieval, config.maxServerSideEntries(), config.journalInfo());
+		journalReceivers = new ReceiverPagination(journalRetrieval, config.maxServerSideEntries(), config.journalInfo());
 
 		builder.withJournal(config.journalInfo().journalName(), config.journalInfo().journalLibrary());
 	}

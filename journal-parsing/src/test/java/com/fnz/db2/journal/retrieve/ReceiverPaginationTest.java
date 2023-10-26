@@ -25,8 +25,8 @@ import com.fnz.db2.journal.retrieve.rnrn0200.JournalStatus;
 import com.ibm.as400.access.AS400;
 
 @ExtendWith(MockitoExtension.class)
-class JournalReceiversTest {
-	JournalReceivers receivers;
+class ReceiverPaginationTest {
+	ReceiverPagination receivers;
 	@Mock
 	JournalInfoRetrieval journalInfoRetrieval;
 	JournalInfo journalInfo = new JournalInfo("journal", "journallib");
@@ -50,7 +50,7 @@ class JournalReceiversTest {
 
 	@Test
 	void findRangeWithinCurrentPosistion() throws Exception {
-		final JournalReceivers jreceivers = new JournalReceivers(journalInfoRetrieval, 100, journalInfo);
+		final ReceiverPagination jreceivers = new ReceiverPagination(journalInfoRetrieval, 100, journalInfo);
 
 		final List<DetailedJournalReceiver> list = Arrays.asList(dr1);
 
@@ -68,7 +68,7 @@ class JournalReceiversTest {
 
 	@Test
 	void findRangeInList() throws Exception {
-		final JournalReceivers jreceivers = new JournalReceivers(journalInfoRetrieval, 100, journalInfo);
+		final ReceiverPagination jreceivers = new ReceiverPagination(journalInfoRetrieval, 100, journalInfo);
 
 		final List<DetailedJournalReceiver> list = Arrays.asList(dr1, dr2);
 
@@ -86,7 +86,7 @@ class JournalReceiversTest {
 
 	@Test
 	void findRangeReFetchList() throws Exception {
-		final JournalReceivers jreceivers = new JournalReceivers(journalInfoRetrieval, 15, journalInfo);
+		final ReceiverPagination jreceivers = new ReceiverPagination(journalInfoRetrieval, 15, journalInfo);
 
 		final DetailedJournalReceiver detailedEnd = dr2;
 		final List<DetailedJournalReceiver> list = Arrays.asList(dr1, detailedEnd);
@@ -115,7 +115,7 @@ class JournalReceiversTest {
 
 	@Test
 	void testFindRangeMidFirstEntry() {
-		final JournalReceivers jreceivers = new JournalReceivers(journalInfoRetrieval, 100, journalInfo);
+		final ReceiverPagination jreceivers = new ReceiverPagination(journalInfoRetrieval, 100, journalInfo);
 		final DetailedJournalReceiver j1 = new DetailedJournalReceiver(
 				new JournalReceiverInfo(new JournalReceiver("j1", "jlib"), new Date(1),
 						JournalStatus.OnlineSavedDetached, Optional.of(1)),
@@ -139,7 +139,7 @@ class JournalReceiversTest {
 
 	@Test
 	void testFindRangeMidSecondEntryReset() {
-		final JournalReceivers jreceivers = new JournalReceivers(journalInfoRetrieval, 100, journalInfo);
+		final ReceiverPagination jreceivers = new ReceiverPagination(journalInfoRetrieval, 100, journalInfo);
 		final DetailedJournalReceiver j1 = new DetailedJournalReceiver(
 				new JournalReceiverInfo(new JournalReceiver("j1", "jlib"), new Date(1),
 						JournalStatus.OnlineSavedDetached, Optional.of(1)),
@@ -163,7 +163,7 @@ class JournalReceiversTest {
 
 	@Test
 	void testFindRangeMidSecondContiguous() {
-		final JournalReceivers jreceivers = new JournalReceivers(journalInfoRetrieval, 100, journalInfo);
+		final ReceiverPagination jreceivers = new ReceiverPagination(journalInfoRetrieval, 100, journalInfo);
 		final DetailedJournalReceiver j1 = new DetailedJournalReceiver(
 				new JournalReceiverInfo(new JournalReceiver("j1", "jlib"), new Date(1),
 						JournalStatus.OnlineSavedDetached, Optional.of(1)),
@@ -187,7 +187,7 @@ class JournalReceiversTest {
 
 	@Test
 	void testFindRangeMidEndEntry() {
-		final JournalReceivers jreceivers = new JournalReceivers(journalInfoRetrieval, 100, journalInfo);
+		final ReceiverPagination jreceivers = new ReceiverPagination(journalInfoRetrieval, 100, journalInfo);
 		final DetailedJournalReceiver j1 = new DetailedJournalReceiver(
 				new JournalReceiverInfo(new JournalReceiver("j1", "jlib"), new Date(1),
 						JournalStatus.OnlineSavedDetached, Optional.of(1)),
@@ -211,7 +211,7 @@ class JournalReceiversTest {
 
 	@Test
 	void testFindRangePastEnd() {
-		final JournalReceivers jreceivers = new JournalReceivers(journalInfoRetrieval, 100, journalInfo);
+		final ReceiverPagination jreceivers = new ReceiverPagination(journalInfoRetrieval, 100, journalInfo);
 		final DetailedJournalReceiver j1 = new DetailedJournalReceiver(
 				new JournalReceiverInfo(new JournalReceiver("j1", "jlib"), new Date(1),
 						JournalStatus.OnlineSavedDetached, Optional.of(1)),
@@ -235,7 +235,7 @@ class JournalReceiversTest {
 
 	@Test
 	void testFindRangeEqualsEnd() {
-		final JournalReceivers jreceivers = new JournalReceivers(journalInfoRetrieval, 10, journalInfo);
+		final ReceiverPagination jreceivers = new ReceiverPagination(journalInfoRetrieval, 10, journalInfo);
 		final DetailedJournalReceiver j1 = new DetailedJournalReceiver(
 				new JournalReceiverInfo(new JournalReceiver("j1", "jlib"), new Date(1),
 						JournalStatus.OnlineSavedDetached, Optional.of(1)),
@@ -251,7 +251,7 @@ class JournalReceiversTest {
 
 	@Test
 	void testFindMidStartingMid() {
-		final JournalReceivers jreceivers = new JournalReceivers(journalInfoRetrieval, 100, journalInfo);
+		final ReceiverPagination jreceivers = new ReceiverPagination(journalInfoRetrieval, 100, journalInfo);
 		final DetailedJournalReceiver j1 = new DetailedJournalReceiver(
 				new JournalReceiverInfo(new JournalReceiver("j1", "jlib"), new Date(1),
 						JournalStatus.OnlineSavedDetached, Optional.of(1)),
@@ -280,7 +280,7 @@ class JournalReceiversTest {
 
 	@Test
 	void testFindStartingPastEnd() {
-		final JournalReceivers jreceivers = new JournalReceivers(journalInfoRetrieval, 100, journalInfo);
+		final ReceiverPagination jreceivers = new ReceiverPagination(journalInfoRetrieval, 100, journalInfo);
 		final DetailedJournalReceiver j1 = new DetailedJournalReceiver(
 				new JournalReceiverInfo(new JournalReceiver("j1", "jlib"), new Date(1),
 						JournalStatus.OnlineSavedDetached, Optional.of(1)),
@@ -300,7 +300,7 @@ class JournalReceiversTest {
 	void testPaginateInSameReceiverEnd() throws Exception {
 		final int maxOffset = 1000;
 		final BigInteger maxServerSideEntriesBI = BigInteger.valueOf(maxOffset);
-		final JournalReceivers jreceivers = new JournalReceivers(journalInfoRetrieval, maxOffset, journalInfo);
+		final ReceiverPagination jreceivers = new ReceiverPagination(journalInfoRetrieval, maxOffset, journalInfo);
 
 		final JournalProcessedPosition startPosition = new JournalProcessedPosition(BigInteger.ONE,
 				new JournalReceiver("j1", "jlib"), Instant.ofEpochSecond(0), true);
@@ -318,7 +318,7 @@ class JournalReceiversTest {
 	void testPaginateInSameReceiverLimited() throws Exception {
 		final int maxOffset = 10;
 		final BigInteger maxServerSideEntriesBI = BigInteger.valueOf(maxOffset);
-		final JournalReceivers jreceivers = new JournalReceivers(journalInfoRetrieval, maxOffset, journalInfo);
+		final ReceiverPagination jreceivers = new ReceiverPagination(journalInfoRetrieval, maxOffset, journalInfo);
 
 		final JournalProcessedPosition startPosition = new JournalProcessedPosition(BigInteger.ONE,
 				new JournalReceiver("j1", "jlib"), Instant.ofEpochSecond(0), true);
@@ -348,14 +348,14 @@ class JournalReceiversTest {
 				new JournalReceiverInfo(j2.info().receiver(), new Date(2), JournalStatus.OnlineSavedDetached,
 						Optional.of(1)),
 				BigInteger.valueOf(11), BigInteger.valueOf(200), Optional.empty(), 1, 1);
-		JournalReceivers.updateEndPosition(list, endPosition);
+		ReceiverPagination.updateEndPosition(list, endPosition);
 
 		assertEquals(endPosition, list.get(1));
 	}
 
 	@Test
 	void testFindMissingCurrentReceiver() {
-		final JournalReceivers jreceivers = new JournalReceivers(journalInfoRetrieval, 100, journalInfo);
+		final ReceiverPagination jreceivers = new ReceiverPagination(journalInfoRetrieval, 100, journalInfo);
 		final DetailedJournalReceiver j1 = new DetailedJournalReceiver(
 				new JournalReceiverInfo(new JournalReceiver("j1", "jlib"), new Date(1),
 						JournalStatus.OnlineSavedDetached, Optional.of(1)),
@@ -377,7 +377,7 @@ class JournalReceiversTest {
 
 	@Test
 	void testContainsEndPosition() {
-		final JournalReceivers jreceivers = new JournalReceivers(journalInfoRetrieval, 100, journalInfo);
+		final ReceiverPagination jreceivers = new ReceiverPagination(journalInfoRetrieval, 100, journalInfo);
 		final List<DetailedJournalReceiver> list = List.of(dr2, dr3);
 		assertTrue(jreceivers.containsEndPosition(list, dr3), "last entry found");
 		assertTrue(jreceivers.containsEndPosition(list, dr2), "first entry found");
@@ -385,7 +385,7 @@ class JournalReceiversTest {
 
 	@Test
 	void testNotContainsEndPosition() {
-		final JournalReceivers jreceivers = new JournalReceivers(journalInfoRetrieval, 100, journalInfo);
+		final ReceiverPagination jreceivers = new ReceiverPagination(journalInfoRetrieval, 100, journalInfo);
 		final List<DetailedJournalReceiver> list = List.of(dr2, dr3);
 		final boolean found = jreceivers.containsEndPosition(list, dr1);
 		assertFalse(found, "receiver does not exist in list");
@@ -393,7 +393,7 @@ class JournalReceiversTest {
 
 	@Test
 	void testStartEqualsEndNotProcessed() {
-		final JournalReceivers jreceivers = new JournalReceivers(journalInfoRetrieval, 100, journalInfo);
+		final ReceiverPagination jreceivers = new ReceiverPagination(journalInfoRetrieval, 100, journalInfo);
 		final DetailedJournalReceiver j1 = new DetailedJournalReceiver(
 				new JournalReceiverInfo(new JournalReceiver("j1", "jlib"), new Date(1),
 						JournalStatus.OnlineSavedDetached, Optional.of(1)),
@@ -411,7 +411,7 @@ class JournalReceiversTest {
 
 	@Test
 	void testStartEqualsEndProcessed() {
-		final JournalReceivers jreceivers = new JournalReceivers(journalInfoRetrieval, 100, journalInfo);
+		final ReceiverPagination jreceivers = new ReceiverPagination(journalInfoRetrieval, 100, journalInfo);
 		final DetailedJournalReceiver j1 = new DetailedJournalReceiver(
 				new JournalReceiverInfo(new JournalReceiver("j1", "jlib"), new Date(1),
 						JournalStatus.OnlineSavedDetached, Optional.of(1)),
@@ -430,7 +430,7 @@ class JournalReceiversTest {
 
 	@Test
 	void testStartEqualsEndProcessedResetReceiver() {
-		final JournalReceivers jreceivers = new JournalReceivers(journalInfoRetrieval, 100, journalInfo);
+		final ReceiverPagination jreceivers = new ReceiverPagination(journalInfoRetrieval, 100, journalInfo);
 		final DetailedJournalReceiver j1 = new DetailedJournalReceiver(
 				new JournalReceiverInfo(new JournalReceiver("j1", "jlib"), new Date(1),
 						JournalStatus.OnlineSavedDetached, Optional.of(1)),
@@ -454,7 +454,7 @@ class JournalReceiversTest {
 
 	@Test
 	void testStartEqualsEndNotProcessedResetReceivers() {
-		final JournalReceivers jreceivers = new JournalReceivers(journalInfoRetrieval, 100, journalInfo);
+		final ReceiverPagination jreceivers = new ReceiverPagination(journalInfoRetrieval, 100, journalInfo);
 		final DetailedJournalReceiver j1 = new DetailedJournalReceiver(
 				new JournalReceiverInfo(new JournalReceiver("j1", "jlib"), new Date(1),
 						JournalStatus.OnlineSavedDetached, Optional.of(1)),
@@ -476,7 +476,7 @@ class JournalReceiversTest {
 
 	@Test
 	void testStartEqualsEndProcessedResetReceiversPaginate() {
-		final JournalReceivers jreceivers = new JournalReceivers(journalInfoRetrieval, 100, journalInfo);
+		final ReceiverPagination jreceivers = new ReceiverPagination(journalInfoRetrieval, 100, journalInfo);
 		final DetailedJournalReceiver j1 = new DetailedJournalReceiver(
 				new JournalReceiverInfo(new JournalReceiver("j1", "jlib"), new Date(1),
 						JournalStatus.OnlineSavedDetached, Optional.of(1)),
