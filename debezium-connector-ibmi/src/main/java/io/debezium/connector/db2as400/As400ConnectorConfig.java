@@ -27,10 +27,10 @@ import io.debezium.relational.Selectors.TableIdToStringMapper;
 import io.debezium.relational.TableId;
 import io.debezium.relational.Tables.TableFilter;
 
-//TODO  can we deliver HistorizedRelationalDatabaseConnectorConfig or should it be RelationalDatabaseConnectorConfig 
+//TODO  can we deliver HistorizedRelationalDatabaseConnectorConfig or should it be RelationalDatabaseConnectorConfig
 public class As400ConnectorConfig extends RelationalDatabaseConnectorConfig {
     private static TableIdToStringMapper tableToString = x -> {
-        StringBuilder sb = new StringBuilder(x.schema());
+        final StringBuilder sb = new StringBuilder(x.schema());
         sb.append(".").append(x.table());
         return sb.toString();
     };
@@ -72,6 +72,11 @@ public class As400ConnectorConfig extends RelationalDatabaseConnectorConfig {
             "keep alive", true);
 
     /**
+     * keep alive flag, should the driver use a secure connection defaults to false
+     */
+    public static final Field SECURE = Field.create("secure", "secure", "use secure connection", false);
+
+    /**
      * threads should be used in communication with the host servers - timeouts might not work as expected when true - default false
      */
     public static final Field THREAD_USED = Field.create("thread used", "thread used - timeouts might not work as expected when true",
@@ -81,7 +86,7 @@ public class As400ConnectorConfig extends RelationalDatabaseConnectorConfig {
      * The timeout to use for sockets
      */
     public static final Field SOCKET_TIMEOUT = Field.create("socket timeout", "socket timeout in milliseconds", "socket timeout", 0);
-    
+
     /**
      * If the ccsid is wrong on your tables and that is the least of your problems - just correct the CCSID before using this or as a last resort...
      * This applies to all tables - everything
@@ -99,7 +104,7 @@ public class As400ConnectorConfig extends RelationalDatabaseConnectorConfig {
     public static final Field DATE_FORMAT= Field.create("date format", "date format", "default date format is 2 digit date 1940->2039 set this to 'iso' or make sure you only have dates in this range, performance is ambysmal if you don't not to mention lots of missing data", "iso");
 
     public static final Field DB_ERRORS = Field.create("errors", "full error reporting", "jdbc level of detail to include options are: 'basic', or 'full'", "full");
-    
+
     public static final long DEFAULT_MAX_JOURNAL_TIMEOUT = 60000;
     /**
      * Maximum number of journal entries to process server side
@@ -117,7 +122,7 @@ public class As400ConnectorConfig extends RelationalDatabaseConnectorConfig {
 
     public As400ConnectorConfig(Configuration config) {
         super(config, new SystemTablesPredicate(),
-                tableToString, 1, ColumnFilterMode.SCHEMA, false);        
+                tableToString, 1, ColumnFilterMode.SCHEMA, false);
         this.config = config;
         this.snapshotMode = SnapshotMode.parse(config.getString(SNAPSHOT_MODE), SNAPSHOT_MODE.defaultValueAsString());
         this.tableFilters = new As400NormalRelationalTableFilters(config, new SystemTablesPredicate(), tableToString);
@@ -156,22 +161,22 @@ public class As400ConnectorConfig extends RelationalDatabaseConnectorConfig {
     }
 
     public Integer getSocketTimeout() {
-        Integer i = config.getInteger(SOCKET_TIMEOUT);
+        final Integer i = config.getInteger(SOCKET_TIMEOUT);
         return i;
     }
 
     public Integer getKeepAlive() {
         return config.getInteger(KEEP_ALIVE);
     }
-    
+
     public Integer getMaxServerSideEntries() {
         return config.getInteger(MAX_SERVER_SIDE_ENTRIES);
     }
-    
+
     public Integer getMaxRetrievalTimeout() {
         return config.getInteger(MAX_RETRIEVAL_TIMEOUT);
     }
-    
+
 
     public Integer getFromCcsid() {
         return config.getInteger(FROM_CCSID);
@@ -179,14 +184,19 @@ public class As400ConnectorConfig extends RelationalDatabaseConnectorConfig {
     public Integer getToCcsid() {
         return config.getInteger(TO_CCSID);
     }
+
+    public boolean isSecure() {
+        return config.getBoolean(SECURE);
+    }
+
     public JournalProcessedPosition getOffset() {
-        String receiver = config.getString(As400OffsetContext.RECEIVER);
-        String lib = config.getString(As400OffsetContext.RECEIVER_LIBRARY);
-        String offset = config.getString(As400OffsetContext.EVENT_SEQUENCE);
-        Boolean processed = config.getBoolean(As400OffsetContext.PROCESSED);
-        Long configTime = config.getLong(As400OffsetContext.EVENT_TIME);
-        Instant time = (configTime == null) ? Instant.ofEpochSecond(0) : Instant.ofEpochSecond(configTime);
-    	return new JournalProcessedPosition(offset, receiver, lib, time, (processed == null) ? false : processed);
+        final String receiver = config.getString(As400OffsetContext.RECEIVER);
+        final String lib = config.getString(As400OffsetContext.RECEIVER_LIBRARY);
+        final String offset = config.getString(As400OffsetContext.EVENT_SEQUENCE);
+        final Boolean processed = config.getBoolean(As400OffsetContext.PROCESSED);
+        final Long configTime = config.getLong(As400OffsetContext.EVENT_TIME);
+        final Instant time = (configTime == null) ? Instant.ofEpochSecond(0) : Instant.ofEpochSecond(configTime);
+        return new JournalProcessedPosition(offset, receiver, lib, time, (processed == null) ? false : processed);
     }
 
     private static class SystemTablesPredicate implements TableFilter {
@@ -214,14 +224,14 @@ public class As400ConnectorConfig extends RelationalDatabaseConnectorConfig {
 
     public static Field.Set ALL_FIELDS = Field.setOf(JdbcConfiguration.HOSTNAME, USER, PASSWORD, SCHEMA, BUFFER_SIZE,
             RelationalDatabaseConnectorConfig.SNAPSHOT_SELECT_STATEMENT_OVERRIDES_BY_TABLE, KEEP_ALIVE, THREAD_USED, SOCKET_TIMEOUT,
-            MAX_SERVER_SIDE_ENTRIES, TOPIC_NAMING_STRATEGY, FROM_CCSID, TO_CCSID, DB_ERRORS, DATE_FORMAT);
+            MAX_SERVER_SIDE_ENTRIES, TOPIC_NAMING_STRATEGY, FROM_CCSID, TO_CCSID, DB_ERRORS, DATE_FORMAT, SECURE);
 
     public static ConfigDef configDef() {
-        ConfigDef c = RelationalDatabaseConnectorConfig.CONFIG_DEFINITION.edit()
+        final ConfigDef c = RelationalDatabaseConnectorConfig.CONFIG_DEFINITION.edit()
                 .name("ibmi")
                 .type(
                         JdbcConfiguration.HOSTNAME, USER, PASSWORD, SCHEMA, BUFFER_SIZE,
-                        KEEP_ALIVE, THREAD_USED, SOCKET_TIMEOUT, FROM_CCSID, TO_CCSID, DB_ERRORS, DATE_FORMAT)
+                        KEEP_ALIVE, THREAD_USED, SOCKET_TIMEOUT, FROM_CCSID, TO_CCSID, DB_ERRORS, DATE_FORMAT, SECURE)
                 .connector()
                 .events(
                         As400OffsetContext.EVENT_SEQUENCE_FIELD,
@@ -300,7 +310,7 @@ public class As400ConnectorConfig extends RelationalDatabaseConnectorConfig {
                 return null;
             }
             value = value.trim();
-            for (SnapshotMode option : SnapshotMode.values()) {
+            for (final SnapshotMode option : SnapshotMode.values()) {
                 if (option.getValue().equalsIgnoreCase(value)) {
                     return option;
                 }
