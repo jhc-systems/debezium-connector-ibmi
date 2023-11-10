@@ -28,6 +28,7 @@ import com.fnz.db2.journal.retrieve.rjne0200.EntryHeader;
 import com.fnz.db2.journal.retrieve.rnrn0200.DetailedJournalReceiver;
 import com.fnz.logging.structured.StructuredMessage;
 import com.ibm.as400.access.AS400;
+import com.ibm.as400.access.SecureAS400;
 import com.ibm.as400.access.SocketProperties;
 
 import io.debezium.connector.db2as400.metrics.As400StreamingChangeEventSourceMetrics;
@@ -46,26 +47,29 @@ public class As400RpcConnection implements AutoCloseable, Connect<AS400, IOExcep
     private final LogLimmiting periodic = new LogLimmiting(5 * 60 * 1000l);
     private final JournalInfoRetrieval journalInfoRetrieval = new JournalInfoRetrieval();
 
+    private final boolean isSecure;
+
 
     public As400RpcConnection(As400ConnectorConfig config, As400StreamingChangeEventSourceMetrics streamingMetrics, List<FileFilter> includes) {
         super();
         this.config = config;
+        this.isSecure = config.isSecure();
         this.streamingMetrics = streamingMetrics;
         try {
-        	System.setProperty("com.ibm.as400.access.AS400.guiAvailable", "False");
-        	if (includes.isEmpty()) {
-        		// TODO add in parameters so this is configurable
-    			journalInfo = JournalInfoRetrieval.getJournal(connection(), config.getSchema());
-    		} else {
-    			journalInfo = JournalInfoRetrieval.getJournal(connection(), config.getSchema(), includes);
-    		}
-			final RetrieveConfig rconfig = new RetrieveConfigBuilder().withAs400(this)
-					.withJournalBufferSize(config.getJournalBufferSize())
-					.withJournalInfo(journalInfo)
-					.withMaxServerSideEntries(config.getMaxServerSideEntries())
-					.withServerFiltering(true)
-					.withIncludeFiles(includes).build();
-			retrieveJournal = new RetrieveJournal(rconfig, journalInfoRetrieval);
+            System.setProperty("com.ibm.as400.access.AS400.guiAvailable", "False");
+            if (includes.isEmpty()) {
+                // TODO add in parameters so this is configurable
+                journalInfo = JournalInfoRetrieval.getJournal(connection(), config.getSchema());
+            } else {
+                journalInfo = JournalInfoRetrieval.getJournal(connection(), config.getSchema(), includes);
+            }
+            final RetrieveConfig rconfig = new RetrieveConfigBuilder().withAs400(this)
+                    .withJournalBufferSize(config.getJournalBufferSize())
+                    .withJournalInfo(journalInfo)
+                    .withMaxServerSideEntries(config.getMaxServerSideEntries())
+                    .withServerFiltering(true)
+                    .withIncludeFiles(includes).build();
+            retrieveJournal = new RetrieveJournal(rconfig, journalInfoRetrieval);
         }
         catch (final IOException e) {
             log.error("Failed to fetch library", e);
@@ -93,13 +97,18 @@ public class As400RpcConnection implements AutoCloseable, Connect<AS400, IOExcep
     }
 
     @Override
-	public AS400 connection() throws IOException {
+    public AS400 connection() throws IOException {
         if (as400 == null || !as400.isConnectionAlive(AS400.COMMAND)) {
             log.info("create new as400 connection");
             try {
                 // need to both create a new object and connect
                 close();
-                this.as400 = new AS400(config.getHostName(), config.getUser(), config.getPassword().toCharArray());
+                if (isSecure) {
+                    this.as400 = new SecureAS400(config.getHostName(), config.getUser(),
+                            config.getPassword().toCharArray());
+                } else {
+                    this.as400 = new AS400(config.getHostName(), config.getUser(), config.getPassword().toCharArray());
+                }
                 socketProperties.setSoTimeout(config.getSocketTimeout());
                 as400.setSocketProperties(socketProperties);
                 as400.connectService(AS400.COMMAND);
@@ -152,7 +161,7 @@ public class As400RpcConnection implements AutoCloseable, Connect<AS400, IOExcep
             // this is bad, we've probably lost data
             final List<DetailedJournalReceiver> receivers = journalInfoRetrieval.getReceivers(connection(), journalInfo);
             log.error(new StructuredMessage("Failed to fetch journal entries, resetting journal to blank",
-                    Map.of("position", position, 
+                    Map.of("position", position,
                             "receivers", receivers)));
             offsetCtx.setPosition(new JournalProcessedPosition());
         }
@@ -167,7 +176,7 @@ public class As400RpcConnection implements AutoCloseable, Connect<AS400, IOExcep
             streamingMetrics.setJournalOffset(currentReceiver.getOffset());
             streamingMetrics.setJournalBehind(behind);
             streamingMetrics.setLastProcessedMs(position.getTimeOfLastProcessed().toEpochMilli());
-            log.info(new StructuredMessage("current position diagnostics", 
+            log.info(new StructuredMessage("current position diagnostics",
                     Map.of("header", retrieveJournal.getFirstHeader(),
                             "behind", behind,
                             "position", position,
@@ -199,11 +208,11 @@ public class As400RpcConnection implements AutoCloseable, Connect<AS400, IOExcep
     private static class LogLimmiting {
         private final Map<String, Long> lastLogged = new HashMap<>();
         private final long rate;
-        
+
         public LogLimmiting(long rate) {
             this.rate = rate;
         }
-        
+
         public boolean shouldLogRateLimted(String type) {
             if (lastLogged.containsKey(type)) {
                 if (System.currentTimeMillis() > rate + lastLogged.get(type)) {

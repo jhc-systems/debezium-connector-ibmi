@@ -42,6 +42,21 @@ REPLICATION_FACTOR=3
 ```
 
 # Problems
+
+## running with a self signed certificate
+
+capture your ca cert normally the top of the output:
+`openssl s_client -showcerts -connect <host>:9471`
+
+between the first pair of `-----BEGIN CERTIFICATE-----` and end and save it to iseries-cert.pem
+	
+
+If using docker simply mount your certs at /var/tls
+
+If running natively import the cert
+	
+	keytool -import -noprompt -alias iseries-cert  -storepass changeit -keystore /usr/lib/jvm/java-1.17.0-openjdk-amd64/lib/security/cacerts -file iseries-cert.pem
+
 ## Journals deleted
 
 If the journal is deleted before it is read it will log an error: "Lost journal at position xxx" and reset to the beginning journal
@@ -98,6 +113,7 @@ file connector-name.json:
     "user": "xxx",
     "password": "xxx",
     "port": "",
+    "secure": true
     "poll.interval.ms": "2000",
     "transforms": "unwrap",
     "transforms.unwrap.delete.handling.mode": "rewrite",
@@ -118,6 +134,7 @@ file connector-name.json:
 
 
 Note the `dbname` can be blank and will be used as part of the jdbc connect string : `dbc://hostname/dbname`
+
 
 Optional:
 
@@ -268,6 +285,10 @@ To run in VS Code, configure the following launch.json file, and run from the Ru
 ```
 
 ## Release notes
+
+### 1.10.4
+
+New configuration paramater `secure` this defaults to true
 
 ### 1.10.2
 

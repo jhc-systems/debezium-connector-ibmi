@@ -9,20 +9,19 @@ import org.fest.assertions.Assertions;
 import org.junit.Test;
 
 public class WatchDogTest {
-
     private WatchDog createTestSubject() {
         return new WatchDog(Thread.currentThread(), 10);
     }
 
     @Test
     public void testRun() throws Exception {
-        WatchDog testSubject = createTestSubject();
+        final WatchDog testSubject = createTestSubject();
         testSubject.start();
         Exception thrown = null;
         try {
             Thread.sleep(200);
         }
-        catch (Exception e) {
+        catch (final Exception e) {
             thrown = e;
         }
         Assertions.assertThat(thrown).isInstanceOf(InterruptedException.class);

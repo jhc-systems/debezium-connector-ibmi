@@ -3,7 +3,7 @@ version: '3.5'
 services:
 
   mskafka:
-    image: redpandadata/redpanda:v22.3.15
+    image: redpandadata/redpanda:v23.2.15
     container_name: mskafka
     expose:
       - 9092
@@ -44,7 +44,7 @@ services:
 
   redpanda-console:
     container_name: redpanda-console
-    image: docker.redpanda.com/vectorized/console:v2.2.2
+    image: docker.redpanda.com/vectorized/console:v2.3.5
     networks:
       - kafkastreams-network
     entrypoint: /bin/sh

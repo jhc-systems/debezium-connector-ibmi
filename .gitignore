@@ -10,3 +10,5 @@ kafka-smt-collection/.flattened-pom.xml
 structured-logging/.flattened-pom.xml
 .vscode/
 debezium-connector-ibmi/src/test/resources/confluent-auth-template.properties
+journal-parsing/archive/
+journal-parsing/logs/
