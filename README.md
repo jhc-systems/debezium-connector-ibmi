@@ -45,10 +45,10 @@ REPLICATION_FACTOR=3
 
 ## running with a self signed certificate
 
-capture your ca cert normally the top of the output:
+capture your ca cert normally the bottom of the output:
 `openssl s_client -showcerts -connect <host>:9471`
 
-between the first pair of `-----BEGIN CERTIFICATE-----` and end and save it to iseries-cert.pem
+between the last pair of `-----BEGIN CERTIFICATE-----` and end and save it to iseries-cert.pem
 	
 
 If using docker simply mount your certs at /var/tls
