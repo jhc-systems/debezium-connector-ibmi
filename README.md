@@ -41,6 +41,13 @@ PARTITIONS=3
 REPLICATION_FACTOR=3
 ```
 
+# Limitations
+
+* TODO integrate with exit program to prevent journal loss https://github.com/jhc-systems/debezium-ibmi-exitpgm
+* Limited support for table changes - the journal entries for table changes are not documented so rely on fetching table structure at runtime and refetching when table change detected
+* No support for remote journals and fail over
+* No support for clobs/xml and similar large text/blobs
+
 # Problems
 
 ## running with a self signed certificate
