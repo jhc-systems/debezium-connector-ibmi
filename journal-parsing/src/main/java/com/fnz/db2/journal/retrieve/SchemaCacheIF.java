@@ -9,18 +9,18 @@ public interface SchemaCacheIF {
 	void store(String database, String schema, String table, TableInfo tableInfo);
 	TableInfo retrieve(String database, String schema, String table);
 	void clearCache(String database, String schema, String table);
-	
+
 	public class TableInfo {
 		private final List<Structure> structure;
 		private final AS400Structure as400Structure;
-//		private final AS400Structure as400Keys;
+		//		private final AS400Structure as400Keys;
 		private final List<String> primaryKeys;
 
 		public TableInfo(List<Structure> structure, List<String> primaryKeys, AS400Structure as400Structure) {
 			super();
 			this.structure = structure;
 			this.as400Structure = as400Structure;
-//			this.as400Keys = as400Keys;
+			//			this.as400Keys = as400Keys;
 			this.primaryKeys = primaryKeys;
 		}
 		public List<Structure> getStructure() {
@@ -35,15 +35,16 @@ public interface SchemaCacheIF {
 		@Override
 		public String toString() {
 			return "TableInfo [ primaryKeys=" + toString(primaryKeys) + " structure=[" + toString(structure) + "] ]";
-		}		
-		
+		}
+
 		public String toString(List<? extends Object> l) {
-			if (l == null)
+			if (l == null) {
 				return "";
+			}
 			return l.stream().map(Object::toString).collect(Collectors.joining(","));
 		}
 	}
-	
+
 	public static class Structure {
 		private final String name;
 		private final String type;
@@ -54,8 +55,9 @@ public interface SchemaCacheIF {
 		private final int position;
 		private final boolean autoinc;
 		private final int ccsid;
-		
-		public Structure(String name, String type, int jdcbType, int length, int precision, boolean optional,
+
+		public Structure(String name, String type, int jdcbType, int length, int precision,
+				boolean optional,
 				int position, boolean autoinc) {
 			super();
 			this.name = name;

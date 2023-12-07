@@ -16,6 +16,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Properties;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.junit.jupiter.api.AfterAll;
@@ -51,10 +52,10 @@ public class CcsidOverrideTest {
 					final byte[] retrievedBytes = rs.getBytes(1); // retrieves unencoded
 					final byte[] expectedBytes = data.getBytes(wrongCcsidCP);
 
-					System.out.println(String.format("sent     %s", data));
-					System.out.println(String.format("received %s\n", retrieved));
-					System.out.println(String.format("expected ebdic  %s", bytesToHex(expectedBytes)));
-					System.out.println(String.format("recieved ebdic  %s", bytesToHex(retrievedBytes)));
+					log.log(Level.FINE, "sent     {0}", data);
+					log.log(Level.FINE, "received {0}", retrieved);
+					log.log(Level.FINE, "expected ebdic  {0}", bytesToHex(expectedBytes));
+					log.log(Level.FINE, "recieved ebdic  {0}", bytesToHex(retrievedBytes));
 
 					assertEquals(data, retrieved);
 					assertArrayEquals(expectedBytes, retrievedBytes);
@@ -85,11 +86,11 @@ public class CcsidOverrideTest {
 					final byte[] expectedBytes = data.getBytes(wrongCcsidCP);
 					final String expectedString = new String(expectedBytes, columnCcsidCP);
 
-					System.out.println(String.format("sent     %s", data));
-					System.out.println(String.format("received %s", retrieved));
-					System.out.println(String.format("expected %s\n", expectedString));
-					System.out.println(String.format("expected ebdic  %s", bytesToHex(expectedBytes)));
-					System.out.println(String.format("recieved ebdic  %s", bytesToHex(retrievedBytes)));
+					log.log(Level.FINE, "sent     {0}", data);
+					log.log(Level.FINE, "received {0}", retrieved);
+					log.log(Level.FINE, "expected {0}", expectedString);
+					log.log(Level.FINE, "expected ebdic  {0}", bytesToHex(expectedBytes));
+					log.log(Level.FINE, "recieved ebdic  {0}", bytesToHex(retrievedBytes));
 
 					assertEquals(expectedString, retrieved);
 					assertArrayEquals(expectedBytes, retrievedBytes);
@@ -100,7 +101,7 @@ public class CcsidOverrideTest {
 	}
 
 	private static void insertData(Connection con, String schema) throws SQLException {
-		System.out.println(con.getClass().toString());
+		log.info(con.getClass().toString());
 		try (PreparedStatement ps = con
 				.prepareStatement(String.format("insert into %s.ccsidTest (id, name) values (?, ?)", schema))) {
 			ps.setInt(1, 1);
@@ -150,9 +151,9 @@ public class CcsidOverrideTest {
 	@AfterAll
 	public static void cleanUp() throws SQLException {
 		AS400JDBCDriverRegistration.registerCcsidDriver();
-		Properties props = configurePropertiesForDriver(columnCcsid, wrongCcsid);
-        String host =  System.getenv("ISERIES_HOST");
-        String schema =  System.getenv("ISERIES_SCHEMA");
+		final Properties props = configurePropertiesForDriver(columnCcsid, wrongCcsid);
+		final String host =  System.getenv("ISERIES_HOST");
+		final String schema =  System.getenv("ISERIES_SCHEMA");
 
 		try (Connection con = DriverManager.getConnection(String.format("jdbc:as400://%s/", host), props)) {
 			dropTable(con, host, schema);

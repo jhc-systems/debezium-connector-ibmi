@@ -56,15 +56,17 @@ public class JdbcFileDecoder extends JournalFileEntryDecoder {
 	private final Connect<Connection, SQLException> jdbcConnect;
 	private final String databaseName;
 	private final SchemaCacheIF schemaCache;
-	private final int forcedCcsid;
+	private final CcsidCache ccsidCache;
+	private final BytesPerChar octetLengthCache;
 
 	public JdbcFileDecoder(Connect<Connection, SQLException> con, String database, SchemaCacheIF schemaCache,
-			Integer forcedCcsid) {
+			Integer fromCcsid, Integer toCcsid) {
 		super();
 		this.jdbcConnect = con;
 		this.schemaCache = schemaCache;
 		this.databaseName = database;
-		this.forcedCcsid = (forcedCcsid == null) ? -1 : forcedCcsid;
+		ccsidCache = new CcsidCache(con, fromCcsid, toCcsid);
+		octetLengthCache = new BytesPerChar(con);
 	}
 
 	/*
@@ -156,14 +158,17 @@ public class JdbcFileDecoder extends JournalFileEntryDecoder {
 					final int jdcbType = columnMetadata.getInt(5);
 
 					final boolean optional = isNullable(columnMetadata.getInt(11));
+					final int octectLength = columnMetadata.getInt(16);
 					final int position = columnMetadata.getInt(17);
 					final boolean autoInc = "YES".equalsIgnoreCase(columnMetadata.getString(23));
 
 					jdbcStructure
-					.add(new Structure(name, type, jdcbType, length, precision, optional, position, autoInc));
+					.add(new Structure(name, type, jdcbType, length, precision, optional,
+							position, autoInc));
 					final AS400DataType dataType = toDataType(schema, longTableName, name, type, length, precision);
 
 					as400structure.add(dataType);
+					octetLengthCache.add(schema, longTableName, name, length, octectLength);
 				}
 				final AS400Structure entryDetailStructure = new AS400Structure(
 						as400structure.toArray(new AS400DataType[as400structure.size()]));
@@ -186,6 +191,7 @@ public class JdbcFileDecoder extends JournalFileEntryDecoder {
 
 		return Optional.empty();
 	}
+
 
 	private List<String> ddsPrimaryKeys(String table, String schema) throws SQLException {
 		final List<String> primaryKeys = new ArrayList<>();
@@ -254,68 +260,23 @@ public class JdbcFileDecoder extends JournalFileEntryDecoder {
 	static final Pattern BIT_DATA = Pattern.compile("CHAR \\(([(0-9]*)\\) FOR BIT DATA");
 	static final Pattern VAR_BIT_DATA = Pattern.compile("VARCHAR \\(([(0-9]*)\\) FOR BIT DATA");
 
-	private static final String GET_CCSID = "select table_name, system_table_name, column_name, system_column_name, ccsid FROM qsys2.SYSCOLUMNS where table_schema=? and (system_table_name = ? or table_name = ?)";
-	private final Map<String, Integer> ccsidMap = new HashMap<>();
 
-	public Integer getCcsid(String schema, String table, String columnName) {
-		log.debug("forced ccsid {} {}", forcedCcsid, table);
-		if (forcedCcsid != -1) {
-			return forcedCcsid;
-		}
 
-		final String canonicalName = String.format("%s.%s.%s", schema, table, columnName);
-		if (ccsidMap.containsKey(canonicalName)) {
-			return ccsidMap.get(canonicalName);
-		}
 
-		try {
-			fetchAllCcsidForTable(schema, table);
 
-			return ccsidMap.get(canonicalName);
-		} catch (final SQLException e) {
-			log.error("failed to fetch ccsid", e);
-			return -1;
-		}
-	}
-
-	private void fetchAllCcsidForTable(String schema, String table) throws SQLException {
-		final Connection con = jdbcConnect.connection();
-		try (PreparedStatement ps = con.prepareStatement(GET_CCSID)) {
-			ps.setString(1, schema.toUpperCase());
-			ps.setString(2, table.toUpperCase());
-			ps.setString(3, table.toUpperCase());
-			try (ResultSet rs = ps.executeQuery()) {
-				while (rs.next()) {
-					final String longTableName = StringHelpers.safeTrim(rs.getString(1));
-					final String shortTableName = StringHelpers.safeTrim(rs.getString(2));
-					final String longcolumn = StringHelpers.safeTrim(rs.getString(3));
-					final String shortcolumn = StringHelpers.safeTrim(rs.getString(4));
-					final Object ccsidObj = rs.getObject(5);
-					final String canonicalLongName = String.format("%s.%s.%s", schema, longTableName, longcolumn);
-					final String canonicalShortName = String.format("%s.%s.%s", schema, shortTableName, shortcolumn);
-					final int ccsid = (ccsidObj == null) ? -1 : (Integer) ccsidObj;
-
-					ccsidMap.put(canonicalLongName, ccsid);
-					ccsidMap.put(canonicalShortName, ccsid);
-				}
-			}
-		}
-	}
 
 	AS400Text getText(int length, int ccsid) {
-		if (forcedCcsid != -1) {
-			return new AS400Text(length, forcedCcsid);
-		} else if (ccsid != -1) {
+		if (ccsid != -1) {
 			return new AS400Text(length, ccsid);
 		}
 		return new AS400Text(length);
 	}
 
-	AS400VarChar getVarText(int length, Integer ccsid) {
-		if (forcedCcsid != -1) {
-			return new AS400VarChar(length, ccsid);
+	AS400VarChar getVarText(int length, int bytesPerChar, Integer ccsid) {
+		if (ccsid != -1) {
+			return new AS400VarChar(length, bytesPerChar, ccsid);
 		}
-		return new AS400VarChar(length);
+		return new AS400VarChar(length, bytesPerChar);
 	}
 
 	public AS400DataType toDataType(String schema, String table, String columnName, String type, int length,
@@ -328,15 +289,21 @@ public class JdbcFileDecoder extends JournalFileEntryDecoder {
 		case "VARCHAR () FOR BIT DATA": // password fields - treat as binary
 			return new AS400VarBin(length);
 		case "CHAR":
-			return getText(length, getCcsid(schema, table, columnName));
+			return getText(length, ccsidCache.getCcsid(schema, table, columnName));
 		case "NCHAR":
-			return getText(length, getCcsid(schema, table, columnName));
+			return getText(length * octetLengthCache.getBytesPerChar(schema, table, columnName),
+					ccsidCache.getCcsid(schema, table, columnName));
 		case "NVARCHAR":
-			return getVarText(length, getCcsid(schema, table, columnName));
+			return getVarText(length, octetLengthCache.getBytesPerChar(schema, table, columnName),
+					ccsidCache.getCcsid(schema, table, columnName));
+		case "VGRAPH":
+			return getVarText(length, octetLengthCache.getBytesPerChar(schema, table, columnName),
+					ccsidCache.getCcsid(schema, table, columnName));
 		case "TIMESTAMP":
 			return AS400_TIMESTAMP;
 		case "VARCHAR":
-			return getVarText(length, getCcsid(schema, table, columnName));
+			return getVarText(length, octetLengthCache.getBytesPerChar(schema, table, columnName),
+					ccsidCache.getCcsid(schema, table, columnName));
 		case "NUMERIC":
 			return new AS400ZonedDecimal(length, precision);
 		case "DATE":
