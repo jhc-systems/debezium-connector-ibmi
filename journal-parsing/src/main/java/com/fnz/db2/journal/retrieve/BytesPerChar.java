@@ -11,6 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class BytesPerChar {
+	/* @See com.fnz.db2.journal.data.types.AS400VarChar */
 	private static final String GET_OCTET_LENGTH = "select table_name, system_table_name, column_name, system_column_name, length, character_octet_length FROM qsys2.SYSCOLUMNS where table_schema=? and (system_table_name = ? or table_name = ?)";
 	private final Map<String, Integer> octetLenghtMap = new HashMap<>();
 	private final Connect<Connection, SQLException> jdbcConnect;

@@ -14,6 +14,23 @@ public class AS400VarChar implements AS400DataType {
 	private final static String defaultValue = "";
 	private int actualLength;
 	private final int ccsid;
+	/*
+	 * as400 correctly decodes the charset but relies on the length being the buffer
+	 * length not the number of characters.
+	 *
+	 * The length in the system catalogue is the number of characters.
+	 *
+	 * The character_octet_length seems to represent the buffer length.
+	 *
+	 * For a var char the length is encoded in the first two bytes of the buffer and
+	 * again this is the number of characters not the buffer length.
+	 *
+	 * So we need the bytesPerChar multiplier to calculate the buffer size or we'd
+	 * need to resolve the number of characters for the ccsid
+	 *
+	 * PRG reference
+	 * https://www.ibm.com/docs/en/i/7.5?topic=type-graphic-format#dgraph
+	 */
 	private final int bytesPerChar;
 
 	public AS400VarChar(int maxLenght, int bytesPerChar) {
