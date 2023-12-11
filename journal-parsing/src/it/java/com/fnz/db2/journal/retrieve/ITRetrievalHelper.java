@@ -45,7 +45,7 @@ public class ITRetrievalHelper {
 		this.maxEntries = maxEntries;
 		this.journalEntryFunction = journalEntryFunction;
 		tables = includes.stream().map(FileFilter::table).collect(Collectors.toSet());
-		fileDecoder = new JdbcFileDecoder(connector.getJdbc(), "databasename", schemaCache, -1);
+		fileDecoder = new JdbcFileDecoder(connector.getJdbc(), "databasename", schemaCache, -1, -1);
 		this.fetchedEntries = fetchedEntries;
 		final RetrieveConfig config = new RetrieveConfigBuilder().withAs400(connector.getAs400())
 				.withJournalInfo(journal).withJournalBufferSize(bufferSize).withServerFiltering(true)
