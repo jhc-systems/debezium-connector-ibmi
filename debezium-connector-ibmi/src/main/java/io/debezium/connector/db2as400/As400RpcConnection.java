@@ -68,7 +68,7 @@ public class As400RpcConnection implements AutoCloseable, Connect<AS400, IOExcep
                     .withJournalInfo(journalInfo)
                     .withMaxServerSideEntries(config.getMaxServerSideEntries())
                     .withServerFiltering(true)
-                    .withIncludeFiles(includes).build();
+                    .withIncludeFiles(includes).withDumpFolder(config.diagnosticsFolder()).build();
             retrieveJournal = new RetrieveJournal(rconfig, journalInfoRetrieval);
         }
         catch (final IOException e) {

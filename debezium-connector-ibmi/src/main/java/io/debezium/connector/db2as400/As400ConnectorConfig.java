@@ -96,6 +96,9 @@ public class As400ConnectorConfig extends RelationalDatabaseConnectorConfig {
 
     public static final Field TO_CCSID = Field.create("to_ccsid", "to ccsid", "when the table indicates the from_ccsid translate to this to_ccsid setting", -1);
 
+    public static final Field DIAGNOSTICS_FOLDER = Field.create("diagnostics_folder",
+            "folder to dump failed decodings to", "used when there is a decoding failure to aid diagnostics");
+
     /**
      * Maximum number of journal entries to process server side
      */
@@ -189,6 +192,10 @@ public class As400ConnectorConfig extends RelationalDatabaseConnectorConfig {
         return config.getBoolean(SECURE);
     }
 
+    public String diagnosticsFolder() {
+        return config.getString(DIAGNOSTICS_FOLDER);
+    }
+
     public JournalProcessedPosition getOffset() {
         final String receiver = config.getString(As400OffsetContext.RECEIVER);
         final String lib = config.getString(As400OffsetContext.RECEIVER_LIBRARY);
@@ -224,14 +231,16 @@ public class As400ConnectorConfig extends RelationalDatabaseConnectorConfig {
 
     public static Field.Set ALL_FIELDS = Field.setOf(JdbcConfiguration.HOSTNAME, USER, PASSWORD, SCHEMA, BUFFER_SIZE,
             RelationalDatabaseConnectorConfig.SNAPSHOT_SELECT_STATEMENT_OVERRIDES_BY_TABLE, KEEP_ALIVE, THREAD_USED, SOCKET_TIMEOUT,
-            MAX_SERVER_SIDE_ENTRIES, TOPIC_NAMING_STRATEGY, FROM_CCSID, TO_CCSID, DB_ERRORS, DATE_FORMAT, SECURE);
+            MAX_SERVER_SIDE_ENTRIES, TOPIC_NAMING_STRATEGY, FROM_CCSID, TO_CCSID, DB_ERRORS, DATE_FORMAT, SECURE,
+            DIAGNOSTICS_FOLDER);
 
     public static ConfigDef configDef() {
         final ConfigDef c = RelationalDatabaseConnectorConfig.CONFIG_DEFINITION.edit()
                 .name("ibmi")
                 .type(
                         JdbcConfiguration.HOSTNAME, USER, PASSWORD, SCHEMA, BUFFER_SIZE,
-                        KEEP_ALIVE, THREAD_USED, SOCKET_TIMEOUT, FROM_CCSID, TO_CCSID, DB_ERRORS, DATE_FORMAT, SECURE)
+                        KEEP_ALIVE, THREAD_USED, SOCKET_TIMEOUT, FROM_CCSID, TO_CCSID, DB_ERRORS, DATE_FORMAT, SECURE,
+                        DIAGNOSTICS_FOLDER)
                 .connector()
                 .events(
                         As400OffsetContext.EVENT_SEQUENCE_FIELD,

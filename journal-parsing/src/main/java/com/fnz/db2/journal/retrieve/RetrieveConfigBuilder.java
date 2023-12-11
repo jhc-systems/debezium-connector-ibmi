@@ -13,8 +13,8 @@ import com.ibm.as400.access.AS400;
 
 public class RetrieveConfigBuilder {
 
-    private static final Logger log = LoggerFactory.getLogger(RetrieveConfigBuilder.class);
-	
+	private static final Logger log = LoggerFactory.getLogger(RetrieveConfigBuilder.class);
+
 	private Connect<AS400, IOException> as400;
 	private JournalInfo journalInfo;
 	private File dumpFolder;
@@ -38,14 +38,14 @@ public class RetrieveConfigBuilder {
 	}
 
 	public RetrieveConfigBuilder withDumpFolder(String dumpFolder) {
-		if (dumpFolder != null) {
-			File f = new File(dumpFolder);
+		if (dumpFolder != null && !dumpFolder.isBlank()) {
+			final File f = new File(dumpFolder);
 			if (f.exists()) {
 				this.dumpFolder = f;
 				return this;
 			}
 		}
-        log.error("ignoring dump folder {} as it doesn't exist", dumpFolder);
+		log.error("ignoring dump folder {} as it doesn't exist", dumpFolder);
 		return this;
 	}
 
@@ -62,7 +62,7 @@ public class RetrieveConfigBuilder {
 		}
 		return this;
 	}
-	
+
 	public RetrieveConfigBuilder withServerFiltering(boolean filtering) {
 		this.filtering = filtering;
 		return this;
@@ -70,14 +70,14 @@ public class RetrieveConfigBuilder {
 
 	public RetrieveConfigBuilder withIncludeFiles(List<FileFilter> includeFiles) {
 		if (includeFiles != null) {
-		    if (includeFiles.size() < 300) {
-		        this.includeFiles = includeFiles;
-		    } else {
-		        log.error("ignoring filter list as too many files included {} limit 300", includeFiles.size());
-		        this.includeFiles = Collections.<FileFilter>emptyList();
-		    }
+			if (includeFiles.size() < 300) {
+				this.includeFiles = includeFiles;
+			} else {
+				log.error("ignoring filter list as too many files included {} limit 300", includeFiles.size());
+				this.includeFiles = Collections.<FileFilter>emptyList();
+			}
 		} else {
-            this.includeFiles = Collections.<FileFilter>emptyList();
+			this.includeFiles = Collections.<FileFilter>emptyList();
 		}
 
 		return this;
