@@ -12,13 +12,12 @@ import org.apache.kafka.common.config.ConfigDef.Importance;
 import org.apache.kafka.common.config.ConfigDef.Type;
 import org.apache.kafka.common.config.ConfigDef.Width;
 
-import com.fnz.db2.journal.retrieve.JournalProcessedPosition;
-import com.fnz.db2.journal.retrieve.RetrieveConfig;
-
 import io.debezium.config.Configuration;
 import io.debezium.config.EnumeratedValue;
 import io.debezium.config.Field;
 import io.debezium.connector.SourceInfoStructMaker;
+import io.debezium.ibmi.db2.journal.retrieve.JournalProcessedPosition;
+import io.debezium.ibmi.db2.journal.retrieve.RetrieveConfig;
 import io.debezium.jdbc.JdbcConfiguration;
 import io.debezium.relational.ColumnFilterMode;
 import io.debezium.relational.RelationalDatabaseConnectorConfig;
@@ -102,9 +101,12 @@ public class As400ConnectorConfig extends RelationalDatabaseConnectorConfig {
     /**
      * Maximum number of journal entries to process server side
      */
-    public static final Field MAX_SERVER_SIDE_ENTRIES = Field.create("max_entries", "max server side entries", "Maximum number of journal entries to process server side when filtering", RetrieveConfig.DEFAULT_MAX_SERVER_SIDE_ENTRIES);
+    public static final Field MAX_SERVER_SIDE_ENTRIES = Field.create("max_entries", "max server side entries",
+            "Maximum number of journal entries to process server side when filtering", RetrieveConfig.DEFAULT_MAX_SERVER_SIDE_ENTRIES);
 
-    public static final Field DATE_FORMAT= Field.create("date format", "date format", "default date format is 2 digit date 1940->2039 set this to 'iso' or make sure you only have dates in this range, performance is ambysmal if you don't not to mention lots of missing data", "iso");
+    public static final Field DATE_FORMAT = Field.create("date format", "date format",
+            "default date format is 2 digit date 1940->2039 set this to 'iso' or make sure you only have dates in this range, performance is ambysmal if you don't not to mention lots of missing data",
+            "iso");
 
     public static final Field DB_ERRORS = Field.create("errors", "full error reporting", "jdbc level of detail to include options are: 'basic', or 'full'", "full");
 
@@ -112,7 +114,8 @@ public class As400ConnectorConfig extends RelationalDatabaseConnectorConfig {
     /**
      * Maximum number of journal entries to process server side
      */
-    public static final Field MAX_RETRIEVAL_TIMEOUT = Field.create("max_journal_timeout", "max time to fetch the journal entries", "Maximum time to fetch the journal entries in ms", DEFAULT_MAX_JOURNAL_TIMEOUT);
+    public static final Field MAX_RETRIEVAL_TIMEOUT = Field.create("max_journal_timeout", "max time to fetch the journal entries",
+            "Maximum time to fetch the journal entries in ms", DEFAULT_MAX_JOURNAL_TIMEOUT);
 
     public static final Field TOPIC_NAMING_STRATEGY = Field.create("topic.naming.strategy")
             .withDisplayName("Topic naming strategy class")
@@ -180,10 +183,10 @@ public class As400ConnectorConfig extends RelationalDatabaseConnectorConfig {
         return config.getInteger(MAX_RETRIEVAL_TIMEOUT);
     }
 
-
     public Integer getFromCcsid() {
         return config.getInteger(FROM_CCSID);
     }
+
     public Integer getToCcsid() {
         return config.getInteger(TO_CCSID);
     }
@@ -260,7 +263,7 @@ public class As400ConnectorConfig extends RelationalDatabaseConnectorConfig {
     /**
      * The set of predefined SnapshotMode options or aliases.
      */
-    public static enum SnapshotMode implements EnumeratedValue {
+    public enum SnapshotMode implements EnumeratedValue {
 
         /**
          * Perform a snapshot when it is needed.
@@ -290,7 +293,7 @@ public class As400ConnectorConfig extends RelationalDatabaseConnectorConfig {
         private final String value;
         private final boolean includeData;
 
-        private SnapshotMode(String value, boolean includeData) {
+        SnapshotMode(String value, boolean includeData) {
             this.value = value;
             this.includeData = includeData;
         }

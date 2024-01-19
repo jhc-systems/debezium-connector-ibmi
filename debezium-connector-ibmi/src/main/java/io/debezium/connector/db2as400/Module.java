@@ -26,7 +26,7 @@ public final class Module {
      * @return symbolic name of the connector plugin
      */
     public static String name() {
-        return "db2as400";
+        return "ibmi";
     }
 
     /**

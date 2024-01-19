@@ -12,31 +12,29 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import com.fnz.db2.journal.retrieve.Connect;
-import com.fnz.db2.journal.retrieve.FileFilter;
-import com.fnz.db2.journal.retrieve.JournalInfo;
-import com.fnz.db2.journal.retrieve.JournalInfoRetrieval;
-import com.fnz.db2.journal.retrieve.JournalPosition;
-import com.fnz.db2.journal.retrieve.JournalProcessedPosition;
-import com.fnz.db2.journal.retrieve.RetrieveConfig;
-import com.fnz.db2.journal.retrieve.RetrieveConfigBuilder;
-import com.fnz.db2.journal.retrieve.RetrieveJournal;
-import com.fnz.db2.journal.retrieve.rjne0200.EntryHeader;
-import com.fnz.db2.journal.retrieve.rnrn0200.DetailedJournalReceiver;
-import com.fnz.logging.structured.StructuredMessage;
 import com.ibm.as400.access.AS400;
 import com.ibm.as400.access.SecureAS400;
 import com.ibm.as400.access.SocketProperties;
 
 import io.debezium.connector.db2as400.metrics.As400StreamingChangeEventSourceMetrics;
+import io.debezium.ibmi.db2.journal.retrieve.Connect;
+import io.debezium.ibmi.db2.journal.retrieve.FileFilter;
+import io.debezium.ibmi.db2.journal.retrieve.JournalInfo;
+import io.debezium.ibmi.db2.journal.retrieve.JournalInfoRetrieval;
+import io.debezium.ibmi.db2.journal.retrieve.JournalPosition;
+import io.debezium.ibmi.db2.journal.retrieve.JournalProcessedPosition;
+import io.debezium.ibmi.db2.journal.retrieve.RetrieveConfig;
+import io.debezium.ibmi.db2.journal.retrieve.RetrieveConfigBuilder;
+import io.debezium.ibmi.db2.journal.retrieve.RetrieveJournal;
+import io.debezium.ibmi.db2.journal.retrieve.rjne0200.EntryHeader;
+import io.debezium.ibmi.db2.journal.retrieve.rnrn0200.DetailedJournalReceiver;
 import io.debezium.pipeline.source.spi.ChangeEventSource.ChangeEventSourceContext;
 
-
 public class As400RpcConnection implements AutoCloseable, Connect<AS400, IOException> {
-    private static Logger log = LogManager.getLogger(As400RpcConnection.class);
+    private static Logger log = LoggerFactory.getLogger(As400RpcConnection.class);
     private final As400StreamingChangeEventSourceMetrics streamingMetrics;
 
     private final As400ConnectorConfig config;
@@ -49,7 +47,6 @@ public class As400RpcConnection implements AutoCloseable, Connect<AS400, IOExcep
 
     private final boolean isSecure;
 
-
     public As400RpcConnection(As400ConnectorConfig config, As400StreamingChangeEventSourceMetrics streamingMetrics, List<FileFilter> includes) {
         super();
         this.config = config;
@@ -60,7 +57,8 @@ public class As400RpcConnection implements AutoCloseable, Connect<AS400, IOExcep
             if (includes.isEmpty()) {
                 // TODO add in parameters so this is configurable
                 journalInfo = JournalInfoRetrieval.getJournal(connection(), config.getSchema());
-            } else {
+            }
+            else {
                 journalInfo = JournalInfoRetrieval.getJournal(connection(), config.getSchema(), includes);
             }
             final RetrieveConfig rconfig = new RetrieveConfigBuilder().withAs400(this)
@@ -106,7 +104,8 @@ public class As400RpcConnection implements AutoCloseable, Connect<AS400, IOExcep
                 if (isSecure) {
                     this.as400 = new SecureAS400(config.getHostName(), config.getUser(),
                             config.getPassword().toCharArray());
-                } else {
+                }
+                else {
                     this.as400 = new AS400(config.getHostName(), config.getUser(), config.getPassword().toCharArray());
                 }
                 socketProperties.setSoTimeout(config.getSocketTimeout());
@@ -160,9 +159,9 @@ public class As400RpcConnection implements AutoCloseable, Connect<AS400, IOExcep
         else {
             // this is bad, we've probably lost data
             final List<DetailedJournalReceiver> receivers = journalInfoRetrieval.getReceivers(connection(), journalInfo);
-            log.error(new StructuredMessage("Failed to fetch journal entries, resetting journal to blank",
+            log.error("Failed to fetch journal entries '{}', resetting journal to blank",
                     Map.of("position", position,
-                            "receivers", receivers)));
+                            "receivers", receivers));
             offsetCtx.setPosition(new JournalProcessedPosition());
         }
 
@@ -176,21 +175,21 @@ public class As400RpcConnection implements AutoCloseable, Connect<AS400, IOExcep
             streamingMetrics.setJournalOffset(currentReceiver.getOffset());
             streamingMetrics.setJournalBehind(behind);
             streamingMetrics.setLastProcessedMs(position.getTimeOfLastProcessed().toEpochMilli());
-            log.info(new StructuredMessage("current position diagnostics",
+            log.info("Current position diagnostics '{}'",
                     Map.of("header", retrieveJournal.getFirstHeader(),
                             "behind", behind,
                             "position", position,
                             "currentReceiver", currentReceiver,
-                            "success", success)));
+                            "success", success));
 
         }
     }
 
-    public static interface BlockingReceiverConsumer {
+    public interface BlockingReceiverConsumer {
         void accept(BigInteger offset, RetrieveJournal r, EntryHeader eheader) throws RpcException, InterruptedException, IOException, SQLNonTransientConnectionException;
     }
 
-    public static interface BlockingNoDataConsumer {
+    public interface BlockingNoDataConsumer {
         void accept() throws InterruptedException;
     }
 
@@ -204,12 +203,11 @@ public class As400RpcConnection implements AutoCloseable, Connect<AS400, IOExcep
         }
     }
 
-
     private static class LogLimmiting {
         private final Map<String, Long> lastLogged = new HashMap<>();
         private final long rate;
 
-        public LogLimmiting(long rate) {
+        LogLimmiting(long rate) {
             this.rate = rate;
         }
 

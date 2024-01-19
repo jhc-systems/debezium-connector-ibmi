@@ -1,3 +1,8 @@
+/*
+ * Copyright Debezium Authors.
+ *
+ * Licensed under the Apache Software License version 2.0, available at http://www.apache.org/licenses/LICENSE-2.0
+ */
 package io.debezium.connector.db2as400;
 
 import java.util.List;
@@ -41,12 +46,11 @@ public class HostnamePrefixNamingScheme extends AbstractTopicNamingStrategy<Data
 
     private static final Logger LOGGER = LoggerFactory.getLogger(HostnamePrefixNamingScheme.class);
 
-    
     @Override
     public void configure(Properties props) {
         Configuration config = Configuration.from(props);
         final Field.Set configFields = Field.setOf(
-        		CommonConnectorConfig.TOPIC_PREFIX,
+                CommonConnectorConfig.TOPIC_PREFIX,
                 TOPIC_DELIMITER,
                 TOPIC_CACHE_SIZE,
                 TOPIC_TRANSACTION,
@@ -66,16 +70,16 @@ public class HostnamePrefixNamingScheme extends AbstractTopicNamingStrategy<Data
         prefix = config.getString(CommonConnectorConfig.TOPIC_PREFIX);
         assert prefix != null;
     }
-    
+
     @Override
     public String dataChangeTopic(DataCollectionId id) {
         String topicName;
         if (multiPartitionMode) {
-        	List<String> parts = id.parts();
+            List<String> parts = id.parts();
             topicName = mkString(Collect.arrayListOf(prefix, parts.subList(1, parts.size())), delimiter);
         }
         else {
-        	List<String> parts = id.schemaParts();
+            List<String> parts = id.schemaParts();
             topicName = mkString(Collect.arrayListOf(prefix, parts.subList(1, parts.size())), delimiter);
         }
         return topicNames.computeIfAbsent(id, t -> sanitizedTopicName(topicName));

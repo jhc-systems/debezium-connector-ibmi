@@ -97,7 +97,7 @@ public class As400DefaultValueConverter implements DefaultValueConverter {
                     return null; // can't represent this as a timestamp type
                 }
                 DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-                return (int)(LocalDate.parse(stripQuotes(value), formatter).toEpochDay());
+                return (int) (LocalDate.parse(stripQuotes(value), formatter).toEpochDay());
             }
             case Types.TIMESTAMP: {
                 if ("CURRENT_TIMESTAMP".equals(value)) {
@@ -215,7 +215,7 @@ public class As400DefaultValueConverter implements DefaultValueConverter {
 
     /**
      * Converts a string object for an expected JDBC type of {@link Types#BOOLEAN}.
-     * 
+     *
      * @param value the string object to be converted into a {@link Types#BOOLEAN}
      *              type;
      *

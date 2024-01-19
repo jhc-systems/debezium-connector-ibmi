@@ -1,174 +1,101 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
-                             http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+
+    <parent>
+        <groupId>io.debezium</groupId>
+        <artifactId>debezium-parent</artifactId>
+        <version>2.6.0-SNAPSHOT</version>
+    </parent>
+
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.fnz.debezium.ibmi</groupId>
-    <artifactId>debezium-connector-ibmi-parent</artifactId>
-    <version>${revision}</version>
+    <artifactId>debezium-connector-reactor-ibmi</artifactId>
+    <version>2.6.0-SNAPSHOT</version>
     <packaging>pom</packaging>
-    <name>parent project for debezium-connector-ibmi</name>
+    <name>Debezium Connector Reactor for IBM iSeries Db2</name>
 
-    <properties>
-        <jt400.version>11.1</jt400.version>
-        <revision>1.10.0-SNAPSHOT</revision>
-        <log4j2.version>2.20.0</log4j2.version>
-        <slf4j.version>1.7.29</slf4j.version>
-        <maven.compiler.source>17</maven.compiler.source>
-        <maven.compiler.target>17</maven.compiler.target>
-        <flatten.version>1.2.7</flatten.version>
-	    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-	    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-    </properties>
-    
-    <profiles>
-		<profile>
-			<id>external</id>
-		    <activation>
-				<activeByDefault>true</activeByDefault>
-		    </activation>			
-			 <repositories>
-				<repository>
-				  <id>confluent</id>
-				  <name>confluent repository</name>
-				  <url>https://packages.confluent.io/maven/</url>
-				</repository>
-			</repositories>		
-		</profile>
-	</profiles>
-
-    <dependencyManagement>
-        <dependencies>
-
-            <dependency>
-                <groupId>org.apache.logging.log4j</groupId>
-                <artifactId>log4j-api</artifactId>
-                <version>${log4j2.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.apache.logging.log4j</groupId>
-                <artifactId>log4j-slf4j-impl</artifactId>
-                <version>${log4j2.version}</version>
-                <scope>runtime</scope>
-            </dependency>
-
-            <dependency>
-                <groupId>org.apache.logging.log4j</groupId>
-                <artifactId>log4j-1.2-api</artifactId>
-                <version>${log4j2.version}</version>
-                <scope>runtime</scope>
-            </dependency>
-            <!-- for java util logger -->
-            <dependency>
-                <groupId>org.apache.logging.log4j</groupId>
-                <artifactId>log4j-jul</artifactId>
-                <version>${log4j2.version}</version>
-                <scope>runtime</scope>
-            </dependency>
-            <!-- for java system logger -->
-            <dependency>
-                <groupId>org.apache.logging.log4j</groupId>
-                <artifactId>log4j-jpl</artifactId>
-                <version>${log4j2.version}</version>
-                <scope>runtime</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.logging.log4j</groupId>
-                <artifactId>log4j-core</artifactId>
-                <version>${log4j2.version}</version>
-                <scope>compile</scope>
-            </dependency>
-            <!-- For JSON logging -->
-            <dependency>
-                <groupId>org.apache.logging.log4j</groupId>
-                <artifactId>log4j-layout-template-json</artifactId>
-                <version>${log4j2.version}</version>
-            </dependency>
-
-
-            <dependency>
-                <groupId>net.sf.jt400</groupId>
-                <artifactId>jt400-jdk9</artifactId>
-                <version>${jt400.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.slf4j</groupId>
-                <artifactId>slf4j-api</artifactId>
-                <version>${slf4j.version}</version>
-            </dependency>
-			<dependency>
-				<groupId>org.junit.jupiter</groupId>
-				<artifactId>junit-jupiter</artifactId>
-				<scope>test</scope>
-				<version>5.9.2</version>
-			</dependency>            
-        </dependencies>
-    </dependencyManagement>
+   <scm>
+        <connection>scm:git:git@github.com:debezium/debezium-connector-ibmi.git</connection>
+        <developerConnection>scm:git:git@github.com:debezium/debezium-connector-ibmi.git</developerConnection>
+        <url>https://github.com/debezium/debezium-connector-ibmi</url>
+        <tag>HEAD</tag>
+    </scm>
 
     <modules>
         <module>debezium-connector-ibmi</module>
         <module>journal-parsing</module>
-        <module>structured-logging</module>
-        <module>connector-health</module>
-        <module>kafka-smt-collection</module>
         <module>jt400-override-ccsid</module>
     </modules>
 
+    <properties>
+        <!-- Debezium parent -->
+        <version.debezium>2.5.0-SNAPSHOT</version.debezium>
+
+        <!-- Dependencies -->
+        <version.jt400>11.1</version.jt400>
+        <version.junit5>5.9.1</version.junit5>
+        <version.mockito.jupiter>4.6.1</version.mockito.jupiter>
+
+        <!-- Connector was written originally with Java 17 -->
+        <maven.compiler.release>17</maven.compiler.release>
+        <maven.compiler.testRelease>17</maven.compiler.testRelease>
+        <format.imports.source.compliance>17</format.imports.source.compliance>
+    </properties>
+
+    <repositories>
+        <repository>
+            <id>oss</id>
+            <name>OSS Sonatype Nexus</name>
+            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+            <releases>
+                <enabled>true</enabled>
+                <updatePolicy>never</updatePolicy>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+                <updatePolicy>never</updatePolicy>
+            </snapshots>
+        </repository>
+    </repositories>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>net.sf.jt400</groupId>
+                <artifactId>jt400-jdk9</artifactId>
+                <version>${version.jt400}</version>
+            </dependency>
+
+            <!-- Testing -->
+            <dependency>
+                <groupId>org.mockito</groupId>
+                <artifactId>mockito-junit-jupiter</artifactId>
+                <version>4.6.1</version>
+                <scope>test</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
     <build>
-        <pluginManagement>
-            <plugins>
-                <plugin>
-                    <groupId>org.codehaus.mojo</groupId>
-                    <artifactId>flatten-maven-plugin</artifactId>
-                    <version>${flatten.version}</version>
-                    <configuration>
-                        <updatePomFile>true</updatePomFile>
-                        <flattenMode>resolveCiFriendliesOnly</flattenMode>
-                    </configuration>
-                    <executions>
-                        <execution>
-                            <id>flatten</id>
-                            <phase>process-resources</phase>
-                            <goals>
-                                <goal>flatten</goal>
-                            </goals>
-                        </execution>
-                        <execution>
-                            <id>flatten.clean</id>
-                            <phase>clean</phase>
-                            <goals>
-                                <goal>clean</goal>
-                            </goals>
-                        </execution>
-                    </executions>
-                </plugin>
-            </plugins>
-        </pluginManagement>
-
-        <plugins>
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>flatten-maven-plugin</artifactId>
-                <configuration>
-                    <updatePomFile>true</updatePomFile>
-                    <flattenMode>resolveCiFriendliesOnly</flattenMode>
-                </configuration>
-                <inherited>false</inherited>
-                <executions>
-                    <execution>
-                        <id>flatten</id>
-                        <phase>none</phase> <!-- Unbind from lifecycle for this POM -->
-                    </execution>
-                    <execution>
-                        <id>flatten.clean</id>
-                        <phase>clean</phase>
-                        <goals>
-                            <goal>clean</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-        </plugins>
+        <resources>
+            <!-- Apply the properties set in the POM to the resource files -->
+            <resource>
+                <filtering>true</filtering>
+                <directory>src/main/resources</directory>
+                <includes>
+                    <include>*</include>
+                    <include>**/*</include>
+                </includes>
+            </resource>
+        </resources>
+        <testResources>
+            <testResource>
+                <directory>src/test/resources</directory>
+                <filtering>true</filtering>
+                <includes>
+                    <include>*</include>
+                    <include>**/*</include>
+                </includes>
+            </testResource>
+        </testResources>
     </build>
-
 </project>

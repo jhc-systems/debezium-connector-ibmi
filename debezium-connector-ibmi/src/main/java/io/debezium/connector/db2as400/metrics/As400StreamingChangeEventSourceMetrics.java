@@ -20,7 +20,7 @@ public class As400StreamingChangeEventSourceMetrics extends DefaultStreamingChan
     private final AtomicLong lastProcessedMs = new AtomicLong();
 
     public <T extends CdcSourceTaskContext> As400StreamingChangeEventSourceMetrics(T taskContext, ChangeEventQueueMetrics changeEventQueueMetrics,
-            EventMetadataProvider metadataProvider) {
+                                                                                   EventMetadataProvider metadataProvider) {
         super(taskContext, changeEventQueueMetrics, metadataProvider);
     }
 
@@ -32,7 +32,7 @@ public class As400StreamingChangeEventSourceMetrics extends DefaultStreamingChan
     public void setJournalBehind(BigInteger behind) {
         this.journalBehind.lazySet(behind.longValue());
     }
-    
+
     @Override
     public long getJournalOffset() {
         return journalOffset.get();
@@ -43,10 +43,10 @@ public class As400StreamingChangeEventSourceMetrics extends DefaultStreamingChan
     }
 
     @Override
-	public long getLastProcessedMs() {
-		return lastProcessedMs.get();
-	}
-	
+    public long getLastProcessedMs() {
+        return lastProcessedMs.get();
+    }
+
     public void setLastProcessedMs(long lastProccessedMs) {
         this.lastProcessedMs.lazySet(lastProccessedMs);
     }

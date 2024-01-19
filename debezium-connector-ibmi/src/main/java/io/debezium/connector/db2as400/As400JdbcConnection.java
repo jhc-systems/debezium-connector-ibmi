@@ -21,13 +21,13 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.fnz.db2.journal.retrieve.Connect;
-import com.fnz.db2.journal.retrieve.FileFilter;
 import com.ibm.as400.access.AS400JDBCDriverForcedCcsid;
 import com.ibm.as400.access.AS400JDBCDriverRegistration;
 
 import io.debezium.config.Configuration;
 import io.debezium.config.Field;
+import io.debezium.ibmi.db2.journal.retrieve.Connect;
+import io.debezium.ibmi.db2.journal.retrieve.FileFilter;
 import io.debezium.jdbc.JdbcConfiguration;
 import io.debezium.jdbc.JdbcConnection;
 import io.debezium.relational.Column;
@@ -64,7 +64,7 @@ public class As400JdbcConnection extends JdbcConnection implements Connect<Conne
 
     private final String realDatabaseName;
 
-    private static Field[] JdbcFields = new Field[] {
+    private static Field[] JdbcFields = new Field[]{
 
             As400ConnectorConfig.FROM_CCSID,
             As400ConnectorConfig.TO_CCSID,
@@ -92,7 +92,7 @@ public class As400JdbcConnection extends JdbcConnection implements Connect<Conne
 
     static JdbcConfiguration withDefaults(JdbcConfiguration config) {
         final Map<String, String> m = new HashMap<>();
-        for (final Field f: JdbcFields) {
+        for (final Field f : JdbcFields) {
             if (!config.hasKey(f)) {
                 m.put(f.name(), f.defaultValueAsString());
             }
@@ -101,17 +101,17 @@ public class As400JdbcConnection extends JdbcConnection implements Connect<Conne
             return config;
         }
 
-        return JdbcConfiguration.adapt(config.merge( JdbcConfiguration.adapt(Configuration.from(m))));
+        return JdbcConfiguration.adapt(config.merge(JdbcConfiguration.adapt(Configuration.from(m))));
 
     }
 
     public List<FileFilter> shortIncludes(String schema, String includes) {
         if (includes == null || includes.isBlank()) {
-            return Collections.<FileFilter>emptyList();
+            return Collections.<FileFilter> emptyList();
         }
         final String[] incs = includes.split(",");
         final List<FileFilter> r = new ArrayList<>();
-        for (String tableName: incs) {
+        for (String tableName : incs) {
             String schemaName = "";
             int o = tableName.lastIndexOf('.');
             if (o > 0) {
@@ -122,7 +122,7 @@ public class As400JdbcConnection extends JdbcConnection implements Connect<Conne
             // This handles the case where the table name has been specified as "database.schema.table"
             if (!"".equals(schemaName)) {
                 o = schemaName.lastIndexOf('.');
-                if (o> 0 ) {
+                if (o > 0) {
                     schemaName = schemaName.substring(o + 1);
                 }
             }
@@ -186,9 +186,9 @@ public class As400JdbcConnection extends JdbcConnection implements Connect<Conne
 
     @Override
     protected Map<TableId, List<Column>> getColumnsDetails(String databaseCatalog, String schemaNamePattern,
-            String tableName, TableFilter tableFilter, ColumnNameFilter columnFilter, DatabaseMetaData metadata,
-            final Set<TableId> viewIds)
-                    throws SQLException {
+                                                           String tableName, TableFilter tableFilter, ColumnNameFilter columnFilter, DatabaseMetaData metadata,
+                                                           final Set<TableId> viewIds)
+            throws SQLException {
         final Map<TableId, List<Column>> columnsByTable = new HashMap<>();
         try (ResultSet columnMetadata = metadata.getColumns(databaseCatalog, schemaNamePattern, tableName, null)) {
             while (columnMetadata.next()) {

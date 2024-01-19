@@ -12,11 +12,10 @@ import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.fnz.db2.journal.retrieve.JdbcFileDecoder;
-import com.fnz.db2.journal.retrieve.SchemaCacheIF;
-
 import io.debezium.connector.db2as400.conversion.As400DefaultValueConverter;
 import io.debezium.connector.db2as400.conversion.SchemaInfoConversion;
+import io.debezium.ibmi.db2.journal.retrieve.JdbcFileDecoder;
+import io.debezium.ibmi.db2.journal.retrieve.SchemaCacheIF;
 import io.debezium.relational.RelationalDatabaseSchema;
 import io.debezium.relational.Table;
 import io.debezium.relational.TableId;
@@ -34,7 +33,7 @@ public class As400DatabaseSchema extends RelationalDatabaseSchema implements Sch
     private final JdbcFileDecoder fileDecoder;
 
     public As400DatabaseSchema(As400ConnectorConfig config, As400JdbcConnection jdbcConnection,
-            TopicNamingStrategy<TableId> topicSelector, SchemaNameAdjuster schemaNameAdjuster) {
+                               TopicNamingStrategy<TableId> topicSelector, SchemaNameAdjuster schemaNameAdjuster) {
         super(config, topicSelector, config.getTableFilters().dataCollectionFilter(), config.getColumnFilter(),
                 new TableSchemaBuilder(new As400ValueConverters(), new As400DefaultValueConverter(), schemaNameAdjuster,
                         config.customConverterRegistry(), config.getSourceInfoStructMaker().schema(),

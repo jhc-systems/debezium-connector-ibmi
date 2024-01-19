@@ -8,12 +8,12 @@ package io.debezium.connector.db2as400.conversion;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.fnz.db2.journal.retrieve.JdbcFileDecoder;
-import com.fnz.db2.journal.retrieve.SchemaCacheIF.Structure;
-import com.fnz.db2.journal.retrieve.SchemaCacheIF.TableInfo;
 import com.ibm.as400.access.AS400DataType;
 import com.ibm.as400.access.AS400Structure;
 
+import io.debezium.ibmi.db2.journal.retrieve.JdbcFileDecoder;
+import io.debezium.ibmi.db2.journal.retrieve.SchemaCacheIF.Structure;
+import io.debezium.ibmi.db2.journal.retrieve.SchemaCacheIF.TableInfo;
 import io.debezium.relational.Column;
 import io.debezium.relational.ColumnEditor;
 import io.debezium.relational.Table;
@@ -25,12 +25,12 @@ import io.debezium.relational.TableId;
  * @author sillencem
  *
  */
-public class SchemaInfoConversion {	
-	private final JdbcFileDecoder fileDecoder;
-	
-	public SchemaInfoConversion(JdbcFileDecoder fileDecoder) {
-		this.fileDecoder = fileDecoder;
-	}
+public class SchemaInfoConversion {
+    private final JdbcFileDecoder fileDecoder;
+
+    public SchemaInfoConversion(JdbcFileDecoder fileDecoder) {
+        this.fileDecoder = fileDecoder;
+    }
 
     public TableInfo table2TableInfo(Table table) {
         List<Structure> structures = table2Structure(table);
@@ -53,7 +53,7 @@ public class SchemaInfoConversion {
     }
 
     public AS400Structure table2As400Structure(Table table) {
-    	TableId id = table.id();
+        TableId id = table.id();
         List<AS400DataType> as400structure = new ArrayList<>();
         if (table != null && table.columns() != null) {
             for (Column c : table.columns()) {
@@ -71,23 +71,23 @@ public class SchemaInfoConversion {
         TableId id = new TableId(database, schema, tableName);
         editor.tableId(id);
         if (tableInfo != null) {
-	        List<Structure> structure = tableInfo.getStructure();
-	        if (structure != null) {
-	            for (Structure col : structure) {
-	                ColumnEditor ceditor = Column.editor();
-	                ceditor.jdbcType(col.getJdcbType());
-	                ceditor.type(col.getType());
-	                ceditor.length(col.getLength());
-	                ceditor.scale(col.getPrecision());
-	                ceditor.name(col.getName());
-	                ceditor.autoIncremented(col.isAutoinc());
-	                ceditor.optional(col.isOptional());
-	                ceditor.position(col.getPosition());
-	
-	                editor.addColumn(ceditor.create());
-	            }
-	        }
-	        editor.setPrimaryKeyNames(tableInfo.getPrimaryKeys());
+            List<Structure> structure = tableInfo.getStructure();
+            if (structure != null) {
+                for (Structure col : structure) {
+                    ColumnEditor ceditor = Column.editor();
+                    ceditor.jdbcType(col.getJdcbType());
+                    ceditor.type(col.getType());
+                    ceditor.length(col.getLength());
+                    ceditor.scale(col.getPrecision());
+                    ceditor.name(col.getName());
+                    ceditor.autoIncremented(col.isAutoinc());
+                    ceditor.optional(col.isOptional());
+                    ceditor.position(col.getPosition());
+
+                    editor.addColumn(ceditor.create());
+                }
+            }
+            editor.setPrimaryKeyNames(tableInfo.getPrimaryKeys());
         }
 
         return editor.create();

@@ -17,7 +17,8 @@ public class As400ChangeRecordEmitter extends RelationalChangeRecordEmitter<As40
     private final Object[] data;
     private final Object[] dataNext;
 
-    public As400ChangeRecordEmitter(As400Partition partition, OffsetContext offset, Operation operation, Object[] data, Object[] dataNext, Clock clock, RelationalDatabaseConnectorConfig connectorConfig) {
+    public As400ChangeRecordEmitter(As400Partition partition, OffsetContext offset, Operation operation, Object[] data, Object[] dataNext, Clock clock,
+                                    RelationalDatabaseConnectorConfig connectorConfig) {
         super(partition, offset, clock, connectorConfig);
 
         this.operation = operation;

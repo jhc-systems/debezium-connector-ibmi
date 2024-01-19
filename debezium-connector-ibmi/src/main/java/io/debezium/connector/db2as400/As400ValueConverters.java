@@ -35,7 +35,7 @@ public class As400ValueConverters extends JdbcValueConverters {
             if (fixed.modified) {
                 String cname = (column == null) ? "" : String.format(" column name %s", column.name());
                 String fname = (fieldDefn == null) ? "" : String.format(" fieldDefn name %s", fieldDefn.name());
-            	log.warn("removed binary data from{}{}", cname, fname);
+                log.warn("removed binary data from{}{}", cname, fname);
             }
             return super.convertString(column, fieldDefn, fixed.value.trim());
         }

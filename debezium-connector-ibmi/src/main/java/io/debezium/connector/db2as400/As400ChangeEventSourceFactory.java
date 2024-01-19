@@ -28,10 +28,10 @@ public class As400ChangeEventSourceFactory implements ChangeEventSourceFactory<A
     private final As400DatabaseSchema schema;
 
     public As400ChangeEventSourceFactory(As400ConnectorConfig configuration, As400ConnectorConfig snapshotConfig,
-            As400RpcConnection rpcConnection,
-            MainConnectionProvidingConnectionFactory<As400JdbcConnection> jdbcConnectionFactory,
-            ErrorHandler errorHandler, EventDispatcher<As400Partition, TableId> dispatcher, Clock clock,
-            As400DatabaseSchema schema) {
+                                         As400RpcConnection rpcConnection,
+                                         MainConnectionProvidingConnectionFactory<As400JdbcConnection> jdbcConnectionFactory,
+                                         ErrorHandler errorHandler, EventDispatcher<As400Partition, TableId> dispatcher, Clock clock,
+                                         As400DatabaseSchema schema) {
         this.configuration = configuration;
         this.rpcConnection = rpcConnection;
         this.jdbcConnectionFactory = jdbcConnectionFactory;
@@ -44,8 +44,8 @@ public class As400ChangeEventSourceFactory implements ChangeEventSourceFactory<A
 
     @Override
     public SnapshotChangeEventSource<As400Partition, As400OffsetContext> getSnapshotChangeEventSource(
-            SnapshotProgressListener<As400Partition> snapshotProgressListener,
-            NotificationService<As400Partition, As400OffsetContext> notificationService) {
+                                                                                                      SnapshotProgressListener<As400Partition> snapshotProgressListener,
+                                                                                                      NotificationService<As400Partition, As400OffsetContext> notificationService) {
         return new As400SnapshotChangeEventSource(snapshotConfig, rpcConnection, jdbcConnectionFactory, schema,
                 dispatcher, clock, snapshotProgressListener, notificationService);
     }

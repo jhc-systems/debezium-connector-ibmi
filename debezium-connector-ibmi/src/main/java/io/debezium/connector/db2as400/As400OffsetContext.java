@@ -16,217 +16,218 @@ import org.apache.kafka.connect.data.Struct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.fnz.db2.journal.retrieve.JournalProcessedPosition;
-import com.fnz.db2.journal.retrieve.JournalReceiver;
-
 import io.debezium.config.Field;
 import io.debezium.connector.SnapshotRecord;
+import io.debezium.ibmi.db2.journal.retrieve.JournalProcessedPosition;
+import io.debezium.ibmi.db2.journal.retrieve.JournalReceiver;
 import io.debezium.pipeline.spi.OffsetContext;
 import io.debezium.pipeline.txmetadata.TransactionContext;
 import io.debezium.relational.RelationalDatabaseConnectorConfig;
 import io.debezium.spi.schema.DataCollectionId;
 
 public class As400OffsetContext implements OffsetContext {
-	private static Logger log = LoggerFactory.getLogger(As400OffsetContext.class);
-	// TODO note believe there is a per journal offset
-	private static final String SERVER_PARTITION_KEY = "server";
-	public static final String EVENT_SEQUENCE = "offset.event_sequence";
-	public static final String EVENT_TIME = "offset.time";
-	public static final String RECEIVER_LIBRARY = "offset.receiver_library";
-	public static final String PROCESSED = "offset.processed";
-	public static final String RECEIVER = "offset.receiver";
-	private static final String SNAPSHOT_COMPLETED_KEY = "snapshot_completed";
+    private static Logger log = LoggerFactory.getLogger(As400OffsetContext.class);
+    // TODO note believe there is a per journal offset
+    private static final String SERVER_PARTITION_KEY = "server";
+    public static final String EVENT_SEQUENCE = "offset.event_sequence";
+    public static final String EVENT_TIME = "offset.time";
+    public static final String RECEIVER_LIBRARY = "offset.receiver_library";
+    public static final String PROCESSED = "offset.processed";
+    public static final String RECEIVER = "offset.receiver";
+    private static final String SNAPSHOT_COMPLETED_KEY = "snapshot_completed";
 
-	public static final Field EVENT_SEQUENCE_FIELD = Field.create(EVENT_SEQUENCE);
-	public static final Field RECEIVER_LIBRARY_FIELD = Field.create(RECEIVER_LIBRARY);
-	public static final Field RECEIVER_FIELD = Field.create(RECEIVER);
-	public static final Field PROCESSED_FIELD = Field.create(PROCESSED);
+    public static final Field EVENT_SEQUENCE_FIELD = Field.create(EVENT_SEQUENCE);
+    public static final Field RECEIVER_LIBRARY_FIELD = Field.create(RECEIVER_LIBRARY);
+    public static final Field RECEIVER_FIELD = Field.create(RECEIVER);
+    public static final Field PROCESSED_FIELD = Field.create(PROCESSED);
 
-	private final Map<String, String> partition;
-	private TransactionContext transactionContext;
+    private final Map<String, String> partition;
+    private TransactionContext transactionContext;
 
-	private final As400ConnectorConfig connectorConfig;
-	private final SourceInfo sourceInfo;
-	private final JournalProcessedPosition position;
-	private final String inclueTables;
-	private boolean hasNewTables = false;
-	private volatile boolean snapshotComplete = false;
+    private final As400ConnectorConfig connectorConfig;
+    private final SourceInfo sourceInfo;
+    private final JournalProcessedPosition position;
+    private final String inclueTables;
+    private boolean hasNewTables = false;
+    private volatile boolean snapshotComplete = false;
 
-	public As400OffsetContext(As400ConnectorConfig connectorConfig) {
-		super();
-		partition = Collections.singletonMap(SERVER_PARTITION_KEY, connectorConfig.getLogicalName());
-		this.position = connectorConfig.getOffset();
-		this.connectorConfig = connectorConfig;
-		sourceInfo = new SourceInfo(connectorConfig);
-		inclueTables = connectorConfig.tableIncludeList();
-	}
+    public As400OffsetContext(As400ConnectorConfig connectorConfig) {
+        super();
+        partition = Collections.singletonMap(SERVER_PARTITION_KEY, connectorConfig.getLogicalName());
+        this.position = connectorConfig.getOffset();
+        this.connectorConfig = connectorConfig;
+        sourceInfo = new SourceInfo(connectorConfig);
+        inclueTables = connectorConfig.tableIncludeList();
+    }
 
-	public As400OffsetContext(As400ConnectorConfig connectorConfig, JournalProcessedPosition position) {
-		super();
-		partition = Collections.singletonMap(SERVER_PARTITION_KEY, connectorConfig.getLogicalName());
-		this.position = position;
-		this.connectorConfig = connectorConfig;
-		sourceInfo = new SourceInfo(connectorConfig);
-		inclueTables = connectorConfig.tableIncludeList();
-	}
+    public As400OffsetContext(As400ConnectorConfig connectorConfig, JournalProcessedPosition position) {
+        super();
+        partition = Collections.singletonMap(SERVER_PARTITION_KEY, connectorConfig.getLogicalName());
+        this.position = position;
+        this.connectorConfig = connectorConfig;
+        sourceInfo = new SourceInfo(connectorConfig);
+        inclueTables = connectorConfig.tableIncludeList();
+    }
 
-	public As400OffsetContext(As400ConnectorConfig connectorConfig, JournalProcessedPosition position, String includeTables,
-			boolean snapshotComplete) {
-		super();
-		partition = Collections.singletonMap(SERVER_PARTITION_KEY, connectorConfig.getLogicalName());
-		this.position = position;
-		this.connectorConfig = connectorConfig;
-		sourceInfo = new SourceInfo(connectorConfig);
-		this.inclueTables = includeTables;
-		this.snapshotComplete = snapshotComplete;
-	}
+    public As400OffsetContext(As400ConnectorConfig connectorConfig, JournalProcessedPosition position, String includeTables,
+                              boolean snapshotComplete) {
+        super();
+        partition = Collections.singletonMap(SERVER_PARTITION_KEY, connectorConfig.getLogicalName());
+        this.position = position;
+        this.connectorConfig = connectorConfig;
+        sourceInfo = new SourceInfo(connectorConfig);
+        this.inclueTables = includeTables;
+        this.snapshotComplete = snapshotComplete;
+    }
 
-	public void setPosition(JournalProcessedPosition newPosition) {
-		this.position.setPosition(newPosition);
-	}
+    public void setPosition(JournalProcessedPosition newPosition) {
+        this.position.setPosition(newPosition);
+    }
 
-	public boolean isSnapshotCompplete() {
-		return this.snapshotComplete;
-	}
+    public boolean isSnapshotCompplete() {
+        return this.snapshotComplete;
+    }
 
-	public JournalProcessedPosition getPosition() {
-		return position;
-	}
-	
-	public boolean isPosisionSet() {
-		return position != null && position.isOffsetSet();
-	}
+    public JournalProcessedPosition getPosition() {
+        return position;
+    }
 
-	public void setTransaction(TransactionContext transactionContext) {
-		this.transactionContext = transactionContext;
-	}
+    public boolean isPosisionSet() {
+        return position != null && position.isOffsetSet();
+    }
 
-	public void endTransaction() {
-		transactionContext = null;
-	}
+    public void setTransaction(TransactionContext transactionContext) {
+        this.transactionContext = transactionContext;
+    }
 
-	@Override
-	public Map<String, ?> getOffset() {
-		if (sourceInfo.isSnapshot()) {
-			log.debug("new snapshot offset {}", position);
-		} else {
-			log.debug("new offset {}", position);
+    public void endTransaction() {
+        transactionContext = null;
+    }
 
-		}
-		final BigInteger offset = position.getOffset();
-		String offsetStr = "null";
-		if (null != offset) {
-			offsetStr = offset.toString();
-		}
-		String time = Long.toString(position.getTimeOfLastProcessed().getEpochSecond());
-		return new HashMap<>(Map.of(As400OffsetContext.EVENT_SEQUENCE, offsetStr,
-				As400OffsetContext.EVENT_TIME, time,
-				As400OffsetContext.RECEIVER, position.getReceiver().name(), 
-				As400OffsetContext.PROCESSED, Boolean.toString(position.processed()),
-				As400OffsetContext.RECEIVER_LIBRARY, position.getReceiver().library(),
-				RelationalDatabaseConnectorConfig.TABLE_INCLUDE_LIST.name(), inclueTables,
-				As400OffsetContext.SNAPSHOT_COMPLETED_KEY, Boolean.toString(snapshotComplete)));
-	}
+    @Override
+    public Map<String, ?> getOffset() {
+        if (sourceInfo.isSnapshot()) {
+            log.debug("new snapshot offset {}", position);
+        }
+        else {
+            log.debug("new offset {}", position);
 
-	@Override
-	public Schema getSourceInfoSchema() {
-		return sourceInfo.schema();
-	}
+        }
+        final BigInteger offset = position.getOffset();
+        String offsetStr = "null";
+        if (null != offset) {
+            offsetStr = offset.toString();
+        }
+        String time = Long.toString(position.getTimeOfLastProcessed().getEpochSecond());
+        return new HashMap<>(Map.of(As400OffsetContext.EVENT_SEQUENCE, offsetStr,
+                As400OffsetContext.EVENT_TIME, time,
+                As400OffsetContext.RECEIVER, position.getReceiver().name(),
+                As400OffsetContext.PROCESSED, Boolean.toString(position.processed()),
+                As400OffsetContext.RECEIVER_LIBRARY, position.getReceiver().library(),
+                RelationalDatabaseConnectorConfig.TABLE_INCLUDE_LIST.name(), inclueTables,
+                As400OffsetContext.SNAPSHOT_COMPLETED_KEY, Boolean.toString(snapshotComplete)));
+    }
 
-	public void setSourceTime(Instant time) {
-		sourceInfo.setSourceTime(time);
-	}
+    @Override
+    public Schema getSourceInfoSchema() {
+        return sourceInfo.schema();
+    }
 
-	@Override
-	public Struct getSourceInfo() {
-		return sourceInfo.struct();
-	}
+    public void setSourceTime(Instant time) {
+        sourceInfo.setSourceTime(time);
+    }
 
-	@Override
-	public boolean isSnapshotRunning() {
-		return sourceInfo.isSnapshot();
-	}
+    @Override
+    public Struct getSourceInfo() {
+        return sourceInfo.struct();
+    }
 
-	@Override
-	public void preSnapshotStart() {
-		snapshotComplete = false;
-		sourceInfo.setSnapshot(SnapshotRecord.TRUE);
-	}
+    @Override
+    public boolean isSnapshotRunning() {
+        return sourceInfo.isSnapshot();
+    }
 
-	@Override
-	public void preSnapshotCompletion() {
-		snapshotComplete = true;
-	}
+    @Override
+    public void preSnapshotStart() {
+        snapshotComplete = false;
+        sourceInfo.setSnapshot(SnapshotRecord.TRUE);
+    }
 
-	@Override
-	public void postSnapshotCompletion() {
-		sourceInfo.setSnapshot(SnapshotRecord.FALSE);
-		snapshotComplete = true;
-	}
+    @Override
+    public void preSnapshotCompletion() {
+        snapshotComplete = true;
+    }
 
-	@Override
-	public void event(DataCollectionId collectionId, Instant timestamp) {
-		sourceInfo.setSourceTime(timestamp);
-//        sourceInfo.tableEvent((TableId) collectionId);
-	}
+    @Override
+    public void postSnapshotCompletion() {
+        sourceInfo.setSnapshot(SnapshotRecord.FALSE);
+        snapshotComplete = true;
+    }
 
-	@Override
-	public TransactionContext getTransactionContext() {
-		return transactionContext;
-	}
+    @Override
+    public void event(DataCollectionId collectionId, Instant timestamp) {
+        sourceInfo.setSourceTime(timestamp);
+        // sourceInfo.tableEvent((TableId) collectionId);
+    }
 
-	public String getIncludeTables() {
-		return inclueTables;
-	}
+    @Override
+    public TransactionContext getTransactionContext() {
+        return transactionContext;
+    }
 
-	public static class Loader implements OffsetContext.Loader<As400OffsetContext> {
+    public String getIncludeTables() {
+        return inclueTables;
+    }
 
-		private final As400ConnectorConfig connectorConfig;
+    public static class Loader implements OffsetContext.Loader<As400OffsetContext> {
 
-		public Loader(As400ConnectorConfig connectorConfig) {
-			this.connectorConfig = connectorConfig;
-		}
+        private final As400ConnectorConfig connectorConfig;
 
-		@Override
-		public As400OffsetContext load(Map<String, ?> map) {
-			final String offsetStr = (String) map.get(As400OffsetContext.EVENT_SEQUENCE);
-			final String TimeStr = (String) map.get(As400OffsetContext.EVENT_TIME);
-			final String complete = (String) map.get(As400OffsetContext.SNAPSHOT_COMPLETED_KEY);
-			boolean snapshotComplete = false;
-			if (null != complete) {
-				snapshotComplete = Boolean.valueOf(complete);
-			}
-			final String receiver = (String) map.get(As400OffsetContext.RECEIVER);
-			final boolean processed = Boolean.valueOf((String) map.get(As400OffsetContext.PROCESSED));
-			final String receiverLibrary = (String) map.get(As400OffsetContext.RECEIVER_LIBRARY);
-			final String inclueTables = (String) map.get(RelationalDatabaseConnectorConfig.TABLE_INCLUDE_LIST.name());
-			JournalProcessedPosition position = new JournalProcessedPosition();
-			if ("null".equals(offsetStr)) {
-				log.warn("setting offsets to zero");
-			} else {
-				final BigInteger offset = new BigInteger(offsetStr);
-				Instant time = (TimeStr == null) ? Instant.ofEpochSecond(0) : Instant.ofEpochSecond(Long.parseLong(TimeStr));
-				position = new JournalProcessedPosition(offset, new JournalReceiver(receiver, receiverLibrary), time, processed);
-			}
-			return new As400OffsetContext(connectorConfig, position, inclueTables, snapshotComplete);
-		}
-	}
+        public Loader(As400ConnectorConfig connectorConfig) {
+            this.connectorConfig = connectorConfig;
+        }
 
-	public boolean hasNewTables() {
-		return hasNewTables;
-	}
+        @Override
+        public As400OffsetContext load(Map<String, ?> map) {
+            final String offsetStr = (String) map.get(As400OffsetContext.EVENT_SEQUENCE);
+            final String TimeStr = (String) map.get(As400OffsetContext.EVENT_TIME);
+            final String complete = (String) map.get(As400OffsetContext.SNAPSHOT_COMPLETED_KEY);
+            boolean snapshotComplete = false;
+            if (null != complete) {
+                snapshotComplete = Boolean.valueOf(complete);
+            }
+            final String receiver = (String) map.get(As400OffsetContext.RECEIVER);
+            final boolean processed = Boolean.valueOf((String) map.get(As400OffsetContext.PROCESSED));
+            final String receiverLibrary = (String) map.get(As400OffsetContext.RECEIVER_LIBRARY);
+            final String inclueTables = (String) map.get(RelationalDatabaseConnectorConfig.TABLE_INCLUDE_LIST.name());
+            JournalProcessedPosition position = new JournalProcessedPosition();
+            if ("null".equals(offsetStr)) {
+                log.warn("setting offsets to zero");
+            }
+            else {
+                final BigInteger offset = new BigInteger(offsetStr);
+                Instant time = (TimeStr == null) ? Instant.ofEpochSecond(0) : Instant.ofEpochSecond(Long.parseLong(TimeStr));
+                position = new JournalProcessedPosition(offset, new JournalReceiver(receiver, receiverLibrary), time, processed);
+            }
+            return new As400OffsetContext(connectorConfig, position, inclueTables, snapshotComplete);
+        }
+    }
 
-	public void hasNewTables(boolean hasNewTables) {
-		this.hasNewTables = hasNewTables;
-	}
+    public boolean hasNewTables() {
+        return hasNewTables;
+    }
 
-	@Override
-	public String toString() {
-		return "As400OffsetContext [position=" + position + "]";
-	}
+    public void hasNewTables(boolean hasNewTables) {
+        this.hasNewTables = hasNewTables;
+    }
 
-	@Override
-	public void markSnapshotRecord(SnapshotRecord record) {
-		sourceInfo.setSnapshot(record);
-	}
+    @Override
+    public String toString() {
+        return "As400OffsetContext [position=" + position + "]";
+    }
+
+    @Override
+    public void markSnapshotRecord(SnapshotRecord record) {
+        sourceInfo.setSnapshot(record);
+    }
 }
