@@ -28,6 +28,7 @@ then
    for i in  /var/tls/*
    do
         test -f "$i" || continue
+        test -s "$i" || echo "file $i is empty" || continue
         keytool -import -noprompt -alias "${i##*/}" -storepass changeit -keystore '/tmp/cacerts' -file "$i"
    done
 fi
