@@ -27,20 +27,10 @@
             <artifactId>jt400-override-ccsid</artifactId>
             <version>${project.version}</version>
         </dependency>
-
-        <!-- For JSON logging -->
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
-        </dependency>
-        <dependency>
-            <!-- for instant -->
-            <groupId>com.fasterxml.jackson.datatype</groupId>
-            <artifactId>jackson-datatype-jsr310</artifactId>
-        </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>io.debezium</groupId>
@@ -54,6 +44,7 @@
         <dependency>
             <groupId>org.apache.kafka</groupId>
             <artifactId>connect-api</artifactId>
+            <scope>provided</scope>
         </dependency>
 
         <!-- Testing -->
