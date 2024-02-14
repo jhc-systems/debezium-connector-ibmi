@@ -17,6 +17,7 @@ import org.apache.kafka.connect.source.SourceRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.debezium.bean.StandardBeanNames;
 import io.debezium.config.Configuration;
 import io.debezium.config.Field;
 import io.debezium.connector.base.ChangeEventQueue;
@@ -39,6 +40,7 @@ import io.debezium.pipeline.spi.Offsets;
 import io.debezium.relational.TableId;
 import io.debezium.schema.SchemaFactory;
 import io.debezium.schema.SchemaNameAdjuster;
+import io.debezium.snapshot.SnapshotterService;
 import io.debezium.spi.topic.TopicNamingStrategy;
 import io.debezium.util.Clock;
 
@@ -75,6 +77,14 @@ public class As400ConnectorTask extends BaseSourceTask<As400Partition, As400Offs
         final CdcSourceTaskContext ctx = new CdcSourceTaskContext(connectorConfig.getContextName(),
                 connectorConfig.getLogicalName(), connectorConfig.getCustomMetricTags(), schema::tableIds);
 
+        // Manual Bean Registration
+        connectorConfig.getBeanRegistry().add(StandardBeanNames.CONFIGURATION, config);
+        connectorConfig.getBeanRegistry().add(StandardBeanNames.CONNECTOR_CONFIG, connectorConfig);
+        connectorConfig.getBeanRegistry().add(StandardBeanNames.DATABASE_SCHEMA, schema);
+
+        // Service providers
+        registerServiceProviders(connectorConfig.getServiceRegistry());
+
         // Set up the task record queue ...
         this.queue = new ChangeEventQueue.Builder<DataChangeEvent>().pollInterval(connectorConfig.getPollInterval())
                 .maxBatchSize(connectorConfig.getMaxBatchSize()).maxQueueSize(connectorConfig.getMaxQueueSize())
@@ -89,6 +99,8 @@ public class As400ConnectorTask extends BaseSourceTask<As400Partition, As400Offs
             log.info("previous offsets not found creating from config");
             previousOffset = new As400OffsetContext(connectorConfig);
         }
+
+        final SnapshotterService snapshotterService = connectorConfig.getServiceRegistry().tryGetService(SnapshotterService.class);
 
         final As400EventMetadataProvider metadataProvider = new As400EventMetadataProvider();
 
@@ -129,7 +141,7 @@ public class As400ConnectorTask extends BaseSourceTask<As400Partition, As400Offs
         final Clock clock = Clock.system();
 
         final As400ChangeEventSourceFactory changeFactory = new As400ChangeEventSourceFactory(newConfig, snapshotConnectorConfig, rpcConnection,
-                jdbcConnectionFactory, errorHandler, dispatcher, clock, schema);
+                jdbcConnectionFactory, errorHandler, dispatcher, clock, schema, snapshotterService);
 
         final SignalProcessor<As400Partition, As400OffsetContext> signalProcessor = new SignalProcessor<>(
                 As400RpcConnector.class, connectorConfig, Map.of(),
@@ -143,7 +155,7 @@ public class As400ConnectorTask extends BaseSourceTask<As400Partition, As400Offs
         final ChangeEventSourceCoordinator<As400Partition, As400OffsetContext> coordinator = new ChangeEventSourceCoordinator<>(
                 previousOffsetPartition, errorHandler, As400JdbcConnector.class, newConfig, changeFactory,
                 new As400ChangeEventSourceMetricsFactory(streamingMetrics), dispatcher, schema,
-                signalProcessor, notificationService);
+                signalProcessor, notificationService, snapshotterService);
         coordinator.start(taskContext, this.queue, metadataProvider);
 
         return coordinator;

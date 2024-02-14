@@ -14,6 +14,7 @@ import io.debezium.pipeline.source.spi.SnapshotChangeEventSource;
 import io.debezium.pipeline.source.spi.SnapshotProgressListener;
 import io.debezium.pipeline.source.spi.StreamingChangeEventSource;
 import io.debezium.relational.TableId;
+import io.debezium.snapshot.SnapshotterService;
 import io.debezium.util.Clock;
 
 public class As400ChangeEventSourceFactory implements ChangeEventSourceFactory<As400Partition, As400OffsetContext> {
@@ -26,12 +27,14 @@ public class As400ChangeEventSourceFactory implements ChangeEventSourceFactory<A
     private final EventDispatcher<As400Partition, TableId> dispatcher;
     private final Clock clock;
     private final As400DatabaseSchema schema;
+    private final SnapshotterService snapshotterService;
 
     public As400ChangeEventSourceFactory(As400ConnectorConfig configuration, As400ConnectorConfig snapshotConfig,
                                          As400RpcConnection rpcConnection,
                                          MainConnectionProvidingConnectionFactory<As400JdbcConnection> jdbcConnectionFactory,
                                          ErrorHandler errorHandler, EventDispatcher<As400Partition, TableId> dispatcher, Clock clock,
-                                         As400DatabaseSchema schema) {
+                                         As400DatabaseSchema schema,
+                                         SnapshotterService snapshotterService) {
         this.configuration = configuration;
         this.rpcConnection = rpcConnection;
         this.jdbcConnectionFactory = jdbcConnectionFactory;
@@ -40,6 +43,7 @@ public class As400ChangeEventSourceFactory implements ChangeEventSourceFactory<A
         this.clock = clock;
         this.schema = schema;
         this.snapshotConfig = snapshotConfig;
+        this.snapshotterService = snapshotterService;
     }
 
     @Override
@@ -47,7 +51,7 @@ public class As400ChangeEventSourceFactory implements ChangeEventSourceFactory<A
                                                                                                       SnapshotProgressListener<As400Partition> snapshotProgressListener,
                                                                                                       NotificationService<As400Partition, As400OffsetContext> notificationService) {
         return new As400SnapshotChangeEventSource(snapshotConfig, rpcConnection, jdbcConnectionFactory, schema,
-                dispatcher, clock, snapshotProgressListener, notificationService);
+                dispatcher, clock, snapshotProgressListener, notificationService, snapshotterService);
     }
 
     @Override

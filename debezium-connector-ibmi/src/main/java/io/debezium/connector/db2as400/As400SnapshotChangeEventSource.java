@@ -32,6 +32,7 @@ import io.debezium.relational.Table;
 import io.debezium.relational.TableId;
 import io.debezium.schema.SchemaChangeEvent;
 import io.debezium.schema.SchemaChangeEvent.SchemaChangeEventType;
+import io.debezium.snapshot.SnapshotterService;
 import io.debezium.util.Clock;
 
 public class As400SnapshotChangeEventSource
@@ -47,10 +48,11 @@ public class As400SnapshotChangeEventSource
                                           MainConnectionProvidingConnectionFactory<As400JdbcConnection> jdbcConnectionFactory,
                                           As400DatabaseSchema schema, EventDispatcher<As400Partition, TableId> dispatcher, Clock clock,
                                           SnapshotProgressListener<As400Partition> snapshotProgressListener,
-                                          NotificationService<As400Partition, As400OffsetContext> notificationService) {
+                                          NotificationService<As400Partition, As400OffsetContext> notificationService,
+                                          SnapshotterService snapshotterService) {
 
         super(connectorConfig, jdbcConnectionFactory, schema, dispatcher, clock, snapshotProgressListener,
-                notificationService);
+                notificationService, snapshotterService);
 
         this.connectorConfig = connectorConfig;
         this.rpcConnection = rpcConnection;
@@ -66,7 +68,7 @@ public class As400SnapshotChangeEventSource
             log.info("snapshotting skipped but fetching structure");
             final RelationalSnapshotContext<As400Partition, As400OffsetContext> ctx;
             try {
-                ctx = (RelationalSnapshotContext<As400Partition, As400OffsetContext>) prepare(partition);
+                ctx = (RelationalSnapshotContext<As400Partition, As400OffsetContext>) prepare(partition, false);
                 determineTables(ctx, snapshottingTask);
                 readTableStructure(context, ctx, previousOffset, snapshottingTask);
             }
@@ -235,8 +237,8 @@ public class As400SnapshotChangeEventSource
     }
 
     @Override
-    protected SnapshotContext<As400Partition, As400OffsetContext> prepare(As400Partition partition) throws Exception {
-        return new RelationalSnapshotContext<>(partition, jdbcConnection.getRealDatabaseName());
+    protected SnapshotContext<As400Partition, As400OffsetContext> prepare(As400Partition partition, boolean onDemand) throws Exception {
+        return new RelationalSnapshotContext<>(partition, jdbcConnection.getRealDatabaseName(), onDemand);
     }
 
     @Override
