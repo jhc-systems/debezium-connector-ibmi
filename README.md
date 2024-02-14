@@ -17,10 +17,10 @@ GRTOBJAUT OBJ(<PROJECT_LIB>/*ALL) OBJTYPE(*FILE) USER(<CDC_USER>) AUT(*USE)
 ```
 Where:
 
-* <JRNLIB> is the library where the journal and receivers reside
-* <JRN> is the journal name
-* <PROJECT_LIB> is the Figaro database library
-* <CDC_USER> is the username of the CDC service account
+* `<JRNLIB>` is the library where the journal and receivers reside
+* `<JRN>` is the journal name
+* `<PROJECT_LIB>` is the Figaro database library
+* `<CDC_USER>` is the username of the CDC service account
 
 ## Required
 The following environment variables are mandatory configuration and have no default values
