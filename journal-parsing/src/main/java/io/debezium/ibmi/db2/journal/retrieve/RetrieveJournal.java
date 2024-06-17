@@ -118,7 +118,6 @@ public class RetrieveJournal {
         builder.withRange(range);
         final ProgramParameter[] parameters = builder.build();
 
-        log.debug("Fetch journal position {} parameters {}", previousPosition, builder);
         spc.setProgram(JournalInfoRetrieval.JOURNAL_SERVICE_LIB, parameters);
         spc.setProcedureName("QjoRetrieveJournalEntries");
         spc.setAlignOn16Bytes(true);
@@ -128,7 +127,7 @@ public class RetrieveJournal {
             outputData = parameters[0].getOutputData();
             header = firstHeaderDecoder.decode(outputData, end);
             totalTransferred += header.totalBytes();
-            log.debug("first header: {} ", header);
+            log.debug("retrieve from {} to {} header {}", range.start(), range.end(), header);
             offset = -1;
             if (header.status() == OffsetStatus.MORE_DATA_NEW_OFFSET && header.offset() == 0) {
                 log.error("buffer too small need to skip this entry {}", previousPosition);
@@ -139,6 +138,7 @@ public class RetrieveJournal {
             }
         }
         else {
+            log.debug("retrieve from {} to {} status {}", range.start(), range.end(), success);
             return reThrowIfFatal(previousPosition, spc, end, builder);
         }
         return success;
@@ -269,9 +269,10 @@ public class RetrieveJournal {
         position.setPosition(nextOffset);
     }
 
-    private static boolean alreadyProcessed(JournalProcessedPosition position, EntryHeader entryHeader) {
-        final JournalProcessedPosition entryPosition = new JournalProcessedPosition(position);
-        return position.processed() && entryPosition.equals(position);
+    static boolean alreadyProcessed(JournalProcessedPosition position, EntryHeader entryHeader) {
+        return position.processed() && position.getOffset().equals(entryHeader.getSequenceNumber()) && (!entryHeader.hasReceiver() ||
+                (entryHeader.getReceiverLibrary().equals(position.getReceiver().library()) && entryHeader.getReceiver().equals(position.getReceiver().name())));
+
     }
 
     private static void updatePosition(JournalProcessedPosition p, EntryHeader entryHeader) {
