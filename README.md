@@ -1,3 +1,55 @@
+# DEPRICATED
+
+This project has been adopted by debezium and can be found at https://github.com/debezium/debezium-connector-ibmi
+
+Many thanks to Jiri Pechanec for taking this on
+
+please use the new project where future development will take place
+
+# Migration notes the newly adopted driver requires a few different options in the json configuration
+
+configuration changes:
+
+```
+  "config": {
+    "connector.class": "io.debezium.connector.db2as400.As400RpcConnector",
+    "schema": "SCHEMA",
+    "hostname": "ibmiserver",
+    "dbname": "database name",
+    "user": "xxx",
+    "password": "xxx",
+    "secure": true
+```
+
+will become:
+
+```
+  "config": {
+    "connector.class": "io.debezium.connector.db2as400.As400RpcConnector",
+    "database.schema": "SCHEMA",
+    "database.hostname": "ibmiserver",
+    "database.dbname": "database name",
+    "database.user": "xxx",
+    "database.password": "xxx",
+    "database.driver.secure": true  
+```
+
+you will also need to set the topic prefix to the same value as `hostname` in the old config to have the same topic names
+
+`"topic.prefix" = "ibmiserver"`
+
+All jdbc driver parameters e.g. ccsid mapping if you want to use secure connections are now prefixed `database.driver.`
+
+i.e.
+
+```
+    "database.driver.secure": true 
+    "database.driver.from_ccsid": 37,
+    "database.driver.to_ccsid": 285,  
+```
+
+# OLD information
+
 # Project
 
 Use the IBM I journal as a source of CDC events see https://bitbucket.org/jhc-systems/journal-parsing/ for the journal fetch/decoding
