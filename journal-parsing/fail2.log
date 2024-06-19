@@ -1,0 +1,218 @@
+16:11:42.277 [main] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - journal JournalInfo [journalName=QSQJRN, journalLibrary=JRN_TEST4]
+16:11:42.594 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 0
+16:11:42.596 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 1
+16:11:42.597 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 2
+16:11:42.597 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 3
+16:11:42.598 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 4
+16:11:42.598 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 5
+16:11:42.599 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 6
+16:11:42.599 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 7
+16:11:42.600 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 8
+16:11:42.600 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 9
+16:11:42.600 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 10
+16:11:42.601 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 11
+16:11:42.601 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 12
+16:11:42.601 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 13
+16:11:42.601 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 14
+16:11:42.601 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 15
+16:11:42.602 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 16
+16:11:42.602 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 17
+16:11:42.602 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 18
+16:11:42.602 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 19
+16:11:42.602 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 20
+16:11:42.602 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 21
+16:11:42.603 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 22
+16:11:42.603 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 23
+16:11:42.603 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 24
+16:11:42.603 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 25
+16:11:42.603 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 26
+16:11:42.603 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 27
+16:11:42.603 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 28
+16:11:42.604 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 29
+16:11:42.604 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 30
+16:11:42.604 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 31
+16:11:42.604 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 32
+16:11:42.605 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 33
+16:11:42.605 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 34
+16:11:43.459 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - padding with ignored updates 10
+16:11:43.758 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - add new receiver 35
+16:11:43.915 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - connamd true
+16:11:43.916 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - command CHGJRN JRN(JRN_TEST4/QSQJRN) JRNRCV(*GEN) SEQOPT(*RESET) reponse Journal receiver QSQJRN0182 created in library JRN_TEST4.
+16:11:43.916 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - command CHGJRN JRN(JRN_TEST4/QSQJRN) JRNRCV(*GEN) SEQOPT(*RESET) reponse Journal receivers QSQJRN0181 and *N detached.
+16:11:43.916 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - padding with ignored updates 28
+16:11:44.653 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - add new receiver 35
+16:11:44.761 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - connamd true
+16:11:44.762 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - command CHGJRN JRN(JRN_TEST4/QSQJRN) JRNRCV(*GEN) SEQOPT(*RESET) reponse Journal receiver QSQJRN0183 created in library JRN_TEST4.
+16:11:44.762 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - command CHGJRN JRN(JRN_TEST4/QSQJRN) JRNRCV(*GEN) SEQOPT(*RESET) reponse Journal receivers QSQJRN0182 and *N detached.
+16:11:44.799 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 36
+16:11:44.799 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 37
+16:11:44.800 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 38
+16:11:44.800 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 39
+16:11:44.800 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 40
+16:11:44.801 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 41
+16:11:44.801 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 42
+16:11:44.801 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 43
+16:11:44.801 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 44
+16:11:44.802 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 45
+16:11:44.802 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 46
+16:11:44.803 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 47
+16:11:44.803 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 48
+16:11:44.803 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 49
+16:11:44.804 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 50
+16:11:44.804 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 51
+16:11:44.804 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 52
+16:11:44.804 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 53
+16:11:44.805 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 54
+16:11:44.805 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 55
+16:11:44.805 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 56
+16:11:44.806 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 57
+16:11:44.806 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 58
+16:11:44.806 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 59
+16:11:44.807 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 60
+16:11:44.807 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 61
+16:11:44.807 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 62
+16:11:44.807 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 63
+16:11:44.807 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 64
+16:11:44.808 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 65
+16:11:44.808 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 66
+16:11:44.808 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 67
+16:11:44.809 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 68
+16:11:44.809 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 69
+16:11:44.809 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 70
+16:11:44.809 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 71
+16:11:44.810 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 72
+16:11:44.810 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 73
+16:11:44.810 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 74
+16:11:44.810 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 75
+16:11:44.810 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 76
+16:11:44.811 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 77
+16:11:44.811 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 78
+16:11:44.811 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 79
+16:11:45.870 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - padding with ignored updates 36
+16:11:46.792 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - add new receiver 80
+16:11:46.906 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - connamd true
+16:11:46.906 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - command CHGJRN JRN(JRN_TEST4/QSQJRN) JRNRCV(*GEN) SEQOPT(*RESET) reponse Journal receiver QSQJRN0184 created in library JRN_TEST4.
+16:11:46.906 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - command CHGJRN JRN(JRN_TEST4/QSQJRN) JRNRCV(*GEN) SEQOPT(*RESET) reponse Journal receivers QSQJRN0183 and *N detached.
+16:11:46.906 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - padding with ignored updates 48
+16:11:48.059 [main] [INFO] com.fnz.db2.journal.retrieve.RetrieveJournal - Fetch journal at postion JournalProcessedPosition [offset=29, receiver=JournalReceiver[name=QSQJRN0181, library=JRN_TEST4], timeOfLastProcessed=2023-10-18T15:11:42.421010200Z, processed=true] range PositionRange[fromBeginning=false, start=JournalProcessedPosition [offset=29, receiver=JournalReceiver[name=QSQJRN0181, library=JRN_TEST4], timeOfLastProcessed=2023-10-18T15:11:42.421010200Z, processed=true], end=JournalPosition[offset=33, receiver=JournalReceiver[name=QSQJRN0181, library=JRN_TEST4]]]
+16:11:48.111 [main] [DEBUG] com.fnz.db2.journal.retrieve.RetrieveJournal - first header: FirstHeader [totalBytes=376, offset=64, size=1, status=NO_MORE_DATA, nextPosition=Optional.empty] 
+16:11:48.111 [main] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - success: true position: JournalProcessedPosition [offset=33, receiver=JournalReceiver[name=QSQJRN0181, library=JRN_TEST4], timeOfLastProcessed=2023-10-18T15:11:42.421010200Z, processed=false] header FirstHeader [totalBytes=376, offset=64, size=1, status=NO_MORE_DATA_NEW_OFFSET, nextPosition=Optional[JournalPosition[offset=33, receiver=JournalReceiver[name=QSQJRN0181, library=JRN_TEST4]]]]
+16:11:48.111 [main] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - more journal data: false
+16:11:48.116 [main] [DEBUG] com.fnz.db2.journal.retrieve.RetrieveJournal - offset with receiver QSQJRN0181
+16:11:48.120 [main] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - R.PT
+16:11:48.121 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - add new receiver 80
+16:11:48.125 [main] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - receiver QSQJRN0181
+16:11:48.126 [main] [DEBUG] com.fnz.db2.journal.retrieve.RetrieveJournal - Setting continuation offset JournalPosition[offset=33, receiver=JournalReceiver[name=QSQJRN0181, library=JRN_TEST4]]
+16:11:48.237 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - connamd true
+16:11:48.238 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - command CHGJRN JRN(JRN_TEST4/QSQJRN) JRNRCV(*GEN) SEQOPT(*RESET) reponse Journal receiver QSQJRN0185 created in library JRN_TEST4.
+16:11:48.238 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - command CHGJRN JRN(JRN_TEST4/QSQJRN) JRNRCV(*GEN) SEQOPT(*RESET) reponse Journal receivers QSQJRN0184 and *N detached.
+16:11:48.278 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 81
+16:11:48.279 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 82
+16:11:48.279 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 83
+16:11:48.280 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 84
+16:11:48.280 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 85
+16:11:48.281 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 86
+16:11:48.281 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 87
+16:11:48.281 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 88
+16:11:48.282 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 89
+16:11:48.282 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 90
+16:11:48.283 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 91
+16:11:48.283 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 92
+16:11:48.283 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 93
+16:11:48.283 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 94
+16:11:48.284 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 95
+16:11:48.284 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 96
+16:11:48.284 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 97
+16:11:48.284 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 98
+16:11:48.285 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 99
+16:11:48.285 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 100
+16:11:48.285 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 101
+16:11:48.286 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 102
+16:11:48.286 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 103
+16:11:48.286 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 104
+16:11:48.286 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 105
+16:11:48.286 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 106
+16:11:48.287 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 107
+16:11:48.287 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 108
+16:11:48.287 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 109
+16:11:48.287 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 110
+16:11:48.287 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 111
+16:11:48.288 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 112
+16:11:48.288 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 113
+16:11:48.288 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 114
+16:11:48.288 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 115
+16:11:48.288 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 116
+16:11:48.289 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 117
+16:11:48.289 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 118
+16:11:48.289 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 119
+16:11:48.289 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 120
+16:11:48.289 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 121
+16:11:48.289 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 122
+16:11:48.290 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 123
+16:11:48.290 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 124
+16:11:48.290 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 125
+16:11:48.290 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 126
+16:11:48.290 [Thread-0] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - insert 127
+16:11:48.444 [main] [INFO] com.fnz.db2.journal.retrieve.RetrieveJournal - Fetch journal at postion JournalProcessedPosition [offset=33, receiver=JournalReceiver[name=QSQJRN0181, library=JRN_TEST4], timeOfLastProcessed=2023-10-18T16:11:42.339824Z, processed=false] range PositionRange[fromBeginning=false, start=JournalProcessedPosition [offset=33, receiver=JournalReceiver[name=QSQJRN0181, library=JRN_TEST4], timeOfLastProcessed=2023-10-18T16:11:42.339824Z, processed=false], end=JournalPosition[offset=40, receiver=JournalReceiver[name=QSQJRN0181, library=JRN_TEST4]]]
+16:11:48.477 [main] [DEBUG] com.fnz.db2.journal.retrieve.RetrieveJournal - first header: FirstHeader [totalBytes=2104, offset=64, size=7, status=NO_MORE_DATA, nextPosition=Optional.empty] 
+16:11:48.478 [main] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - success: true position: JournalProcessedPosition [offset=40, receiver=JournalReceiver[name=QSQJRN0181, library=JRN_TEST4], timeOfLastProcessed=2023-10-18T16:11:42.339824Z, processed=false] header FirstHeader [totalBytes=2104, offset=64, size=7, status=NO_MORE_DATA_NEW_OFFSET, nextPosition=Optional[JournalPosition[offset=40, receiver=JournalReceiver[name=QSQJRN0181, library=JRN_TEST4]]]]
+16:11:48.479 [main] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - more journal data: false
+16:11:48.479 [main] [DEBUG] com.fnz.db2.journal.retrieve.RetrieveJournal - offset with receiver QSQJRN0181
+16:11:48.480 [main] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - R.UB
+16:11:48.480 [main] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - receiver QSQJRN0181
+16:11:48.481 [main] [DEBUG] com.fnz.db2.journal.retrieve.RetrieveJournal - offset no receiver EntryHeader [nextEntryOffset=288, nullValueOffest=236, entrySpecificDataOffset=256, sequenceNumber=35, systemSequenceNumber=0, timestamp=2023-10-18T16:11:42.515680Z, journalCode=R, entryType=UP, objectName=SEQ1      JRN_TEST4 SEQ1      , commitCycle=0, endOffset=288, pointerHandle=0, receiver=, receiverLibrary=]
+16:11:48.481 [main] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - R.UP
+16:11:48.482 [main] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - receiver 
+16:11:48.784 [main] [INFO] com.fnz.db2.journal.retrieve.JournalEntryDeocder - missed cache fetching structure for JRN_TEST4 SEQ1
+16:11:50.346 [main] [DEBUG] com.fnz.db2.journal.retrieve.RetrieveJournal - offset no receiver EntryHeader [nextEntryOffset=288, nullValueOffest=236, entrySpecificDataOffset=256, sequenceNumber=36, systemSequenceNumber=0, timestamp=2023-10-18T16:11:42.542736Z, journalCode=R, entryType=UB, objectName=SEQ1      JRN_TEST4 SEQ1      , commitCycle=0, endOffset=288, pointerHandle=0, receiver=, receiverLibrary=]
+16:11:50.346 [main] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - R.UB
+16:11:50.347 [main] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - receiver 
+16:11:50.355 [main] [DEBUG] com.fnz.db2.journal.retrieve.RetrieveJournal - offset no receiver EntryHeader [nextEntryOffset=288, nullValueOffest=236, entrySpecificDataOffset=256, sequenceNumber=37, systemSequenceNumber=0, timestamp=2023-10-18T16:11:42.542736Z, journalCode=R, entryType=UP, objectName=SEQ1      JRN_TEST4 SEQ1      , commitCycle=0, endOffset=288, pointerHandle=0, receiver=, receiverLibrary=]
+16:11:50.355 [main] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - R.UP
+16:11:50.356 [main] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - receiver 
+16:11:50.356 [main] [DEBUG] com.fnz.db2.journal.retrieve.RetrieveJournal - offset no receiver EntryHeader [nextEntryOffset=288, nullValueOffest=236, entrySpecificDataOffset=256, sequenceNumber=38, systemSequenceNumber=0, timestamp=2023-10-18T16:11:42.564192Z, journalCode=R, entryType=UB, objectName=SEQ1      JRN_TEST4 SEQ1      , commitCycle=0, endOffset=288, pointerHandle=0, receiver=, receiverLibrary=]
+16:11:50.356 [main] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - R.UB
+16:11:50.357 [main] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - receiver 
+16:11:50.357 [main] [DEBUG] com.fnz.db2.journal.retrieve.RetrieveJournal - offset no receiver EntryHeader [nextEntryOffset=288, nullValueOffest=236, entrySpecificDataOffset=256, sequenceNumber=39, systemSequenceNumber=0, timestamp=2023-10-18T16:11:42.564192Z, journalCode=R, entryType=UP, objectName=SEQ1      JRN_TEST4 SEQ1      , commitCycle=0, endOffset=288, pointerHandle=0, receiver=, receiverLibrary=]
+16:11:50.357 [main] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - R.UP
+16:11:50.357 [main] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - receiver 
+16:11:50.358 [main] [DEBUG] com.fnz.db2.journal.retrieve.RetrieveJournal - offset no receiver EntryHeader [nextEntryOffset=0, nullValueOffest=236, entrySpecificDataOffset=256, sequenceNumber=40, systemSequenceNumber=0, timestamp=2023-10-18T16:11:42.592752Z, journalCode=R, entryType=UB, objectName=SEQ1      JRN_TEST4 SEQ1      , commitCycle=0, endOffset=129248, pointerHandle=0, receiver=, receiverLibrary=]
+16:11:50.358 [main] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - R.UB
+16:11:50.358 [main] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - receiver 
+16:11:50.359 [main] [DEBUG] com.fnz.db2.journal.retrieve.RetrieveJournal - Setting continuation offset JournalPosition[offset=40, receiver=JournalReceiver[name=QSQJRN0181, library=JRN_TEST4]]
+16:11:50.414 [main] [INFO] com.fnz.db2.journal.retrieve.RetrieveJournal - Fetch journal at postion JournalProcessedPosition [offset=40, receiver=JournalReceiver[name=QSQJRN0181, library=JRN_TEST4], timeOfLastProcessed=2023-10-18T16:11:42.592752Z, processed=false] range PositionRange[fromBeginning=false, start=JournalProcessedPosition [offset=40, receiver=JournalReceiver[name=QSQJRN0181, library=JRN_TEST4], timeOfLastProcessed=2023-10-18T16:11:42.592752Z, processed=false], end=JournalPosition[offset=47, receiver=JournalReceiver[name=QSQJRN0181, library=JRN_TEST4]]]
+16:11:50.445 [main] [DEBUG] com.fnz.db2.journal.retrieve.RetrieveJournal - first header: FirstHeader [totalBytes=2392, offset=64, size=8, status=NO_MORE_DATA, nextPosition=Optional.empty] 
+16:11:50.445 [main] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - success: true position: JournalProcessedPosition [offset=47, receiver=JournalReceiver[name=QSQJRN0181, library=JRN_TEST4], timeOfLastProcessed=2023-10-18T16:11:42.592752Z, processed=false] header FirstHeader [totalBytes=2392, offset=64, size=8, status=NO_MORE_DATA_NEW_OFFSET, nextPosition=Optional[JournalPosition[offset=47, receiver=JournalReceiver[name=QSQJRN0181, library=JRN_TEST4]]]]
+16:11:50.446 [main] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - more journal data: false
+16:11:50.446 [main] [DEBUG] com.fnz.db2.journal.retrieve.RetrieveJournal - offset with receiver QSQJRN0181
+16:11:50.447 [main] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - R.UB
+16:11:50.447 [main] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - receiver QSQJRN0181
+16:11:50.447 [main] [DEBUG] com.fnz.db2.journal.retrieve.RetrieveJournal - offset no receiver EntryHeader [nextEntryOffset=288, nullValueOffest=236, entrySpecificDataOffset=256, sequenceNumber=41, systemSequenceNumber=0, timestamp=2023-10-18T16:11:42.592752Z, journalCode=R, entryType=UP, objectName=SEQ1      JRN_TEST4 SEQ1      , commitCycle=0, endOffset=288, pointerHandle=0, receiver=, receiverLibrary=]
+16:11:50.448 [main] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - R.UP
+16:11:50.448 [main] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - receiver 
+16:11:50.449 [main] [DEBUG] com.fnz.db2.journal.retrieve.RetrieveJournal - offset no receiver EntryHeader [nextEntryOffset=288, nullValueOffest=236, entrySpecificDataOffset=256, sequenceNumber=42, systemSequenceNumber=0, timestamp=2023-10-18T16:11:42.614208Z, journalCode=R, entryType=UB, objectName=SEQ1      JRN_TEST4 SEQ1      , commitCycle=0, endOffset=288, pointerHandle=0, receiver=, receiverLibrary=]
+16:11:50.449 [main] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - R.UB
+16:11:50.449 [main] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - receiver 
+16:11:50.450 [main] [DEBUG] com.fnz.db2.journal.retrieve.RetrieveJournal - offset no receiver EntryHeader [nextEntryOffset=288, nullValueOffest=236, entrySpecificDataOffset=256, sequenceNumber=43, systemSequenceNumber=0, timestamp=2023-10-18T16:11:42.614208Z, journalCode=R, entryType=UP, objectName=SEQ1      JRN_TEST4 SEQ1      , commitCycle=0, endOffset=288, pointerHandle=0, receiver=, receiverLibrary=]
+16:11:50.450 [main] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - R.UP
+16:11:50.450 [main] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - receiver 
+16:11:50.451 [main] [DEBUG] com.fnz.db2.journal.retrieve.RetrieveJournal - offset no receiver EntryHeader [nextEntryOffset=288, nullValueOffest=236, entrySpecificDataOffset=256, sequenceNumber=44, systemSequenceNumber=0, timestamp=2023-10-18T16:11:42.641904Z, journalCode=R, entryType=UB, objectName=SEQ1      JRN_TEST4 SEQ1      , commitCycle=0, endOffset=288, pointerHandle=0, receiver=, receiverLibrary=]
+16:11:50.451 [main] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - R.UB
+16:11:50.451 [main] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - receiver 
+16:11:50.452 [main] [DEBUG] com.fnz.db2.journal.retrieve.RetrieveJournal - offset no receiver EntryHeader [nextEntryOffset=288, nullValueOffest=236, entrySpecificDataOffset=256, sequenceNumber=45, systemSequenceNumber=0, timestamp=2023-10-18T16:11:42.641904Z, journalCode=R, entryType=UP, objectName=SEQ1      JRN_TEST4 SEQ1      , commitCycle=0, endOffset=288, pointerHandle=0, receiver=, receiverLibrary=]
+16:11:50.452 [main] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - R.UP
+16:11:50.452 [main] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - receiver 
+16:11:50.453 [main] [DEBUG] com.fnz.db2.journal.retrieve.RetrieveJournal - offset no receiver EntryHeader [nextEntryOffset=288, nullValueOffest=236, entrySpecificDataOffset=256, sequenceNumber=46, systemSequenceNumber=0, timestamp=2023-10-18T16:11:42.662992Z, journalCode=R, entryType=UB, objectName=SEQ1      JRN_TEST4 SEQ1      , commitCycle=0, endOffset=288, pointerHandle=0, receiver=, receiverLibrary=]
+16:11:50.453 [main] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - R.UB
+16:11:50.453 [main] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - receiver 
+16:11:50.454 [main] [DEBUG] com.fnz.db2.journal.retrieve.RetrieveJournal - offset no receiver EntryHeader [nextEntryOffset=0, nullValueOffest=236, entrySpecificDataOffset=256, sequenceNumber=47, systemSequenceNumber=0, timestamp=2023-10-18T16:11:42.662992Z, journalCode=R, entryType=UP, objectName=SEQ1      JRN_TEST4 SEQ1      , commitCycle=0, endOffset=128960, pointerHandle=0, receiver=, receiverLibrary=]
+16:11:50.454 [main] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - R.UP
+16:11:50.454 [main] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - receiver 
+16:11:50.455 [main] [DEBUG] com.fnz.db2.journal.retrieve.RetrieveJournal - Setting continuation offset JournalPosition[offset=47, receiver=JournalReceiver[name=QSQJRN0181, library=JRN_TEST4]]
+16:11:50.505 [main] [INFO] com.fnz.db2.journal.retrieve.RetrieveJournal - Fetch journal at postion JournalProcessedPosition [offset=47, receiver=JournalReceiver[name=QSQJRN0181, library=JRN_TEST4], timeOfLastProcessed=2023-10-18T16:11:42.662992Z, processed=false] range PositionRange[fromBeginning=false, start=JournalProcessedPosition [offset=47, receiver=JournalReceiver[name=QSQJRN0181, library=JRN_TEST4], timeOfLastProcessed=2023-10-18T16:11:42.662992Z, processed=false], end=JournalPosition[offset=54, receiver=JournalReceiver[name=QSQJRN0181, library=JRN_TEST4]]]
+16:11:50.535 [main] [DEBUG] com.fnz.db2.journal.retrieve.RetrieveJournal - first header: FirstHeader [totalBytes=2392, offset=64, size=8, status=NO_MORE_DATA, nextPosition=Optional.empty] 
+16:11:50.535 [main] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - success: true position: JournalProcessedPosition [offset=54, receiver=JournalReceiver[name=QSQJRN0181, library=JRN_TEST4], timeOfLastProcessed=2023-10-18T16:11:42.662992Z, processed=false] header FirstHeader [totalBytes=2392, offset=64, size=8, status=NO_MORE_DATA_NEW_OFFSET, nextPosition=Optional[JournalPosition[offset=54, receiver=JournalReceiver[name=QSQJRN0181, library=JRN_TEST4]]]]
+16:11:50.536 [main] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - more journal data: false
+16:11:50.536 [main] [DEBUG] com.fnz.db2.journal.retrieve.RetrieveJournal - offset with receiver QSQJRN0181
+16:11:50.537 [main] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - R.UP
+16:11:50.537 [main] [INFO] com.fnz.db2.journal.retrieve.JournalConcurrentUpdatesIT - receiver QSQJRN0181
