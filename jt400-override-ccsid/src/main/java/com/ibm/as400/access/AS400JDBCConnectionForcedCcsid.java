@@ -32,17 +32,21 @@ public class AS400JDBCConnectionForcedCcsid extends AS400JDBCConnectionImpl {
 	}
 
 	@Override
-	public void setProperties(JDDataSourceURL dataSourceUrl, JDProperties properties, AS400 as400, Properties info)
+	public void setProperties(JDDataSourceURL dataSourceUrl, JDProperties urlProperties, AS400 as400, Properties info)
 			throws SQLException {
-		super.setProperties(dataSourceUrl, properties, as400, info);
-		fromCcsid = getInteger(info, FROM_CCSID);
-		toCcsid = getInteger(info, TO_CCSID);
+		super.setProperties(dataSourceUrl, urlProperties, as400, info);
+		fromCcsid = getInteger(urlProperties, info, FROM_CCSID);
+		toCcsid = getInteger(urlProperties, info, TO_CCSID);
 	}
 	
-	public Integer getInteger(Properties p, String key) {
-		final String v = p.getProperty(key);
-		if (v != null) {
-			return Integer.parseInt(v);
+	public Integer getInteger(JDProperties urlProperties, Properties info, String key) {
+		final int index = JDProperties.getPropertyIndex(key);
+		if (index > -1) {
+			return urlProperties.getInt(index);
+		}
+		final String jv = info.getProperty(key);
+		if (jv != null) {
+			return Integer.parseInt(jv);
 		}
 		return null;
 	}

@@ -33,6 +33,8 @@ then
    done
 fi
 
+chmod u-w /tmp/cacerts
+
 perl -e 'while (my ($key, $value) = each(%ENV)) {if ($key=~/^DEBEZIUM_/) { $key =~s/^DEBEZIUM_//;  $key =~ s/_/./g; print lc($key)."=$value\n";} }' > /tmp/connect-distributed.properties
 
 jars=$(echo libs/*jar|tr ' ' ':'):classes:resources

@@ -28,6 +28,8 @@ import com.ibm.as400.access.MessageFile;
 import com.ibm.as400.access.ProgramParameter;
 import com.ibm.as400.access.ServiceProgramCall;
 
+import io.debezium.ibmi.db2.journal.retrieve.JournalProcessedPosition;
+
 /**
  * based on the work of Stanley Vong see
  * https://www.ibm.com/docs/en/i/7.5?topic=ssw_ibm_i_75/apis/QJORJRNE.html
@@ -259,10 +261,11 @@ public class RetrieveJournal {
 		position.setPosition(nextOffset);
 	}
 
-	private static boolean alreadyProcessed(JournalProcessedPosition position, EntryHeader entryHeader) {
-		final JournalProcessedPosition entryPosition = new JournalProcessedPosition(position);
-		return position.processed() && entryPosition.equals(position);
-	}
+    static boolean alreadyProcessed(JournalProcessedPosition position, EntryHeader entryHeader) {
+        return position.processed() && position.getOffset().equals(entryHeader.getSequenceNumber()) && (!entryHeader.hasReceiver() ||
+                (entryHeader.getReceiverLibrary().equals(position.getReceiver().library()) && entryHeader.getReceiver().equals(position.getReceiver().name())));
+
+    }
 
 	private static void updatePosition(JournalProcessedPosition p, EntryHeader entryHeader) {
 		if (entryHeader.hasReceiver()) {
