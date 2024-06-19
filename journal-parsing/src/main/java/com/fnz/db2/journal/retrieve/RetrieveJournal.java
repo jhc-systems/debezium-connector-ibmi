@@ -259,10 +259,11 @@ public class RetrieveJournal {
 		position.setPosition(nextOffset);
 	}
 
-	private static boolean alreadyProcessed(JournalProcessedPosition position, EntryHeader entryHeader) {
-		final JournalProcessedPosition entryPosition = new JournalProcessedPosition(position);
-		return position.processed() && entryPosition.equals(position);
-	}
+    static boolean alreadyProcessed(JournalProcessedPosition position, EntryHeader entryHeader) {
+        return position.processed() && position.getOffset().equals(entryHeader.getSequenceNumber()) && (!entryHeader.hasReceiver() ||
+                (entryHeader.getReceiverLibrary().equals(position.getReceiver().library()) && entryHeader.getReceiver().equals(position.getReceiver().name())));
+
+    }
 
 	private static void updatePosition(JournalProcessedPosition p, EntryHeader entryHeader) {
 		if (entryHeader.hasReceiver()) {

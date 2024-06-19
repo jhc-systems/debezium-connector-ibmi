@@ -2,10 +2,10 @@
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
 		<groupId>com.fnz.debezium.ibmi</groupId>
-		<artifactId>debezium-connector-ibmi-parent</artifactId>
+		<artifactId>debezium-connector-ibmi-fnz-parent</artifactId>
 		<version>${revision}</version>
 	</parent>
-	<artifactId>journal-parsing</artifactId>
+	<artifactId>journal-parsing-fnz</artifactId>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -26,12 +26,12 @@
 	<dependencies>
 		<dependency>
 			<groupId>com.fnz.debezium.ibmi</groupId>
-			<artifactId>structured-logging</artifactId>
+			<artifactId>structured-logging-fnz</artifactId>
 			<version>${project.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>com.fnz.debezium.ibmi</groupId>
-			<artifactId>jt400-override-ccsid</artifactId>			
+			<artifactId>jt400-override-ccsid-fnz</artifactId>			
 			<version>${project.version}</version>
 		</dependency>
 		<dependency>
