@@ -28,6 +28,8 @@ import com.ibm.as400.access.MessageFile;
 import com.ibm.as400.access.ProgramParameter;
 import com.ibm.as400.access.ServiceProgramCall;
 
+import io.debezium.ibmi.db2.journal.retrieve.JournalProcessedPosition;
+
 /**
  * based on the work of Stanley Vong see
  * https://www.ibm.com/docs/en/i/7.5?topic=ssw_ibm_i_75/apis/QJORJRNE.html
