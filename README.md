@@ -38,7 +38,7 @@ you will also need to set the topic prefix to the same value as `hostname` in th
 
 `"topic.prefix" = "ibmiserver"`
 
-All jdbc driver parameters e.g. ccsid mapping if you want to use secure connections are now prefixed `database.driver.`
+All jdbc driver parameters are now prefixed `database.driver.` e.g. ccsid mapping or if you want to use secure connections 
 
 i.e.
 
