@@ -38,7 +38,19 @@ you will also need to set the topic prefix to the same value as `hostname` in th
 
 `"topic.prefix" = "ibmiserver"`
 
-All jdbc driver parameters are now prefixed `database.driver.` e.g. ccsid mapping or if you want to use secure connections 
+All jdbc driver parameters are now prefixed `database.` e.g. ccsid mapping or if you want to use secure connections 
+
+i.e.
+
+```
+    "database.secure": true 
+    "database.from_ccsid": 37,
+    "database.to_ccsid": 285,  
+```
+
+Also you currently 2.6.0 need both `secure=false` and `database.secure=false` the first for RPC and the second for JDBC they would be combined in the proposal below.
+
+Proposed is to map driver parameters to be prefixed with `database.driver.` e.g. ccsid mapping or if you want to use secure connections 
 
 i.e.
 
