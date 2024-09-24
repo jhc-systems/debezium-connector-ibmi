@@ -180,16 +180,15 @@ public class ReceiverPagination {
                 }
 
                 final Optional<PositionRange> r = rangeWithinCurrentPosition(nextReceiver, nextReceiver.start());
-                if (r.isPresent()) {
-                    return r;
-                }
-            }
-            if (nextReceiver.isSameReceiver(startPosition)) {
-                found = true;
-                final Optional<PositionRange> r = rangeWithinCurrentPosition(nextReceiver, startPosition.getOffset());
-                if (r.isPresent()) {
-                    return r;
-                }
+                lastReceiver = nextReceiver;
+                return r;
+            } else {
+            	if(nextReceiver.isSameReceiver(startPosition)) {
+	                found = true;
+	                final Optional<PositionRange> r = rangeWithinCurrentPosition(nextReceiver, startPosition.getOffset());
+	                lastReceiver = nextReceiver;
+	                return r;
+	            }
             }
             lastReceiver = nextReceiver;
             return Optional.empty();

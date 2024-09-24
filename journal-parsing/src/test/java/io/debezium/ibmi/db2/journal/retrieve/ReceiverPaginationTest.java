@@ -581,4 +581,36 @@ class ReceiverPaginationTest {
         assertEquals("j2", position.get().end().getReceiver().name());
         assertEquals(j2.end().subtract(BigInteger.ONE), position.get().end().getOffset());
     }
+    
+    
+    @Test
+    void testSkippingOverEndOfFirst() {
+        final ReceiverPagination jreceivers = new ReceiverPagination(journalInfoRetrieval, 40, journalInfo);
+        final DetailedJournalReceiver j0 = new DetailedJournalReceiver(
+                new JournalReceiverInfo(new JournalReceiver("j0", "jlib"), new Date(1),
+                        JournalStatus.OnlineSavedDetached, Optional.of(1)),
+                BigInteger.valueOf(1), BigInteger.valueOf(111111), Optional.of(new JournalReceiver("j1", "jlib")), 1, 1);
+        final DetailedJournalReceiver j1 = new DetailedJournalReceiver(
+                new JournalReceiverInfo(new JournalReceiver("j1", "jlib"), new Date(1),
+                        JournalStatus.OnlineSavedDetached, Optional.of(1)),
+                BigInteger.valueOf(1), BigInteger.valueOf(20), Optional.of(new JournalReceiver("j2", "jlib")), 1, 1);
+        final DetailedJournalReceiver j2 = new DetailedJournalReceiver(
+                new JournalReceiverInfo(new JournalReceiver("j2", "jlib"), new Date(2),
+                        JournalStatus.OnlineSavedDetached, Optional.of(1)),
+                BigInteger.valueOf(21), BigInteger.valueOf(30), Optional.of(new JournalReceiver("j3", "jlib")), 1, 1);
+        final DetailedJournalReceiver j3 = new DetailedJournalReceiver(
+                new JournalReceiverInfo(new JournalReceiver("j3", "jlib"), new Date(3),
+                        JournalStatus.OnlineSavedDetached, Optional.of(1)),
+                BigInteger.valueOf(31), BigInteger.valueOf(40), Optional.of(new JournalReceiver("j4", "jlib")), 1, 1);
+        final List<DetailedJournalReceiver> list = List.of(j0, j1, j2, j3);
+
+        final JournalProcessedPosition start = new JournalProcessedPosition(BigInteger.valueOf(111111),
+                j0.info().receiver(), Instant.ofEpochSecond(10), true);
+
+        final Optional<PositionRange> found = jreceivers.findPosition(start, BigInteger.valueOf(40), list, j1);
+        assertEquals(start, found.get().start());
+        assertEquals(new JournalPosition(BigInteger.valueOf(40), j3.info().receiver()), found.get().end());
+    }
+	
+
 }
