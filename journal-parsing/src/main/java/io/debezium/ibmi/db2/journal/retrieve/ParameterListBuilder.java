@@ -179,10 +179,16 @@ public class ParameterListBuilder {
     @Override
     public String toString() {
         return String.format(
-                "ParameterListBuilder [receiver=%s, receiverLibrary=%s, startReceiver=%s, startLibrary=%s, endReceiver=%s, endLibrary=%s, startOffset=%s, endOffset=%s, journalEntryTypes=%s, journalCode=%s, tableFilters=%s]",
+                "ParameterListBuilder [receiver=%s, receiverLibrary=%s, startReceiver=%s, startLibrary=%s, endReceiver=%s, endLibrary=%s, startOffset=%s, endOffset=%s, journalEntryTypes=%s, journalCode=%s, tableFilters=%s, buffer length=%s]",
                 receiver, receiverLibrary, startReceiver, startLibrary,
                 endReceiver, endLibrary, startOffset, endOffset, Arrays.toString(journalEntryTypes),
-                Arrays.toString(journalCode), filtersToShortString(tableFilters));
+                Arrays.toString(journalCode), filtersToShortString(tableFilters), bufferLength);
+    }
+
+    public String offsetDifference() {
+        if (this.endOffset != null && this.startOffset != null)
+            return new BigInteger(this.endOffset).subtract(new BigInteger(this.startOffset)).toString();
+        return "not set";
     }
 
     public String filtersToShortString(List<FileFilter> tableFilters) {

@@ -86,6 +86,14 @@ public class RetrieveJournal {
         return retrieveJournal(previousPosition, range);
     }
 
+    public String parameters() {
+        return builder.toString();
+    }
+
+    public String offsetDifference() {
+        return builder.offsetDifference();
+    }
+
     public boolean retrieveJournal(JournalProcessedPosition previousPosition, final PositionRange range)
             throws Exception {
         this.offset = -1;
@@ -116,6 +124,7 @@ public class RetrieveJournal {
         }
         builder.withRange(range);
         final ProgramParameter[] parameters = builder.build();
+        log.info("parameters: {}", builder.toString());
 
         spc.setProgram(JournalInfoRetrieval.JOURNAL_SERVICE_LIB, parameters);
         spc.setProcedureName("QjoRetrieveJournalEntries");
@@ -254,6 +263,9 @@ public class RetrieveJournal {
                 entryHeader = entryHeaderDecoder.decode(outputData, offset);
                 updatePosition(position, entryHeader);
                 return true;
+            }
+            else {
+                log.debug("next offset", nextOffset);
             }
 
             updateOffsetFromContinuation();

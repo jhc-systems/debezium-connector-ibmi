@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Configuration status="warn">
+<Configuration status="info">
 	<Appenders>
 		<Console name="console">
 			<PatternLayout
@@ -17,10 +17,10 @@
 	</Appenders>
 
 	<Loggers>
-		<Logger name="com.fnz.db2.journal.retrieve.RetrieveJournal" level="debug" additivity="true"/>
-		<Logger name="com.fnz.db2.journal.retrieve.rjne0200.FirstHeaderDecoder" level="debug" additivity="true"/>
-		
-		<Root level="debug">
+		<Logger name="com.fnz.db2.journal.retrieve.RetrieveJournal" level="warn" additivity="true"/>
+		<Logger name="com.fnz.db2.journal.retrieve.rjne0200.FirstHeaderDecoder" level="warn" additivity="true"/>
+		<Logger name="io.debezium.ibmi.db2.journal.retrieve.RetrieveJournal" level="warn" additivity="false"/>
+		<Root level="info">
 			<AppenderRef ref="console" />
 			<AppenderRef ref="fileLog" />
 		</Root>

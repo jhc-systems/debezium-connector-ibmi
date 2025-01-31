@@ -61,7 +61,6 @@ public class FirstHeaderDecoder {
             final String library = StringHelpers.safeTrim((String) os[5]);
             final String offsetStr = StringHelpers.safeTrim((String) os[6]);
             final BigInteger nextOffset = new BigInteger(offsetStr);
-            log.debug("continuation offset {} {}", receiver, nextOffset);
             final JournalPosition jp = new JournalPosition(nextOffset, new JournalReceiver(receiver, library));
             pos = new JournalProcessedPosition(jp, Instant.EPOCH, false);
         }
