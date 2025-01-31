@@ -14,10 +14,17 @@ public class TestEndOffsets {
 
     public static void main(String args[]) throws Exception {
         final TestConnector connector = new TestConnector();
+        final String threadsParam = System.getenv("MAX_THREADS");
+        String tablePrefix = System.getenv("TABLE_PREFIX");
+        int threads = 10;
+        if (threadsParam != null) {
+            threads = Integer.valueOf(threadsParam);
+        }
+        tablePrefix = (tablePrefix == null || tablePrefix.isBlank()) ? "TESTSKIP" : tablePrefix;
 
         List<String> al = new ArrayList<>();
-        for (int i = 0; i < 10; i++) {
-            al.add("TESTSKIP" + i);
+        for (int i = 0; i < threads; i++) {
+            al.add(tablePrefix + i);
         }
         for (String table : al) {
             UpdateChecker checker = new UpdateChecker(connector, table);
