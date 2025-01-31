@@ -150,7 +150,7 @@ public class UpdateChecker {
         int journalValue = (Integer) fields[1];
         if (nextValue != journalValue) {
             log.error("missing entry {} found {} expected {} parameters {}", nextValue, tableName, journalValue, rj.parameters());
-            nextValue = journalValue + 1;
+            nextValue = journalValue;
         }
         nextValue++;
         long now = System.currentTimeMillis();
