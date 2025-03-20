@@ -9,8 +9,8 @@ import java.util.Random;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class UpdateTables {
-    private static final Logger log = LoggerFactory.getLogger(UpdateTables.class);
+public class UpdateAllRows {
+    private static final Logger log = LoggerFactory.getLogger(UpdateAllRows.class);
     String schema;
     String table;
     int start;
@@ -18,7 +18,7 @@ public class UpdateTables {
     Connection con;
     Random random = new Random();
 
-    public UpdateTables(Connection con, String schema, String table, int start, int end) {
+    public UpdateAllRows(Connection con, String schema, String table, int start, int end) {
         this.schema = schema;
         this.table = table;
         this.start = start;
@@ -31,7 +31,7 @@ public class UpdateTables {
     }
 
     public void startUpdateThread() throws Exception {
-        Thread update = new Thread(() -> insertData(con));
+        Thread update = new Thread(() -> updateData(con));
         update.start();
     }
 
@@ -68,25 +68,18 @@ public class UpdateTables {
 
     }
 
-    private void insertData(Connection con) {
-        String updateQuery = String.format("update %s.%s set v1=? where id=?", schema, table);
+    private void updateData(Connection con) {
+        String updateQuery = String.format("update %s.%s set v1=?", schema, table);
         log.info("starting updates");
         int counter = 0;
 
         try {
-            int batchSize = random.nextInt(20);
             try (final PreparedStatement ps = con.prepareStatement(updateQuery)) {
                 while (true) {
-                    for (int i = start; i < end;) {
-                        for (int j = 0; j < batchSize && i < end; j++, i++) {
-                            ps.setInt(1, counter++);
-                            ps.setInt(2, i);
-                            ps.addBatch();
-                        }
-                        final int[] ir = ps.executeBatch();
-                        con.commit();
-                        Thread.sleep(random.nextInt(100));
-                    }
+                    ps.setInt(1, counter++);
+                    final int ir = ps.executeUpdate();
+                    con.commit();
+                    Thread.sleep(random.nextInt(100));
                 }
             }
         }

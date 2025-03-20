@@ -30,24 +30,24 @@ import io.debezium.ibmi.db2.journal.retrieve.SchemaCacheIF.TableInfo;
 import io.debezium.ibmi.db2.journal.retrieve.rjne0200.EntryHeader;
 import io.debezium.ibmi.db2.journal.test.TestConnector;
 
-public class UpdateChecker {
+public class UpdateSingleRowChecker {
     final String table;
     final TestConnector connector;
 
     private static JdbcFileDecoder fileDecoder;
     private static SchemaCacheHash schemaCache = new SchemaCacheHash();
-    private static final Logger log = LoggerFactory.getLogger(UpdateChecker.class);
+    private static final Logger log = LoggerFactory.getLogger(UpdateSingleRowChecker.class);
     RetrieveJournal rj;
     JournalProcessedPosition nextPosition;
     Random random = new Random();
 
-    public UpdateChecker(TestConnector connector, String table) {
+    public UpdateSingleRowChecker(TestConnector connector, String table) {
         this.table = table;
         this.connector = connector;
     }
 
     public void startChecker() throws Exception {
-        UpdateTables updateTables = new UpdateTables(connector.getJdbc().connection(), connector.getSchema(), table, 0, 100);
+        UpdateSingleRow updateTables = new UpdateSingleRow(connector.getJdbc().connection(), connector.getSchema(), table, 0, 100);
         updateTables.initaliseTable();
 
         Thread checker = new Thread(() -> check());
@@ -135,7 +135,7 @@ public class UpdateChecker {
 
                 }
 
-                Thread.sleep(random.nextInt(20000));
+                Thread.sleep(random.nextInt(200));
             } while (true);
         }
         catch (Exception e) {
