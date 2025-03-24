@@ -611,4 +611,9 @@ class ReceiverPaginationTest {
         assertEquals(new JournalPosition(BigInteger.valueOf(40), j3.info().receiver()), found.get().end());
     }
 
+    @Test
+    public void testWrapppingJournal() {
+
+    }
+
 }
