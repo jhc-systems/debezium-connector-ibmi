@@ -146,7 +146,8 @@ public class RetrieveJournal {
         }
         builder.withRange(range);
         final ProgramParameter[] parameters = builder.build();
-
+        log.debug("parameters: {}", builder.toString());
+        
         spc.setProgram(JournalInfoRetrieval.JOURNAL_SERVICE_LIB, parameters);
         spc.setProcedureName("QjoRetrieveJournalEntries");
         spc.setAlignOn16Bytes(true);
