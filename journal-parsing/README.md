@@ -40,6 +40,20 @@ Where:
 * <FIGLIB> is the Figaro database library
 * <CDC_USER> is the username of the CDC service account
 
+
+## changing journaling for a specific library
+e.g. if you want to test including open/close instad of filtering
+
+CHGJRNOBJ OBJ((MSTESTX/ *FILE)) ATR(*OMTJRNE) OMTJRNE(*NONE) 
+
+CRTJRNRCV JRNRCV(MSTESTX/MSRCVR) TEXT('martins test receiver')  
+
+CRTJRN JRN(MSTESTX/CARN) JRNRCV(MSTESTX/MSRCVR) TEXT('martins test journal')                                                                              
+
+ENDJRNLIB LIB(MSTESTX) 
+
+STRJRNLIB LIB(MSTESTX) JRN(MSTESTX/CARN) INHRULES((*ALL *ALLOPR *INCLUDE *BOTH *NONE))                                                                    
+
 ## Reference:
 
 https://www.ibm.com/docs/en/i/7.4?topic=commands-journal
@@ -107,6 +121,30 @@ WHERE
 ORDER BY
 	attach_timestamp ASC ;
 ```
+
+## decoding the entries e.g. two columns of ints
+
+Note if you want to use hex then you need to cast as the default for hex is too big to use twice in the query
+
+cast(hex(substr(entry_data, 1, 4)) as char(100))
+
+
+select entry_timestamp, sequence_number, journal_code, journal_entry_type, OBJECT, 
+interpret(substr(entry_data, 1, 4) AS int) AS id,
+interpret(substr(entry_data, 5, 4) as int) AS value from table (Display_Journal(
+  'MSTEST1',     'QSQJRN',  -- Journal library and name
+  ' ','*CURCHAIN',        -- Receiver library and name
+  CAST('2025-02-28-10.05.13.000000' as TIMESTAMP), -- Starting timestamp
+  CAST(null as DECIMAL(21,0)), -- Starting sequence number
+  '',              -- Journal codes
+  'UP,UB,PT',              -- Journal entries
+  '',  '',         -- Object library, Object name - library alone OK, name also needs library
+  '*FILE', '*ALL', -- Object type, Object member
+  '',              -- User
+  '',              -- Job
+  '',              -- Program
+  ''       			-- EOF delay
+) ) as x WHERE interpret(substr(entry_data, 5, 4) as int) = 370;
 
 # TODO
 
