@@ -17,9 +17,9 @@
 	</Appenders>
 
 	<Loggers>
-		<Logger name="com.fnz.db2.journal.retrieve.RetrieveJournal" level="warn" additivity="true"/>
+		<Logger name="com.fnz.db2.journal.retrieve.RetrieveJournal" level="debug" additivity="true"/>
+		<Logger name="io.debezium.ibmi.db2.journal.retrieve.RetrieveJournal" level="info" additivity="true"/>
 		<Logger name="com.fnz.db2.journal.retrieve.rjne0200.FirstHeaderDecoder" level="warn" additivity="true"/>
-		<Logger name="io.debezium.ibmi.db2.journal.retrieve.RetrieveJournal" level="warn" additivity="false"/>
 		<Root level="info">
 			<AppenderRef ref="console" />
 			<AppenderRef ref="fileLog" />
