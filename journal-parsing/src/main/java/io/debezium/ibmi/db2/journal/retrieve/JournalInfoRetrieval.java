@@ -9,10 +9,10 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -96,6 +96,46 @@ public class JournalInfoRetrieval {
         }
         throw new IllegalStateException("Journal not found");
     }
+    
+    static class JournalsToFiles {
+    	Map<JournalInfo, List<String>> map = new HashMap<>();
+    	
+    	public void add(JournalInfo journal, FileFilter file) {
+    		String fileName = String.format("%s.%s",  file.schema(), file.table());
+    		if (map.containsKey(journal)) {
+    			map.get(journal).add(fileName);
+    		} else {
+    			List<String> l = new ArrayList<>();
+    			l.add(fileName);
+    			map.put(journal,  l);
+    		}    		
+    	}
+    	
+    	public String toString() {
+    		StringBuilder sb = new StringBuilder();
+    		map.entrySet().forEach( e -> {
+    			JournalInfo ji = e.getKey();
+    			sb.append("[").append(ji.journalLibrary()).append(".").append(ji.journalName()).append(":");
+    			List<String> l = e.getValue();
+    			sb.append("{").append(String.join(",", l)).append("}");
+    			sb.append("]");
+    		});
+    		
+    		return sb.toString();
+    	}
+    	
+    	public JournalInfo getOnlyJournal() {
+            if (map.size() > 1) {
+                throw new IllegalArgumentException(
+                        String.format("more than one journal for the set of tables journals: %s", toString()));
+            }
+            return map.keySet().iterator().next();
+    	}
+    	
+    	public int size() {
+    		return map.size();
+    	}
+    }
 
     public static JournalInfo getJournal(AS400 as400, String schema, List<FileFilter> includes)
             throws IllegalStateException {
@@ -103,20 +143,17 @@ public class JournalInfoRetrieval {
             return getJournal(as400, schema);
         }
         try {
-            final Set<JournalInfo> jis = new HashSet<>();
+            final JournalsToFiles jis = new JournalsToFiles();
             for (final FileFilter f : includes) {
                 if (!schema.equals(f.schema())) {
                     throw new IllegalArgumentException(
                             String.format("schema %s does not match for filter: %s", schema, f));
                 }
                 final JournalInfo ji = getJournal(as400, f.schema(), f.table());
-                jis.add(ji);
+                jis.add(ji, f);
             }
-            if (jis.size() > 1) {
-                throw new IllegalArgumentException(
-                        String.format("more than one journal for the set of tables journals: %s", jis));
-            }
-            return jis.iterator().next();
+
+            return jis.getOnlyJournal();
         }
         catch (final Exception e) {
             throw new IllegalStateException("unable to retrieve journal details", e);

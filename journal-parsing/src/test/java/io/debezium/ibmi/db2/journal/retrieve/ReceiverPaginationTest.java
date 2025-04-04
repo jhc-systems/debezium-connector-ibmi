@@ -616,4 +616,44 @@ class ReceiverPaginationTest {
 
     }
 
+	@Test
+	public void testFindRangeLooping() {
+		final ReceiverPagination jreceivers = new ReceiverPagination(journalInfoRetrieval, 40, journalInfo);
+		
+        final DetailedJournalReceiver j1 = new DetailedJournalReceiver(
+                new JournalReceiverInfo(new JournalReceiver("j1", "jlib"), new Date(1),
+                        JournalStatus.OnlineSavedDetached, Optional.of(1)),
+                BigInteger.valueOf(8766756887L), BigInteger.valueOf(8770746860L), Optional.of(new JournalReceiver("j2", "jlib")), 1, 1);
+        
+        final DetailedJournalReceiver j2 = new DetailedJournalReceiver(
+                new JournalReceiverInfo(new JournalReceiver("j2", "jlib"), new Date(2),
+                        JournalStatus.OnlineSavedDetached, Optional.of(1)),
+                BigInteger.valueOf(8770746861L), BigInteger.valueOf(8771449292L), Optional.of(new JournalReceiver("j3", "jlib")), 1, 1);
+        
+        final DetailedJournalReceiver j3 = new DetailedJournalReceiver(
+                new JournalReceiverInfo(new JournalReceiver("j3", "jlib"), new Date(3),
+                        JournalStatus.OnlineSavedDetached, Optional.of(1)),
+                BigInteger.valueOf(8771449292L), BigInteger.valueOf(8772449292L), Optional.of(new JournalReceiver("j3", "jlib")), 1, 1);        
+        
+        final DetailedJournalReceiver j4 = new DetailedJournalReceiver(
+                new JournalReceiverInfo(new JournalReceiver("j4", "jlib"), new Date(4),
+                        JournalStatus.OnlineSavedDetached, Optional.of(1)),
+                BigInteger.valueOf(5567334560L), BigInteger.valueOf(5571616479L), Optional.empty(), 1, 1);    
+        
+        final DetailedJournalReceiver j5 = new DetailedJournalReceiver(
+                new JournalReceiverInfo(new JournalReceiver("j5", "jlib"), new Date(5),
+                        JournalStatus.OnlineSavedDetached, Optional.of(1)),
+                BigInteger.valueOf(5571616480L), BigInteger.valueOf(5577702596L), Optional.empty(), 1, 1);            
+        
+        final JournalProcessedPosition start = new JournalProcessedPosition(BigInteger.valueOf(8771449293L),
+                j1.info().receiver(), Instant.ofEpochSecond(10), true);
+		
+        final List<DetailedJournalReceiver> list = List.of(j1, j2, j3, j4, j5);
+        final Optional<PositionRange> found = jreceivers.findPosition(start, BigInteger.valueOf(1000000L), list, j1);
+        
+        System.out.println(found.get().end());
+        
+        assertEquals(new JournalPosition(j3.end(), j3.info().receiver()), found.get().end());
+	}
+
 }

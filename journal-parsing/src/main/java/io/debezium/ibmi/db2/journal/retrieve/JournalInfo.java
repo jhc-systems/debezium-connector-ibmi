@@ -5,6 +5,8 @@
  */
 package io.debezium.ibmi.db2.journal.retrieve;
 
+import java.util.Objects;
+
 public record JournalInfo(String journalName, String journalLibrary) {
 
     public JournalInfo(String journalName, String journalLibrary) {
@@ -22,4 +24,23 @@ public record JournalInfo(String journalName, String journalLibrary) {
     public String toString() {
         return String.format("JournalInfo [journalName=%s, journalLibrary=%s]", journalName, journalLibrary);
     }
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(journalLibrary, journalName);
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		JournalInfo other = (JournalInfo) obj;
+		return Objects.equals(journalLibrary, other.journalLibrary) && Objects.equals(journalName, other.journalName);
+	}
+    
+    
 }
