@@ -6,6 +6,7 @@
 package io.debezium.ibmi.db2.journal.retrieve;
 
 import java.math.BigInteger;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -37,11 +38,6 @@ public class ReceiverPagination {
 
         final DetailedJournalReceiver endPosition = journalInfoRetrieval.getCurrentDetailedJournalReceiver(as400, journalInfo);
 
-        if (fromBeginning) {
-            return new PositionRange(fromBeginning, startPosition,
-                    new JournalPosition(endPosition.end(), endPosition.info().receiver()));
-        }
-
         if (cachedEndPosition == null) {
             cachedEndPosition = endPosition;
         }
@@ -49,6 +45,12 @@ public class ReceiverPagination {
         if (cachedReceivers == null) {
             cachedReceivers = journalInfoRetrieval.getReceivers(as400, journalInfo);
         }
+        
+        if (fromBeginning) {
+        	DetailedJournalReceiver first = cachedReceivers.get(0);
+        	startPosition = new JournalProcessedPosition(first.start(), first.info().receiver(), Instant.EPOCH, false);
+        }
+        
         if (cachedEndPosition.isSameReceiver(endPosition)) {
             // refresh end position in cached list
             updateEndPosition(cachedReceivers, endPosition);
@@ -74,8 +76,9 @@ public class ReceiverPagination {
 
         log.debug("end {} journals {}", endPosition, cachedReceivers);
 
+        final JournalProcessedPosition startf = new JournalProcessedPosition(startPosition);
         return endOpt.orElseGet(
-                () -> new PositionRange(fromBeginning, startPosition,
+                () -> new PositionRange(fromBeginning, startf,
                         new JournalPosition(endPosition.end(), endPosition.info().receiver())));
     }
 
