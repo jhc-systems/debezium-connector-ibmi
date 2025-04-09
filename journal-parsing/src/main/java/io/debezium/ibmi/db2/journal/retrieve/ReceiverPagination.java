@@ -33,8 +33,8 @@ public class ReceiverPagination {
     }
 
     PositionRange findRange(AS400 as400, JournalProcessedPosition startPosition) throws Exception {
-        final BigInteger start = startPosition.getOffset();
-        final boolean fromBeginning = !startPosition.isOffsetSet() || start.equals(BigInteger.ZERO);
+        final BigInteger startOffset = startPosition.getOffset();
+        final boolean fromBeginning = !startPosition.isOffsetSet() || startOffset.equals(BigInteger.ZERO);
 
         final DetailedJournalReceiver endPosition = journalInfoRetrieval.getCurrentDetailedJournalReceiver(as400, journalInfo);
 
@@ -78,7 +78,7 @@ public class ReceiverPagination {
 
         final JournalProcessedPosition startf = new JournalProcessedPosition(startPosition);
         return endOpt.orElseGet(
-                () -> new PositionRange(fromBeginning, startf,
+                () -> new PositionRange(startf,
                         new JournalPosition(endPosition.end(), endPosition.info().receiver())));
     }
 
@@ -110,10 +110,10 @@ public class ReceiverPagination {
         final BigInteger diff = endJournalPosition.end().subtract(startPosition.getOffset());
         if (diff.compareTo(maxServerSideEntriesBI) > 0) {
             final BigInteger restricted = startPosition.getOffset().add(maxServerSideEntriesBI);
-            return new PositionRange(false, startPosition,
+            return new PositionRange(startPosition,
                     new JournalPosition(restricted, startPosition.getReceiver()));
         }
-        return new PositionRange(false, startPosition,
+        return new PositionRange(startPosition,
                 new JournalPosition(endJournalPosition.end(), startPosition.getReceiver()));
     }
 
@@ -177,7 +177,7 @@ public class ReceiverPagination {
                     }
                     else {
                         // the only way we can get here is if we have already checked for pagination
-                        return Optional.of(new PositionRange(false, startPosition,
+                        return Optional.of(new PositionRange(startPosition,
                                 new JournalPosition(lastReceiver.end(), lastReceiver.info().receiver())));
                     }
                 }
@@ -208,7 +208,7 @@ public class ReceiverPagination {
             if (remaining.compareTo(difference) <= 0) { // range is inclusive but don't go past end when adding
                 // remaining
                 final BigInteger offset = currentOffset.add(remaining);
-                return Optional.of(new PositionRange(false, startPosition,
+                return Optional.of(new PositionRange(startPosition,
                         new JournalPosition(offset, nextReceiver.info().receiver())));
             }
             remaining = remaining.subtract(entriesInJournal);
@@ -218,7 +218,7 @@ public class ReceiverPagination {
         public Optional<PositionRange> endRange() {
             if (found && lastReceiver != null) {
                 return Optional.of(
-                        new PositionRange(false, startPosition, JournalPosition.endPosition(lastReceiver)));
+                        new PositionRange(startPosition, JournalPosition.endPosition(lastReceiver)));
             }
             return Optional.empty();
         }

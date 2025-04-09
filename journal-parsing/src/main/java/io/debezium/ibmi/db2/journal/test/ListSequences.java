@@ -72,7 +72,7 @@ public class ListSequences {
                 .withMaxServerSideEntries(10000).build();
         final RetrieveJournal rj = new RetrieveJournal(config, journalInfoRetrieval);
 
-        PositionRange range = new PositionRange(false, startPosition, endPosition);
+        PositionRange range = new PositionRange(startPosition, endPosition);
 
         final boolean success = rj.retrieveJournal(startPosition, range);
         log.info("success: {} position: {} header {}", success, startPosition, rj.getFirstHeader());

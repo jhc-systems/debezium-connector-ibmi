@@ -61,11 +61,9 @@ public class ParameterListBuilder {
     }
 
     public ParameterListBuilder withRange(PositionRange range) {
-        if (range.fromBeginning()) {
-            log.warn("starting from beginning");
-            withFromBeginningToEnd();
-        }
-        else {
+        if (range.end() == null) {
+        	withStartReceiversToCurrentEnd(range.start());
+        } else {
             withReceivers(range);
         }
         return this;
@@ -121,10 +119,10 @@ public class ParameterListBuilder {
         return this;
     }
 
-    public ParameterListBuilder withStartReceiversToCurrentEnd(BigInteger start, String startReceiver, String startLibrary) {
-        withStartingSequence(start);
-        this.startReceiver = startReceiver;
-        this.startLibrary = startLibrary;
+    public ParameterListBuilder withStartReceiversToCurrentEnd(JournalProcessedPosition start) {
+        withStartingSequence(start.getOffset());
+        this.startReceiver = start.getReceiver().name();
+        this.startLibrary = start.getReceiver().library();
         this.endReceiver = "*CURRENT";
         this.endLibrary = "";
         criteria.withReceiverRange(startReceiver, startLibrary, endReceiver, endLibrary);

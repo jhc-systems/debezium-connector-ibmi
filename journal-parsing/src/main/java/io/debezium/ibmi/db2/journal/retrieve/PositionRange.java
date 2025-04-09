@@ -5,7 +5,7 @@
  */
 package io.debezium.ibmi.db2.journal.retrieve;
 
-public record PositionRange(boolean fromBeginning, JournalProcessedPosition start, JournalPosition end) {
+public record PositionRange(JournalProcessedPosition start, JournalPosition end) {
 
     boolean startEqualsEnd() {
         final JournalPosition startPos = new JournalPosition(start.getOffset(), start.getReceiver());
