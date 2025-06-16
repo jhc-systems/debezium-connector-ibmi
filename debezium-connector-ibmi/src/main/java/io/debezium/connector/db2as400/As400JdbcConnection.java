@@ -5,7 +5,6 @@
  */
 package io.debezium.connector.db2as400;
 
-import static io.debezium.config.CommonConnectorConfig.DATABASE_CONFIG_PREFIX;
 import static io.debezium.config.CommonConnectorConfig.DRIVER_CONFIG_PREFIX;
 
 import java.sql.Connection;
@@ -93,10 +92,8 @@ public class As400JdbcConnection extends JdbcConnection implements Connect<Conne
         log.debug("connection: {}", connectionString());
     }
 
-
     static JdbcConfiguration withDefaults(JdbcConfiguration config) {
         JdbcConfiguration.Builder defaults = JdbcConfiguration.create();
-        
 
         for (Map.Entry<String, String> e : jdbcDefaults.entrySet()) {
             if (!config.hasKey(e.getKey())) {

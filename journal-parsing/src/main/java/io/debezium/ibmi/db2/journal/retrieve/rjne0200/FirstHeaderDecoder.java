@@ -29,6 +29,7 @@ public class FirstHeaderDecoder {
     private static final Logger log = LoggerFactory.getLogger(FirstHeaderDecoder.class);
 
     private final AS400Structure structure;
+
     public FirstHeaderDecoder() {
         final ArrayList<AS400DataType> dataTypes = new ArrayList<>();
         final FieldDescription[] fds = new FieldDescription[]{

@@ -167,7 +167,7 @@ endif JAVA9 */
 	// Toolbox resources NOT needed in proxy jar file.        @A1A
 	private static ResourceBundle resources2_;
 
-  private static final String CLASSNAME = "com.ibm.as400.access.AS400JDBCDriverForcedCcsid";
+  private static final String CLASSNAME = "com.ibm.as400.access.AS400JDBCDriverForcedCcsid"; // only line we need to change
 
   private static Driver nativeDriver = null;
 

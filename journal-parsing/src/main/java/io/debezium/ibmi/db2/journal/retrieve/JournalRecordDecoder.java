@@ -17,6 +17,7 @@ import io.debezium.ibmi.db2.journal.retrieve.rjne0200.EntryHeader;
 
 public class JournalRecordDecoder implements JournalEntryDeocder<JournalReceiver> {
     final AS400Structure structure;
+
     public JournalRecordDecoder() {
         FieldDescription[] fds = new FieldDescription[]{
                 new CharacterFieldDescription(new AS400Text(10), "start journal"),

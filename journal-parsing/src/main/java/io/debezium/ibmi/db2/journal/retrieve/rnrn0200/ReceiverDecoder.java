@@ -46,7 +46,7 @@ public class ReceiverDecoder {
             privateSetFormat.invoke(timeType, dtsformat);
         }
         catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchFieldException | SecurityException | NoSuchMethodException e) {
-           throw new RuntimeException("Failed to setup ReceiverDecoder", e);
+            throw new RuntimeException("Failed to setup ReceiverDecoder", e);
         }
 
         FieldDescription[] fds = new FieldDescription[]{

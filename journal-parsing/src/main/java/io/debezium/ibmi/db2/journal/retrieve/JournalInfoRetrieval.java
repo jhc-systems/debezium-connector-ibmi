@@ -133,10 +133,10 @@ public class JournalInfoRetrieval {
                                                                                   // variable
                                                                                   // (output)
                 new ProgramParameter(ProgramParameter.PASS_BY_REFERENCE, as400Bin4.toBytes(rcvLen)), // 2
-                                                                                                      // Length
-                                                                                                      // of
-                                                                                                      // receiver
-                                                                                                      // variable
+                                                                                                     // Length
+                                                                                                     // of
+                                                                                                     // receiver
+                                                                                                     // variable
                 new ProgramParameter(ProgramParameter.PASS_BY_REFERENCE, 20), // 3
                                                                               // Qualified
                                                                               // returned
@@ -144,27 +144,27 @@ public class JournalInfoRetrieval {
                                                                               // name
                                                                               // (output)
                 new ProgramParameter(ProgramParameter.PASS_BY_REFERENCE, as400Text8.toBytes("FILD0100")), // 4
-                                                                                                            // Format
-                                                                                                            // name
+                                                                                                          // Format
+                                                                                                          // name
                 new ProgramParameter(ProgramParameter.PASS_BY_REFERENCE, as400Text20.toBytes(filename)), // 5
-                                                                                                           // Qualified
-                                                                                                           // file
-                                                                                                           // name
+                                                                                                         // Qualified
+                                                                                                         // file
+                                                                                                         // name
                 new ProgramParameter(ProgramParameter.PASS_BY_REFERENCE, as400Text10.toBytes("*FIRST")), // 6
-                                                                                                           // Record
-                                                                                                           // format
-                                                                                                           // name
+                                                                                                         // Record
+                                                                                                         // format
+                                                                                                         // name
                 new ProgramParameter(ProgramParameter.PASS_BY_REFERENCE, as400Text1.toBytes("0")), // 7
-                                                                                                     // Override
-                                                                                                     // processing
+                                                                                                   // Override
+                                                                                                   // processing
                 new ProgramParameter(ProgramParameter.PASS_BY_REFERENCE, as400Text10.toBytes("*LCL")), // 8
-                                                                                                         // System
+                                                                                                       // System
                 new ProgramParameter(ProgramParameter.PASS_BY_REFERENCE, as400Text10.toBytes("*INT")), // 9
-                                                                                                         // Format
-                                                                                                         // type
+                                                                                                       // Format
+                                                                                                       // type
                 new ProgramParameter(ProgramParameter.PASS_BY_REFERENCE, as400Bin4.toBytes(0)), // 10
-                                                                                                 // Error
-                                                                                                 // Code
+                                                                                                // Error
+                                                                                                // Code
         };
 
         final ProgramCall pc = new ProgramCall();

@@ -64,7 +64,7 @@ public class As400RpcConnection implements AutoCloseable, Connect<AS400, IOExcep
                 journalInfo = JournalInfoRetrieval.getJournal(connection(), config.getSchema());
             }
             else {
-                journalInfo = JournalInfoRetrieval.getJournal(connection(), config.getSchema(), includes);
+                journalInfo = journalInfoRetrieval.getJournal(connection(), config.getSchema(), includes);
             }
             final RetrieveConfig rconfig = new RetrieveConfigBuilder().withAs400(this)
                     .withJournalBufferSize(config.getJournalBufferSize())

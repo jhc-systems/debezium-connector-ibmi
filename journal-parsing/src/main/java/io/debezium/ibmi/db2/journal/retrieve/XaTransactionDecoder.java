@@ -17,6 +17,7 @@ import com.ibm.as400.access.FieldDescription;
 
 public class XaTransactionDecoder {
     final AS400Structure structure;
+
     /*
      * long formatID; Format id
      * Value of -1 (constant NULLXID) means that XID is null.
