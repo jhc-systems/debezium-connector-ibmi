@@ -115,7 +115,7 @@ public class As400SnapshotChangeEventSource
                                            RelationalSnapshotContext<As400Partition, As400OffsetContext> snapshotContext,
                                            As400OffsetContext previousOffset)
             throws Exception {
-        if (previousOffset != null && previousOffset.isPositionSet() && !snapshotterService.getSnapshotter().shouldStreamEventsStartingFromSnapshot()) {
+        if (previousOffset != null && previousOffset.isPositionSet() && snapshotterService.getSnapshotter().shouldStreamEventsStartingFromSnapshot()) {
             snapshotContext.offset = previousOffset;
         }
         else {
