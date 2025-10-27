@@ -30,6 +30,7 @@ import io.debezium.ibmi.db2.journal.retrieve.RetreivalState;
 import io.debezium.ibmi.db2.journal.retrieve.RetrieveConfig;
 import io.debezium.ibmi.db2.journal.retrieve.RetrieveConfigBuilder;
 import io.debezium.ibmi.db2.journal.retrieve.RetrieveJournal;
+import io.debezium.ibmi.db2.journal.retrieve.exception.LostJournalException;
 import io.debezium.ibmi.db2.journal.retrieve.rjne0200.EntryHeader;
 import io.debezium.ibmi.db2.journal.retrieve.rnrn0200.DetailedJournalReceiver;
 import io.debezium.pipeline.source.spi.ChangeEventSource.ChangeEventSourceContext;
@@ -134,41 +135,41 @@ public class As400RpcConnection implements AutoCloseable, Connect<AS400, IOExcep
 
     public RetreivalState getJournalEntries(ChangeEventSourceContext context, As400OffsetContext offsetCtx, BlockingReceiverConsumer consumer, WatchDog watchDog)
             throws Exception {
-        RetreivalState state;
         final JournalProcessedPosition position = offsetCtx.getPosition();
-        state = retrieveJournal.retrieveJournal(position);
+        try {
 
-        logOffsets(position, state);
+            RetreivalState state = retrieveJournal.retrieveJournal(position);
 
-        watchDog.alive();
+            logOffsets(position, state);
 
-        if (state.hasData()) {
-            while (retrieveJournal.nextEntry() && context.isRunning()) {
-                watchDog.alive();
-                final EntryHeader eheader = retrieveJournal.getEntryHeader();
-                final BigInteger processingOffset = eheader.getSequenceNumber();
+            watchDog.alive();
 
-                consumer.accept(processingOffset, retrieveJournal, eheader);
-                // while processing journal entries getPosistion is the current position
-                position.setPosition(retrieveJournal.getPosition());
-            }
+            if (state.hasData()) {
+                while (retrieveJournal.nextEntry() && context.isRunning()) {
+                    watchDog.alive();
+                    final EntryHeader eheader = retrieveJournal.getEntryHeader();
+                    final BigInteger processingOffset = eheader.getSequenceNumber();
 
-            // note that getPosition returns the current position or the next continuation offset after the current block
-            offsetCtx.setPosition(retrieveJournal.getPosition());
+                    consumer.accept(processingOffset, retrieveJournal, eheader);
+                    // while processing journal entries getPosistion is the current position
+                    position.setPosition(retrieveJournal.getPosition());
+                }
 
-        }
-        else {
-            if (RetreivalState.LostJournal.equals(state)) {
-                // this is bad, we've probably lost data
-                final List<DetailedJournalReceiver> receivers = journalInfoRetrieval.getReceivers(connection(), journalInfo);
-                log.error("Failed to fetch journal entries '{}', resetting journal to blank",
-                        Map.of("position", position,
-                                "receivers", receivers));
-                offsetCtx.setPosition(new JournalProcessedPosition());
+                // note that getPosition returns the current position or the next continuation offset after the current block
+                offsetCtx.setPosition(retrieveJournal.getPosition());
+
             }
         }
+        catch (LostJournalException e) {
+            // this is bad, we've probably lost data
+            final List<DetailedJournalReceiver> receivers = journalInfoRetrieval.getReceivers(connection(), journalInfo);
+            log.error("Failed to fetch journal entries '{}', resetting journal to blank",
+                    Map.of("position", position,
+                            "receivers", receivers));
+            offsetCtx.setPosition(new JournalProcessedPosition());
+        }
 
-        return state;
+        return RetreivalState.NotCalled;
     }
 
     private void logOffsets(JournalProcessedPosition position, RetreivalState state) throws IOException, Exception {
