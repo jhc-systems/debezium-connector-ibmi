@@ -115,7 +115,7 @@ public class As400SnapshotChangeEventSource
                                            RelationalSnapshotContext<As400Partition, As400OffsetContext> snapshotContext,
                                            As400OffsetContext previousOffset)
             throws Exception {
-        if (previousOffset != null && previousOffset.isPositionSet() && snapshotterService.getSnapshotter().shouldStreamEventsStartingFromSnapshot()) {
+        if (previousOffset != null && previousOffset.isPositionSet()) {
             snapshotContext.offset = previousOffset;
         }
         else {
@@ -198,23 +198,9 @@ public class As400SnapshotChangeEventSource
         final List<String> dataCollectionsToBeSnapshotted = connectorConfig.getDataCollectionsToBeSnapshotted();
         final Map<DataCollectionId, String> snapshotSelectOverridesByTable = connectorConfig.getSnapshotSelectOverridesByTable();
 
+
         boolean offsetExists = previousOffset != null;
-        boolean snapshotInProgress = false;
-
-        if (offsetExists) {
-            snapshotInProgress = !previousOffset.isSnapshotComplete();
-        }
-
-        if (offsetExists && previousOffset.isSnapshotComplete()) {
-            // when control tables in place
-            if (!previousOffset.hasNewTables()) {
-                log.info(
-                        "A previous offset indicating a completed snapshot has been found. Neither schema nor data will be snapshotted.");
-                return new SnapshottingTask(true, false, dataCollectionsToBeSnapshotted,
-                        snapshotSelectOverridesByTable, false);
-            }
-            log.info("A previous offset indicating a completed snapshot has been found.");
-        }
+        boolean snapshotInProgress = (offsetExists && previousOffset.isInitialSnapshotRunning());
 
         boolean shouldSnapshotSchema = snapshotter.shouldSnapshotSchema(offsetExists, snapshotInProgress);
         boolean shouldSnapshotData = snapshotter.shouldSnapshotData(offsetExists, snapshotInProgress);
