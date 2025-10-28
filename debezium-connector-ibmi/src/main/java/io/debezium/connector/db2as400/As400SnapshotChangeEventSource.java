@@ -115,7 +115,9 @@ public class As400SnapshotChangeEventSource
                                            RelationalSnapshotContext<As400Partition, As400OffsetContext> snapshotContext,
                                            As400OffsetContext previousOffset)
             throws Exception {
-        if (previousOffset != null && previousOffset.isPositionSet()) {
+        boolean shouldSnapshotData = shouldSnapshotData(previousOffset, snapshotterService.getSnapshotter());
+        boolean useOffset = !shouldSnapshotData || (shouldSnapshotData && !snapshotterService.getSnapshotter().shouldStreamEventsStartingFromSnapshot());
+        if (previousOffset != null && previousOffset.isPositionSet() && useOffset) {
             snapshotContext.offset = previousOffset;
         }
         else {
@@ -198,14 +200,9 @@ public class As400SnapshotChangeEventSource
         final List<String> dataCollectionsToBeSnapshotted = connectorConfig.getDataCollectionsToBeSnapshotted();
         final Map<DataCollectionId, String> snapshotSelectOverridesByTable = connectorConfig.getSnapshotSelectOverridesByTable();
 
+        boolean shouldSnapshotData = shouldSnapshotData(previousOffset, snapshotter);
 
-        boolean offsetExists = previousOffset != null;
-        boolean snapshotInProgress = (offsetExists && previousOffset.isInitialSnapshotRunning());
-
-        boolean shouldSnapshotSchema = snapshotter.shouldSnapshotSchema(offsetExists, snapshotInProgress);
-        boolean shouldSnapshotData = snapshotter.shouldSnapshotData(offsetExists, snapshotInProgress);
-
-        if (shouldSnapshotData && shouldSnapshotSchema) {
+        if (shouldSnapshotData) {
             log.info("According to the connector configuration both schema and data will be snapshot.");
         }
         else {
@@ -216,6 +213,14 @@ public class As400SnapshotChangeEventSource
                 shouldSnapshotData, dataCollectionsToBeSnapshotted,
                 snapshotSelectOverridesByTable, false);
     }
+
+	private boolean shouldSnapshotData(As400OffsetContext previousOffset, final Snapshotter snapshotter) {
+		boolean offsetExists = previousOffset != null;
+        boolean snapshotInProgress = (offsetExists && previousOffset.isInitialSnapshotRunning());
+
+        boolean shouldSnapshotData = snapshotter.shouldSnapshotData(offsetExists, snapshotInProgress);
+		return shouldSnapshotData;
+	}
 
     @Override
     protected SnapshotContext<As400Partition, As400OffsetContext> prepare(As400Partition partition, boolean onDemand) throws Exception {
