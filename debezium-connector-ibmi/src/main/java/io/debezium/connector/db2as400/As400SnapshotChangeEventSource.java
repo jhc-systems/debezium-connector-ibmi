@@ -34,6 +34,7 @@ import io.debezium.schema.SchemaChangeEvent;
 import io.debezium.schema.SchemaChangeEvent.SchemaChangeEventType;
 import io.debezium.snapshot.SnapshotterService;
 import io.debezium.spi.schema.DataCollectionId;
+import io.debezium.spi.snapshot.Snapshotter;
 import io.debezium.util.Clock;
 
 public class As400SnapshotChangeEventSource
@@ -132,7 +133,9 @@ public class As400SnapshotChangeEventSource
                                            RelationalSnapshotContext<As400Partition, As400OffsetContext> snapshotContext,
                                            As400OffsetContext previousOffset)
             throws Exception {
-        if (previousOffset != null && previousOffset.isPositionSet() && !snapshotterService.getSnapshotter().shouldStreamEventsStartingFromSnapshot()) {
+        boolean shouldSnapshotData = shouldSnapshotData(previousOffset, snapshotterService.getSnapshotter());
+        boolean useOffset = !shouldSnapshotData || (shouldSnapshotData && !snapshotterService.getSnapshotter().shouldStreamEventsStartingFromSnapshot());
+        if (previousOffset != null && previousOffset.isPositionSet() && useOffset) {
             snapshotContext.offset = previousOffset;
         }
         else {
@@ -225,8 +228,9 @@ public class As400SnapshotChangeEventSource
         }
 
         log.info("No previous offset has been found");
-        if (this.connectorConfig.getSnapshotMode().includeData()) {
-            log.info("According to the connector configuration both schema and data will be snapshotted");
+        boolean shouldSnapshotData = shouldSnapshotData(previousOffset, snapshotterService.getSnapshotter());
+        if (shouldSnapshotData) {
+            log.info("According to the connector configuration both schema and data will be snapshot.");
         }
         else {
             log.info("According to the connector configuration only schema will be snapshotted");
@@ -236,6 +240,14 @@ public class As400SnapshotChangeEventSource
                 this.connectorConfig.getSnapshotMode().includeData(), dataCollectionsToBeSnapshotted,
                 snapshotSelectOverridesByTable, false);
     }
+
+	private boolean shouldSnapshotData(As400OffsetContext previousOffset, final Snapshotter snapshotter) {
+		boolean offsetExists = previousOffset != null;
+        boolean snapshotInProgress = (offsetExists && previousOffset.isInitialSnapshotRunning());
+
+        boolean shouldSnapshotData = snapshotter.shouldSnapshotData(offsetExists, snapshotInProgress);
+		return shouldSnapshotData;
+	}
 
     @Override
     protected SnapshotContext<As400Partition, As400OffsetContext> prepare(As400Partition partition, boolean onDemand) throws Exception {
