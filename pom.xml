@@ -9,7 +9,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>debezium-connector-reactor-ibmi</artifactId>
-    <version>3.4.0.Final</version>
+    <version>3.4.0_FNZ2</version>
     <packaging>pom</packaging>
     <name>Debezium Connector Reactor for IBM iSeries Db2</name>
 
