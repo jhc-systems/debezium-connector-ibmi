@@ -92,24 +92,15 @@ public class ReceiverPagination {
             
             cachedEndPosition = endPosition;
         }
-        updateEndPosition(cachedReceivers, endPosition);
 
-        Optional<PositionRange> endOpt = findPosition(startPosition, maxServerSideEntriesBI, cachedReceivers);
+        Optional<PositionRange> endOpt = findPosition(startPosition, endPosition, maxServerSideEntriesBI, cachedReceivers);
         if (endOpt.isEmpty()) {
-            log.warn("retrying to find end offset");
-            cachedReceivers = journalInfoRetrieval.getReceivers(as400, journalInfo);
-            endOpt = findPosition(startPosition, maxServerSideEntriesBI, cachedReceivers);
-            if (endOpt.isEmpty()) {
-                throw new InvalidPositionException("unable to find receiver " + startPosition + " in " + cachedReceivers);
-            }
+    		String receivers = cachedReceivers.stream().map(DetailedJournalReceiver::toString).collect(Collectors.joining(","));
+    		throw new InvalidPositionException(String.format("invalid receiver list after %d retries position was %s receivers were %s", receiverListRetries, startPosition, receivers));
         }
 
         log.debug("end {} journals {}", endPosition, cachedReceivers);
-
-        final JournalProcessedPosition startf = new JournalProcessedPosition(startPosition);
-        return Optional.of(endOpt.orElseGet(
-                () -> new PositionRange(fromBeginning, startf,
-                        new JournalPosition(endPosition.end(), endPosition.info().receiver()))));
+        return endOpt;
     }
     
     static boolean isValid(JournalProcessedPosition startPosition, DetailedJournalReceiver endPositionOpt, List<DetailedJournalReceiver> receivers) {
@@ -134,18 +125,6 @@ public class ReceiverPagination {
 		}
 		return false;
 	}
-
-    static void updateEndPosition(List<DetailedJournalReceiver> list, DetailedJournalReceiver endPosition) {
-        // should be last entry
-        for (int i = list.size() - 1; i >= 0; i--) {
-            final DetailedJournalReceiver d = list.get(i);
-            if (d.isSameReceiver(endPosition)) {
-                list.set(i, endPosition);
-                return;
-            }
-        }
-        list.add(endPosition);
-    }
 
     /**
      * only valid when startPosition and endJournalPosition are the same receiver and library
@@ -177,26 +156,32 @@ public class ReceiverPagination {
      * @param receivers
      * @return try and find end position at most offsetFromStart from start using the receiver list
      */
-    Optional<PositionRange> findPosition(JournalProcessedPosition startPosition, BigInteger maxEntries,
+    Optional<PositionRange> findPosition(JournalProcessedPosition startPosition, DetailedJournalReceiver endPosition, BigInteger maxEntries,
                                          List<DetailedJournalReceiver> receivers)
             throws Exception {
 
         for (Iterator<DetailedJournalReceiver> it = receivers.iterator(); it.hasNext();) {
             DetailedJournalReceiver nextReceiver = it.next();
             if (nextReceiver.isSameReceiver(startPosition)) {
-                if (startEqualsEndAndProcessed(startPosition, nextReceiver)) {
-                    if (it.hasNext()) {
+                if (startEqualsEndAndProcessed(startPosition, nextReceiver)) { // finished processing this receiver
+                    if (it.hasNext()) { // paginate within next receiver if it exists
                         nextReceiver = it.next();
                         startPosition.setPosition(new JournalPosition(nextReceiver.start(), nextReceiver.info().receiver()), false);
+                        if (nextReceiver.isSameReceiver(endPosition)) { // delayed end offset is the next receiver to process
+                        	return Optional.of(
+                                    paginateInSameReceiver(startPosition, endPosition, maxEntries));
+                        }
+                        // just paginate within the receiver in the list
                         return Optional.of(
                                 paginateInSameReceiver(startPosition, nextReceiver, maxEntries));
                     }
                     else {
-                        // we're at the end and we've processed everything
+                        // we're at the end and we've processed everything, there are no more receivers
                         return Optional.of(
                                 paginateInSameReceiver(startPosition, nextReceiver, maxEntries));
                     }
                 }
+                // we haven't finished this receiver yet 
                 return Optional.of(
                         paginateInSameReceiver(startPosition, nextReceiver, maxEntries));
             }
