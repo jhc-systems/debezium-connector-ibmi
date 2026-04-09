@@ -66,8 +66,6 @@ public class ReceiverPagination {
         }
 
         if (cachedEndPosition.isSameReceiver(endPosition)) {
-            // refresh end position in cached list
-            updateEndPosition(cachedReceivers, endPosition);
             // we're currently on the same journal just check the relative offset is within range
             if (startPosition.isSameReceiver(endPosition)) {
                 return Optional.of(paginateInSameReceiver(startPosition, endPosition, maxServerSideEntriesBI));
@@ -93,6 +91,7 @@ public class ReceiverPagination {
             
             cachedEndPosition = endPosition;
         }
+        updateEndPosition(cachedReceivers, endPosition);
 
         Optional<PositionRange> endOpt = findPosition(startPosition, maxServerSideEntriesBI, cachedReceivers,
                 cachedEndPosition);
