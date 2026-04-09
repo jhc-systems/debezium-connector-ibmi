@@ -9,6 +9,7 @@ import java.math.BigInteger;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,6 +27,7 @@ public class ReceiverPagination {
     private final BigInteger maxServerSideEntriesBI;
     private DetailedJournalReceiver cachedEndPosition;
     private List<DetailedJournalReceiver> cachedReceivers = null;
+    private int receiverListRetries = 0;
 
     ReceiverPagination(JournalInfoRetrieval journalInfoRetrieval, int maxServerSideEntries, JournalInfo journalInfo) {
         this.journalInfoRetrieval = journalInfoRetrieval;
@@ -36,7 +38,7 @@ public class ReceiverPagination {
     Optional<PositionRange> findRange(AS400 as400, JournalProcessedPosition startPosition) throws Exception {
         final Optional<DetailedJournalReceiver> endPositionOpt = journalInfoRetrieval.getDelayedDetailedJournalReceiver(as400, journalInfo);
 
-        return endPositionOpt.map(endPosition -> {
+        return endPositionOpt.flatMap(endPosition -> {
             try {
                 return _findRange(as400, startPosition, endPosition);
             }
@@ -46,7 +48,7 @@ public class ReceiverPagination {
         });
     }
 
-    PositionRange _findRange(AS400 as400, JournalProcessedPosition startPosition, DetailedJournalReceiver endPosition) throws Exception {
+    Optional<PositionRange> _findRange(AS400 as400, JournalProcessedPosition startPosition, DetailedJournalReceiver endPosition) throws Exception {
         final BigInteger start = startPosition.getOffset();
         final boolean fromBeginning = !startPosition.isOffsetSet() || start.equals(BigInteger.ZERO);
 
@@ -67,14 +69,28 @@ public class ReceiverPagination {
             // refresh end position in cached list
             updateEndPosition(cachedReceivers, endPosition);
             // we're currently on the same journal just check the relative offset is within range
-            // don't update the cache as we are not going to know the real end offset for this journal receiver until we move on to the next
             if (startPosition.isSameReceiver(endPosition)) {
-                return paginateInSameReceiver(startPosition, endPosition, maxServerSideEntriesBI);
+                return Optional.of(paginateInSameReceiver(startPosition, endPosition, maxServerSideEntriesBI));
             }
         }
         else {
             // last call to current position won't include the correct end offset so we need to refresh the list
             cachedReceivers = journalInfoRetrieval.getReceivers(as400, journalInfo);
+            
+            if (!isValid(startPosition, endPosition, cachedReceivers)) {
+            	cachedReceivers = null;
+            	receiverListRetries++;
+            	if (receiverListRetries < 100) {
+            		log.debug("assuming our receiver list is stale");
+            		return Optional.<PositionRange>empty();
+            	} else {
+            		String receivers = cachedReceivers.stream().map(DetailedJournalReceiver::toString).collect(Collectors.joining(","));
+            		throw new InvalidPositionException(String.format("invalid receiver list after %d retries position was %s receivers were %s", receiverListRetries, startPosition, receivers));
+            	}
+            } else {
+            	receiverListRetries = 0;
+            }       
+            
             cachedEndPosition = endPosition;
         }
 
@@ -92,10 +108,33 @@ public class ReceiverPagination {
         log.debug("end {} journals {}", endPosition, cachedReceivers);
 
         final JournalProcessedPosition startf = new JournalProcessedPosition(startPosition);
-        return endOpt.orElseGet(
+        return Optional.of(endOpt.orElseGet(
                 () -> new PositionRange(fromBeginning, startf,
-                        new JournalPosition(endPosition.end(), endPosition.info().receiver())));
+                        new JournalPosition(endPosition.end(), endPosition.info().receiver()))));
     }
+    
+    static boolean isValid(JournalProcessedPosition startPosition, DetailedJournalReceiver endPositionOpt, List<DetailedJournalReceiver> receivers) {
+        for (int i = receivers.size() - 1; i >= 0; i--) {
+            final DetailedJournalReceiver r = receivers.get(i);
+			if (r.isSameReceiver(endPositionOpt)) {
+				if (!r.isAttached()) {
+					log.warn("the current reciver {} is not attached {}, it is likely we have state data", r, endPositionOpt);
+					return false;
+				}
+			}
+			if (r.isSameReceiver(startPosition)) {
+				if (r.isAttached()) {
+					log.warn("we have a new receiver {} but the list shows the one we were processing before {} is still attached, it is likely we have state data", r, startPosition);
+					return false;
+				}
+				if (r.end().compareTo(startPosition.getOffset()) < 0) { 
+					log.warn("we have a new receiver but the end offset in the receiver list {} is less than the current position {}", r, startPosition);
+					return false;
+				}
+			}
+		}
+		return false;
+	}
 
     static void updateEndPosition(List<DetailedJournalReceiver> list, DetailedJournalReceiver endPosition) {
         // should be last entry
