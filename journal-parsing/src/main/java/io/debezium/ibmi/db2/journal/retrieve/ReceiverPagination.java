@@ -103,22 +103,16 @@ public class ReceiverPagination {
         return endOpt;
     }
     
-    static boolean isValid(JournalProcessedPosition startPosition, DetailedJournalReceiver endPositionOpt, List<DetailedJournalReceiver> receivers) {
+    static boolean isValid(JournalProcessedPosition startPosition, DetailedJournalReceiver endPosition, List<DetailedJournalReceiver> receivers) {
         for (int i = receivers.size() - 1; i >= 0; i--) {
             final DetailedJournalReceiver r = receivers.get(i);
-			if (r.isSameReceiver(endPositionOpt)) {
-				if (!r.isAttached()) {
-					log.warn("the current reciver {} is not attached {}, it is likely we have state data", r, endPositionOpt);
-					return false;
-				}
-			}
 			if (r.isSameReceiver(startPosition)) {
 				if (r.isAttached()) {
-					log.warn("we have a new receiver {} but the list shows the one we were processing before {} is still attached, it is likely we have state data", r, startPosition);
+					log.warn("receiver in the list {} is still attached, but our current position {} isn't the end poisition {}", r, startPosition, endPosition);
 					return false;
 				}
 				if (r.end().compareTo(startPosition.getOffset()) < 0) { 
-					log.warn("we have a new receiver but the end offset in the receiver list {} is less than the current position {}", r, startPosition);
+					log.warn("The end offset in the receiver list {} is less than the current position {}", r, startPosition);
 					return false;
 				}
 			}
