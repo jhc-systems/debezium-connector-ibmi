@@ -14,6 +14,7 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.debezium.ibmi.db2.journal.retrieve.JournalPosition;
 import io.debezium.ibmi.db2.journal.retrieve.JournalProcessedPosition;
 import io.debezium.ibmi.db2.journal.retrieve.JournalReceiver;
 
@@ -27,6 +28,13 @@ public record DetailedJournalReceiver(JournalReceiverInfo info, BigInteger start
                 this.maxEntryLength, this.numberOfEntries);
     }
 
+    public boolean isSameReceiver(JournalPosition position) {
+        if (info == null || position == null) {
+            return false;
+        }
+        return info.receiver().equals(position.getReceiver());
+    }
+    
     public boolean isSameReceiver(JournalProcessedPosition position) {
         if (info == null || position == null) {
             return false;
