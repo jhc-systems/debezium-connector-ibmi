@@ -10,6 +10,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.math.BigInteger;
 import java.nio.file.Files;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
@@ -41,6 +42,7 @@ import io.debezium.ibmi.db2.journal.retrieve.rjne0200.EntryHeaderDecoder;
 import io.debezium.ibmi.db2.journal.retrieve.rjne0200.FirstHeader;
 import io.debezium.ibmi.db2.journal.retrieve.rjne0200.FirstHeaderDecoder;
 import io.debezium.ibmi.db2.journal.retrieve.rjne0200.OffsetStatus;
+import io.debezium.ibmi.db2.journal.retrieve.rnrn0200.DetailedJournalReceiver;
 
 /**
  * based on the work of Stanley Vong see
@@ -59,6 +61,7 @@ public class RetrieveJournal {
     private final SimpleDateFormat dateFormatter = new SimpleDateFormat("yyMMdd-hhmm");
     private final ReceiverPagination journalReceivers;
     private final ParameterListBuilder builder = new ParameterListBuilder();
+    private final JournalInfoRetrieval journalRetrieval;
 
     RetrieveConfig config;
     private byte[] outputData = null;
@@ -71,6 +74,7 @@ public class RetrieveJournal {
 
     public RetrieveJournal(RetrieveConfig config, JournalInfoRetrieval journalRetrieval) {
         this.config = config;
+        this.journalRetrieval = journalRetrieval;
         journalReceivers = new ReceiverPagination(journalRetrieval, config.maxServerSideEntries(), config.journalInfo());
 
         builder.withJournal(config.journalInfo().journalName(), config.journalInfo().journalLibrary());
@@ -416,5 +420,9 @@ public class RetrieveJournal {
 
     public long getTotalTransferred() {
         return totalTransferred;
+    }
+    
+    public Optional<BigInteger> getPositionLag(JournalProcessedPosition current, JournalPosition end) throws Exception {    	
+		return journalReceivers.getPositionLag(current, end);
     }
 }
