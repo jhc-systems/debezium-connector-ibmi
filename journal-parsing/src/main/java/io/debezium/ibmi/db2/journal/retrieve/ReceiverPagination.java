@@ -107,7 +107,7 @@ public class ReceiverPagination {
             final DetailedJournalReceiver r = receivers.get(i);
 			if (r.isSameReceiver(startPosition)) {
 				if (r.isAttached()) {
-					log.warn("receiver in the list {} is still attached, but our current position {} isn't the end poisition {}", r, startPosition, endPosition);
+					log.warn("receiver matching our position in the list {} is still attached, but our current position {} isn't the end poisition {}", r, startPosition, endPosition);
 					return false;
 				}
 				if (r.end().compareTo(startPosition.getOffset()) < 0) {
