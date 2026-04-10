@@ -155,15 +155,17 @@ public class ReceiverPagination {
 
         for (Iterator<DetailedJournalReceiver> it = receivers.iterator(); it.hasNext();) {
             DetailedJournalReceiver nextReceiver = it.next();
+            if (nextReceiver.isSameReceiver(endPosition)) {
+            	nextReceiver = endPosition;
+            }
             if (nextReceiver.isSameReceiver(startPosition)) {
                 if (startEqualsEndAndProcessed(startPosition, nextReceiver)) { // finished processing this receiver
                     if (it.hasNext()) { // paginate within next receiver if it exists
                         nextReceiver = it.next();
-                        startPosition.setPosition(new JournalPosition(nextReceiver.start(), nextReceiver.info().receiver()), false);
-                        if (nextReceiver.isSameReceiver(endPosition)) { // delayed end offset is the next receiver to process
-                        	return Optional.of(
-                                    paginateInSameReceiver(startPosition, endPosition, maxEntries));
+                        if (nextReceiver.isSameReceiver(endPosition)) {
+                        	nextReceiver = endPosition;
                         }
+                        startPosition.setPosition(new JournalPosition(nextReceiver.start(), nextReceiver.info().receiver()), false);
                         // just paginate within the receiver in the list
                         return Optional.of(
                                 paginateInSameReceiver(startPosition, nextReceiver, maxEntries));
