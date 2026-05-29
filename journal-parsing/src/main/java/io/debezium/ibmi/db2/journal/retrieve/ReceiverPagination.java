@@ -75,50 +75,55 @@ public class ReceiverPagination {
         else {
             // last call to current position won't include the correct end offset so we need to refresh the list
             cachedReceivers = journalInfoRetrieval.getReceivers(as400, journalInfo);
-            
+
             if (!isValid(startPosition, endPosition, cachedReceivers)) {
-            	cachedReceivers = null;
-            	receiverListRetries++;
-            	if (receiverListRetries < 100) {
-            		log.debug("assuming our receiver list is stale");
-            		return Optional.<PositionRange>empty();
-            	} else {
-            		String receivers = cachedReceivers.stream().map(DetailedJournalReceiver::toString).collect(Collectors.joining(","));
-            		throw new InvalidPositionException(String.format("invalid receiver list after %d retries position was %s receivers were %s", receiverListRetries, startPosition, receivers));
-            	}
-            } else {
-            	receiverListRetries = 0;
-            }       
-            
+                cachedReceivers = null;
+                receiverListRetries++;
+                if (receiverListRetries < 100) {
+                    log.debug("assuming our receiver list is stale");
+                    return Optional.<PositionRange> empty();
+                }
+                else {
+                    String receivers = cachedReceivers.stream().map(DetailedJournalReceiver::toString).collect(Collectors.joining(","));
+                    throw new InvalidPositionException(
+                            String.format("invalid receiver list after %d retries position was %s receivers were %s", receiverListRetries, startPosition, receivers));
+                }
+            }
+            else {
+                receiverListRetries = 0;
+            }
+
             cachedEndPosition = endPosition;
         }
 
         Optional<PositionRange> endOpt = findPosition(startPosition, endPosition, maxServerSideEntriesBI, cachedReceivers);
         if (endOpt.isEmpty()) {
-    		String receivers = cachedReceivers.stream().map(DetailedJournalReceiver::toString).collect(Collectors.joining(","));
-    		throw new InvalidPositionException(String.format("invalid receiver list after %d retries position was %s receivers were %s", receiverListRetries, startPosition, receivers));
+            String receivers = cachedReceivers.stream().map(DetailedJournalReceiver::toString).collect(Collectors.joining(","));
+            throw new InvalidPositionException(
+                    String.format("invalid receiver list after %d retries position was %s receivers were %s", receiverListRetries, startPosition, receivers));
         }
 
         log.debug("end {} journals {}", endPosition, cachedReceivers);
         return endOpt;
     }
-    
+
     static boolean isValid(JournalProcessedPosition startPosition, DetailedJournalReceiver endPosition, List<DetailedJournalReceiver> receivers) {
         for (int i = receivers.size() - 1; i >= 0; i--) {
             final DetailedJournalReceiver r = receivers.get(i);
-			if (r.isSameReceiver(startPosition)) {
-				if (r.isAttached()) {
-					log.warn("receiver matching our position in the list {} is still attached, but our current position {} isn't the end poisition {}", r, startPosition, endPosition);
-					return false;
-				}
-				if (r.end().compareTo(startPosition.getOffset()) < 0) { 
-					log.warn("The end offset in the receiver list {} is less than the current position {}", r, startPosition);
-					return false;
-				}
-			}
-		}
-		return false;
-	}
+            if (r.isSameReceiver(startPosition)) {
+                if (r.isAttached()) {
+                    log.warn("receiver matching our position in the list {} is still attached, but our current position {} isn't the end poisition {}", r, startPosition,
+                            endPosition);
+                    return false;
+                }
+                if (r.end().compareTo(startPosition.getOffset()) < 0) {
+                    log.warn("The end offset in the receiver list {} is less than the current position {}", r, startPosition);
+                    return false;
+                }
+            }
+        }
+        return false;
+    }
 
     /**
      * only valid when startPosition and endJournalPosition are the same receiver and library
@@ -157,14 +162,14 @@ public class ReceiverPagination {
         for (Iterator<DetailedJournalReceiver> it = receivers.iterator(); it.hasNext();) {
             DetailedJournalReceiver nextReceiver = it.next();
             if (nextReceiver.isSameReceiver(endPosition)) {
-            	nextReceiver = endPosition;
+                nextReceiver = endPosition;
             }
             if (nextReceiver.isSameReceiver(startPosition)) {
                 if (startEqualsEndAndProcessed(startPosition, nextReceiver)) { // finished processing this receiver
                     if (it.hasNext()) { // paginate within next receiver if it exists
                         nextReceiver = it.next();
                         if (nextReceiver.isSameReceiver(endPosition)) {
-                        	nextReceiver = endPosition;
+                            nextReceiver = endPosition;
                         }
                         startPosition.setPosition(new JournalPosition(nextReceiver.start(), nextReceiver.info().receiver()), false);
                         // just paginate within the receiver in the list
@@ -177,7 +182,7 @@ public class ReceiverPagination {
                                 paginateInSameReceiver(startPosition, nextReceiver, maxEntries));
                     }
                 }
-                // we haven't finished this receiver yet 
+                // we haven't finished this receiver yet
                 return Optional.of(
                         paginateInSameReceiver(startPosition, nextReceiver, maxEntries));
             }
