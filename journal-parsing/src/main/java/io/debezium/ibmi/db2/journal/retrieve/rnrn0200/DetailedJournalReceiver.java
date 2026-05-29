@@ -34,7 +34,7 @@ public record DetailedJournalReceiver(JournalReceiverInfo info, BigInteger start
         }
         return info.receiver().equals(position.getReceiver());
     }
-    
+
     public boolean isSameReceiver(JournalProcessedPosition position) {
         if (info == null || position == null) {
             return false;
