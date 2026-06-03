@@ -42,7 +42,6 @@ import io.debezium.ibmi.db2.journal.retrieve.rjne0200.EntryHeaderDecoder;
 import io.debezium.ibmi.db2.journal.retrieve.rjne0200.FirstHeader;
 import io.debezium.ibmi.db2.journal.retrieve.rjne0200.FirstHeaderDecoder;
 import io.debezium.ibmi.db2.journal.retrieve.rjne0200.OffsetStatus;
-import io.debezium.ibmi.db2.journal.retrieve.rnrn0200.DetailedJournalReceiver;
 
 /**
  * based on the work of Stanley Vong see
@@ -421,8 +420,8 @@ public class RetrieveJournal {
     public long getTotalTransferred() {
         return totalTransferred;
     }
-    
-    public Optional<BigInteger> getPositionLag(JournalProcessedPosition current, JournalPosition end) throws Exception {    	
-		return journalReceivers.getPositionLag(current, end);
+
+    public Optional<BigInteger> getPositionLag(JournalProcessedPosition current, JournalPosition end) throws Exception {
+        return journalReceivers.getPositionLag(current, end);
     }
 }

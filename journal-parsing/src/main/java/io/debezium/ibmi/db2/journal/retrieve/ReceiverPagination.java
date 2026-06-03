@@ -7,6 +7,7 @@ package io.debezium.ibmi.db2.journal.retrieve;
 
 import java.math.BigInteger;
 import java.time.Instant;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -34,33 +35,35 @@ public class ReceiverPagination {
         maxServerSideEntriesBI = BigInteger.valueOf(maxServerSideEntries);
         this.journalInfo = journalInfo;
     }
-        
-    public Optional<BigInteger> getPositionLag(JournalProcessedPosition current, JournalPosition end) { 
-    	if (current.getReceiver().equals(end.getReceiver())) { // if we are on the same receiver as the end receiver we can just calculate the difference
-			return Optional.of(end.getOffset().subtract(current.getOffset()));
-		}
-    	
-    	if (cachedReceivers == null) {
-			return Optional.empty();
-		}
-    	boolean found = false;
-    	BigInteger lag = null;
-    	for (DetailedJournalReceiver dr: cachedReceivers) {
-			if (dr.isSameReceiver(current)) { // our current position to the end of the receiver we're processing
-				lag = dr.end().subtract(current.getOffset());
-			} else if (found) { // 
-				if (dr.isSameReceiver(end)) { // we found the end receiver possibly we have a delayed state so we just use the end passed in
-					lag = lag.add(end.getOffset().subtract(dr.start()));
-					return Optional.of(lag); 
-				} else { // neither the start nor the end just add on the range in this receiver
-					lag = lag.add(dr.end().subtract(dr.start()));
-				}
-			}
-		}
 
-    	// if we didn't find the expected end offset something is wrong
-    	log.info("cached receivers list doesn't contain either of the start or end");
-		return Optional.empty();
+    public Optional<BigInteger> getPositionLag(JournalProcessedPosition current, JournalPosition end) {
+        if (current.getReceiver().equals(end.getReceiver())) { // if we are on the same receiver as the end receiver we can just calculate the difference
+            return Optional.of(end.getOffset().subtract(current.getOffset()));
+        }
+
+        if (cachedReceivers == null) {
+            return Optional.empty();
+        }
+        boolean found = false;
+        BigInteger lag = null;
+        for (DetailedJournalReceiver dr : cachedReceivers) {
+            if (dr.isSameReceiver(current)) { // our current position to the end of the receiver we're processing
+                lag = dr.end().subtract(current.getOffset());
+            }
+            else if (found) { //
+                if (dr.isSameReceiver(end)) { // we found the end receiver possibly we have a delayed state so we just use the end passed in
+                    lag = lag.add(end.getOffset().subtract(dr.start()));
+                    return Optional.of(lag);
+                }
+                else { // neither the start nor the end just add on the range in this receiver
+                    lag = lag.add(dr.end().subtract(dr.start()));
+                }
+            }
+        }
+
+        // if we didn't find the expected end offset something is wrong
+        log.info("cached receivers list doesn't contain either of the start or end");
+        return Optional.empty();
     }
 
     Optional<PositionRange> findRange(AS400 as400, JournalProcessedPosition startPosition) throws Exception {

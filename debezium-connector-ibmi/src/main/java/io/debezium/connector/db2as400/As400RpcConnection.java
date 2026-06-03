@@ -194,22 +194,23 @@ public class As400RpcConnection implements AutoCloseable, Connect<AS400, IOExcep
 
     private void logOffsets(JournalProcessedPosition position, RetrievalState state) throws IOException, Exception {
         if (periodic.shouldLogRateLimted("offsets")) {
-        	Optional<DetailedJournalReceiver> delayedEndOpt = journalInfoRetrieval.getDelayedDetailedJournalReceiver(connection(), journalInfo);
-        	delayedEndOpt.ifPresent(delayedEnd -> {
-        		try {
-        		JournalPosition delayed = new JournalPosition(delayedEnd.end(), delayedEnd.info().receiver()); 
-        		final Optional<BigInteger> behind = retrieveJournal.getPositionLag(position, delayed);
-        		streamingMetrics.setJournalOffset(delayed.getOffset());
-        		behind.ifPresent(ba -> streamingMetrics.setJournalBehind(ba));
-                log.info("Current position diagnostics last call {}, header {}, behind {}, endReceiver {}", state, retrieveJournal.getFirstHeader(), behind,
-                		delayed);
-        		} catch (Exception e) {
-					log.warn("Failed to fetch journal info for metrics", e);
-				}
-        	});
+            Optional<DetailedJournalReceiver> delayedEndOpt = journalInfoRetrieval.getDelayedDetailedJournalReceiver(connection(), journalInfo);
+            delayedEndOpt.ifPresent(delayedEnd -> {
+                try {
+                    JournalPosition delayed = new JournalPosition(delayedEnd.end(), delayedEnd.info().receiver());
+                    final Optional<BigInteger> behind = retrieveJournal.getPositionLag(position, delayed);
+                    streamingMetrics.setJournalOffset(delayed.getOffset());
+                    behind.ifPresent(ba -> streamingMetrics.setJournalBehind(ba));
+                    log.info("Current position diagnostics last call {}, header {}, behind {}, endReceiver {}", state, retrieveJournal.getFirstHeader(), behind,
+                            delayed);
+                }
+                catch (Exception e) {
+                    log.warn("Failed to fetch journal info for metrics", e);
+                }
+            });
             streamingMetrics.setLastProcessedMs(position.getTimeOfLastProcessed().toEpochMilli());
         }
-    }   
+    }
 
     public interface BlockingReceiverConsumer {
         void accept(BigInteger offset, RetrieveJournal r, EntryHeader eheader) throws RpcException, InterruptedException, IOException, SQLNonTransientConnectionException;
