@@ -13,6 +13,7 @@ import java.sql.Types;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.ZoneOffset;
 import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -78,7 +79,20 @@ public class As400DefaultValueConverterTest {
 
         Object result = converter.convert(column, "'2023-10-15-14.30.45.123456'");
         LocalDateTime expected = LocalDateTime.of(2023, 10, 15, 14, 30, 45, 123456000);
-        assertThatObject(result).isEqualTo(expected);
+        assertThatObject(result).isEqualTo(toEpochMicros(expected));
+    }
+
+    @Test
+    public void testConvertCurrentTimestamp() {
+        Column column = Column.editor()
+                .name("timestamp_col")
+                .type("TIMESTAMP")
+                .jdbcType(Types.TIMESTAMP)
+                .create();
+
+        Object result = converter.convert(column, "CURRENT_TIMESTAMP");
+
+        assertThatObject(result).isEqualTo(0L);
     }
 
     @Test
@@ -380,6 +394,10 @@ public class As400DefaultValueConverterTest {
         // Should trim whitespace for integer types
         Object result = converter.convert(column, "  42  ");
         assertThatObject(result).isEqualTo(42);
+    }
+
+    private long toEpochMicros(LocalDateTime value) {
+        return value.toInstant(ZoneOffset.UTC).getEpochSecond() * 1_000_000 + value.getNano() / 1_000;
     }
 
     @Test
