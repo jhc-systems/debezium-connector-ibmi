@@ -12,6 +12,7 @@ import java.sql.Types;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.Optional;
@@ -106,11 +107,11 @@ public class As400DefaultValueConverter implements DefaultValueConverter {
             }
             case Types.TIMESTAMP: {
                 if ("CURRENT_TIMESTAMP".equals(value)) {
-                    return LocalDateTime.of(LocalDate.EPOCH, LocalTime.MIDNIGHT);
+                    return toEpochMicros(LocalDateTime.of(LocalDate.EPOCH, LocalTime.MIDNIGHT));
                 }
                 DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd-HH.mm.ss.SSSSSS");
                 try {
-                    return (LocalDateTime.parse(stripQuotes(value), formatter));
+                    return toEpochMicros(LocalDateTime.parse(stripQuotes(value), formatter));
                 }
                 catch (DateTimeParseException e) {
                     log.debug("Failed to parse timestamp default value: {}", value);
@@ -187,6 +188,10 @@ public class As400DefaultValueConverter implements DefaultValueConverter {
             return value.substring(1, value.length() - 1);
         }
         return value;
+    }
+
+    private long toEpochMicros(LocalDateTime value) {
+        return value.toInstant(ZoneOffset.UTC).getEpochSecond() * 1_000_000 + value.getNano() / 1_000;
     }
 
     /**
