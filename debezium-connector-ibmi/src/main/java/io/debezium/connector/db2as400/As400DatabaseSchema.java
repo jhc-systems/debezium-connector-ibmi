@@ -39,7 +39,7 @@ public class As400DatabaseSchema extends RelationalDatabaseSchema implements Sch
                                CdcSourceTaskContext<As400ConnectorConfig> taskContext) {
         super(config, topicSelector, config.getTableFilters().dataCollectionFilter(), config.getColumnFilter(),
                 new TableSchemaBuilder(new As400ValueConverters(config.getDecimalMode(), config),
-                        new As400DefaultValueConverter(), schemaNameAdjuster,
+                        new As400DefaultValueConverter(config.getDecimalMode()), schemaNameAdjuster,
                         customConverterRegistry, config.getSourceInfoStructMaker().schema(),
                         config.getFieldNamer(), false, config.getEventConvertingFailureHandlingMode()),
                 false, config.getKeyMapper(), taskContext);
