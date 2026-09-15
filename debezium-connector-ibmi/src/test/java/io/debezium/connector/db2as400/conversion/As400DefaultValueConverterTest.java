@@ -16,10 +16,12 @@ import java.time.LocalTime;
 import java.time.ZoneOffset;
 import java.util.Optional;
 
+import org.apache.kafka.connect.data.SchemaBuilder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
+import io.debezium.jdbc.JdbcValueConverters.DecimalMode;
 import io.debezium.relational.Column;
 
 @Tag("UnitTests")
@@ -218,6 +220,22 @@ public class As400DefaultValueConverterTest {
 
         Object result = converter.convert(column, "123.456");
         assertThatObject(result).isEqualTo(new BigDecimal("123.456"));
+    }
+
+    @Test
+    public void testConvertDecimalDefaultForStringMode() {
+        Column column = Column.editor()
+                .name("decimal_col")
+                .type("DECIMAL")
+                .jdbcType(Types.DECIMAL)
+                .length(10)
+                .scale(2)
+                .create();
+
+        Object result = new As400DefaultValueConverter(DecimalMode.STRING).convert(column, "0.00");
+
+        assertThatObject(result).isEqualTo("0.00");
+        SchemaBuilder.string().defaultValue(result);
     }
 
     @Test

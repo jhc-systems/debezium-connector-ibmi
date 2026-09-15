@@ -22,6 +22,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.debezium.annotation.Immutable;
+import io.debezium.data.SpecialValueDecimal;
+import io.debezium.jdbc.JdbcValueConverters.DecimalMode;
 import io.debezium.relational.Column;
 import io.debezium.relational.DefaultValueConverter;
 import io.debezium.util.Collect;
@@ -34,6 +36,7 @@ import io.debezium.util.Collect;
 public class As400DefaultValueConverter implements DefaultValueConverter {
 
     private static final Logger log = LoggerFactory.getLogger(As400DefaultValueConverter.class);
+    private final DecimalMode decimalMode;
 
     @Immutable
     private static final Set<Integer> TRIM_DATA_TYPES = Collect.unmodifiableSet(Types.TINYINT, Types.INTEGER,
@@ -41,6 +44,11 @@ public class As400DefaultValueConverter implements DefaultValueConverter {
             Types.NUMERIC, Types.DECIMAL, Types.FLOAT, Types.DOUBLE, Types.REAL);
 
     public As400DefaultValueConverter() {
+        this(DecimalMode.PRECISE);
+    }
+
+    public As400DefaultValueConverter(DecimalMode decimalMode) {
+        this.decimalMode = decimalMode != null ? decimalMode : DecimalMode.PRECISE;
     }
 
     /**
@@ -215,8 +223,10 @@ public class As400DefaultValueConverter implements DefaultValueConverter {
      * @return the converted value;
      */
     private Object convertToDecimal(Column column, String value) {
-        return column.scale().isPresent() ? new BigDecimal(value).setScale(column.scale().get(), RoundingMode.HALF_UP)
+        BigDecimal decimal = column.scale().isPresent()
+                ? new BigDecimal(value).setScale(column.scale().get(), RoundingMode.HALF_UP)
                 : new BigDecimal(value);
+        return SpecialValueDecimal.fromLogical(new SpecialValueDecimal(decimal), decimalMode, column.name());
     }
 
     /**
