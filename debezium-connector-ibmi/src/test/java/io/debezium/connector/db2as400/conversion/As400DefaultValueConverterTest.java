@@ -44,7 +44,8 @@ public class As400DefaultValueConverterTest {
 
         Object result = converter.convert(column, "'2023-10-15'");
 
-        assertThatObject(result).isEqualTo(LocalDate.of(2023, 10, 15).toEpochDay());
+        // io.debezium.time.Date schema is INT32 epoch-day
+        assertThatObject(result).isEqualTo((int) LocalDate.of(2023, 10, 15).toEpochDay());
     }
 
     @Test
@@ -56,7 +57,19 @@ public class As400DefaultValueConverterTest {
                 .create();
 
         Object result = converter.convert(column, "2023-10-15");
-        assertThatObject(result).isEqualTo(LocalDate.of(2023, 10, 15).toEpochDay());
+        assertThatObject(result).isEqualTo((int) LocalDate.of(2023, 10, 15).toEpochDay());
+    }
+
+    @Test
+    public void testConvertCurrentDate() {
+        Column column = Column.editor()
+                .name("date_col")
+                .type("DATE")
+                .jdbcType(Types.DATE)
+                .create();
+
+        Object result = converter.convert(column, "CURRENT_DATE");
+        assertThatObject(result).isEqualTo((int) LocalDate.EPOCH.toEpochDay());
     }
 
     @Test
@@ -118,8 +131,8 @@ public class As400DefaultValueConverterTest {
                 .create();
 
         Object result = converter.convert(column, "'14.30.45'");
-        LocalTime expected = LocalTime.of(14, 30, 45);
-        assertThatObject(result).isEqualTo(expected);
+        // io.debezium.time.Time schema is INT32 millis since midnight
+        assertThatObject(result).isEqualTo((int) (LocalTime.of(14, 30, 45).toSecondOfDay() * 1000L));
     }
 
     @Test
@@ -131,8 +144,19 @@ public class As400DefaultValueConverterTest {
                 .create();
 
         Object result = converter.convert(column, "14.30.45");
-        LocalTime expected = LocalTime.of(14, 30, 45);
-        assertThatObject(result).isEqualTo(expected);
+        assertThatObject(result).isEqualTo((int) (LocalTime.of(14, 30, 45).toSecondOfDay() * 1000L));
+    }
+
+    @Test
+    public void testConvertCurrentTime() {
+        Column column = Column.editor()
+                .name("time_col")
+                .type("TIME")
+                .jdbcType(Types.TIME)
+                .create();
+
+        Object result = converter.convert(column, "CURRENT_TIME");
+        assertThatObject(result).isEqualTo(0);
     }
 
     @Test
@@ -194,7 +218,55 @@ public class As400DefaultValueConverterTest {
                 .create();
 
         Object result = converter.convert(column, "123");
-        assertThatObject(result).isEqualTo(123);
+        assertThatObject(result).isEqualTo((short) 123);
+    }
+
+    @Test
+    public void testConvertBigInt() {
+        Column column = Column.editor()
+                .name("bigint_col")
+                .type("BIGINT")
+                .jdbcType(Types.BIGINT)
+                .create();
+
+        Object result = converter.convert(column, "9223372036");
+        assertThatObject(result).isEqualTo(9223372036L);
+    }
+
+    @Test
+    public void testConvertInvalidBigInt() {
+        Column column = Column.editor()
+                .name("bigint_col")
+                .type("BIGINT")
+                .jdbcType(Types.BIGINT)
+                .create();
+
+        Object result = converter.convert(column, "not-a-bigint");
+        assertThatObject(result).isNull();
+    }
+
+    @Test
+    public void testConvertFloat() {
+        Column column = Column.editor()
+                .name("float_col")
+                .type("FLOAT")
+                .jdbcType(Types.FLOAT)
+                .create();
+
+        Object result = converter.convert(column, "1.5");
+        assertThatObject(result).isEqualTo(1.5f);
+    }
+
+    @Test
+    public void testConvertReal() {
+        Column column = Column.editor()
+                .name("real_col")
+                .type("REAL")
+                .jdbcType(Types.REAL)
+                .create();
+
+        Object result = converter.convert(column, "2.5");
+        assertThatObject(result).isEqualTo(2.5f);
     }
 
     @Test
