@@ -6,6 +6,11 @@
 
 package io.debezium.connector.db2as400.conversion;
 
+/*
+ * Copyright Debezium Authors.
+ *
+ * Licensed under the Apache Software License version 2.0, available at http://www.apache.org/licenses/LICENSE-2.0
+ */
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.sql.Types;
@@ -102,11 +107,12 @@ public class As400DefaultValueConverter implements DefaultValueConverter {
         switch (column.jdbcType()) {
             case Types.DATE: {
                 if ("CURRENT_DATE".equals(value)) {
-                    return LocalDate.EPOCH; // default debezium connector behaviour
+                    return (int) LocalDate.EPOCH.toEpochDay(); // default debezium connector behaviour
                 }
                 DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
                 try {
-                    return (LocalDate.parse(stripQuotes(value), formatter).toEpochDay());
+                    // io.debezium.time.Date schema is INT32, toEpochDay() returns a long
+                    return (int) LocalDate.parse(stripQuotes(value), formatter).toEpochDay();
                 }
                 catch (DateTimeParseException e) {
                     log.debug("Failed to parse date default value: {}", value);
@@ -133,11 +139,11 @@ public class As400DefaultValueConverter implements DefaultValueConverter {
             }
             case Types.TIME:
                 if ("CURRENT_TIME".equals(value)) {
-                    return LocalTime.MIDNIGHT;
+                    return 0; // io.debezium.time.Time schema is INT32 millis since midnight
                 }
                 try {
                     DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH.mm.ss");
-                    return LocalTime.parse(stripQuotes(value), formatter);
+                    return (int) (LocalTime.parse(stripQuotes(value), formatter).toSecondOfDay() * 1000L);
                 }
                 catch (DateTimeParseException e) {
                     log.debug("Failed to parse time default value: {}", value);
@@ -149,6 +155,13 @@ public class As400DefaultValueConverter implements DefaultValueConverter {
                 return convertToBits(column, value);
 
             case Types.BIGINT:
+                try {
+                    return Long.parseLong(value);
+                }
+                catch (NumberFormatException e) {
+                    log.debug("Failed to parse bigint default value: {}", value);
+                    return null;
+                }
             case Types.NUMERIC:
             case Types.DECIMAL:
                 try {
@@ -160,8 +173,15 @@ public class As400DefaultValueConverter implements DefaultValueConverter {
                 }
 
             case Types.FLOAT:
-            case Types.DOUBLE:
             case Types.REAL:
+                try {
+                    return Float.valueOf(value);
+                }
+                catch (NumberFormatException e) {
+                    log.debug("Failed to parse float default value: {}", value);
+                    return null;
+                }
+            case Types.DOUBLE:
                 try {
                     return convertToDouble(value);
                 }
@@ -179,9 +199,16 @@ public class As400DefaultValueConverter implements DefaultValueConverter {
                 }
                 return stripQuotes(value);
             case Types.INTEGER:
-            case Types.SMALLINT:
                 try {
                     return Integer.parseInt(value);
+                }
+                catch (NumberFormatException e) {
+                    log.debug("Failed to parse integer default value: {}", value);
+                    return null;
+                }
+            case Types.SMALLINT:
+                try {
+                    return Short.parseShort(value);
                 }
                 catch (NumberFormatException e) {
                     log.debug("Failed to parse integer default value: {}", value);
