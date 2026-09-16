@@ -12,6 +12,7 @@ import org.apache.kafka.connect.data.Field;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.debezium.connector.db2as400.As400ConnectorConfig.CharSequenceTrimMode;
 import io.debezium.jdbc.JdbcValueConverters;
 import io.debezium.jdbc.TemporalPrecisionMode;
 import io.debezium.relational.Column;
@@ -22,11 +23,11 @@ import io.debezium.relational.Column;
  */
 public class As400ValueConverters extends JdbcValueConverters {
     private static final Logger log = LoggerFactory.getLogger(As400ValueConverters.class);
-    private final As400ConnectorConfig config;
+    private final CharSequenceTrimMode trimMode;
 
-    public As400ValueConverters(DecimalMode decimalMode, As400ConnectorConfig config) {
+    public As400ValueConverters(DecimalMode decimalMode, CharSequenceTrimMode trimMode) {
         super(decimalMode, TemporalPrecisionMode.ADAPTIVE, ZoneOffset.UTC, null, null, null);
-        this.config = config;
+        this.trimMode = trimMode;
     }
 
     /**
@@ -53,7 +54,7 @@ public class As400ValueConverters extends JdbcValueConverters {
                 String fname = (fieldDefn == null) ? "" : String.format(" fieldDefn name %s", fieldDefn.name());
                 log.warn("removed binary data from{}{}", cname, fname);
             }
-            return super.convertString(column, fieldDefn, config.getCharSequenceTrimMode().strip(fixed.value));
+            return super.convertString(column, fieldDefn, trimMode.strip(fixed.value));
         }
         return super.convertString(column, fieldDefn, data);
     }
