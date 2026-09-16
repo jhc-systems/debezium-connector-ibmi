@@ -38,7 +38,7 @@ public class As400DatabaseSchema extends RelationalDatabaseSchema implements Sch
                                TopicNamingStrategy<TableId> topicSelector, SchemaNameAdjuster schemaNameAdjuster, CustomConverterRegistry customConverterRegistry,
                                CdcSourceTaskContext<As400ConnectorConfig> taskContext) {
         super(config, topicSelector, config.getTableFilters().dataCollectionFilter(), config.getColumnFilter(),
-                new TableSchemaBuilder(new As400ValueConverters(config.getDecimalMode(), config),
+                new TableSchemaBuilder(new As400ValueConverters(config.getDecimalMode(), config.getCharSequenceTrimMode()),
                         new As400DefaultValueConverter(config.getDecimalMode()), schemaNameAdjuster,
                         customConverterRegistry, config.getSourceInfoStructMaker().schema(),
                         config.getFieldNamer(), false, config.getEventConvertingFailureHandlingMode()),
