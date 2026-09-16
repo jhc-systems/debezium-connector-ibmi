@@ -46,7 +46,8 @@ public class As400DefaultValueConverter implements DefaultValueConverter {
     @Immutable
     private static final Set<Integer> TRIM_DATA_TYPES = Collect.unmodifiableSet(Types.TINYINT, Types.INTEGER,
             Types.DATE, Types.TIMESTAMP, Types.TIMESTAMP_WITH_TIMEZONE, Types.TIME, Types.BOOLEAN, Types.BIT,
-            Types.NUMERIC, Types.DECIMAL, Types.FLOAT, Types.DOUBLE, Types.REAL);
+            Types.NUMERIC, Types.DECIMAL, Types.FLOAT, Types.DOUBLE, Types.REAL, Types.BINARY, Types.VARBINARY,
+            Types.LONGVARBINARY);
 
     public As400DefaultValueConverter() {
         this(DecimalMode.PRECISE);
@@ -153,6 +154,10 @@ public class As400DefaultValueConverter implements DefaultValueConverter {
                 return convertToBoolean(value);
             case Types.BIT:
                 return convertToBits(column, value);
+            case Types.BINARY:
+            case Types.VARBINARY:
+            case Types.LONGVARBINARY:
+                return convertToBinary(value);
 
             case Types.BIGINT:
                 try {
@@ -291,6 +296,32 @@ public class As400DefaultValueConverter implements DefaultValueConverter {
             value = value.substring(0, s);
         }
         return bytes;
+    }
+
+    private Object convertToBinary(String value) {
+        String hex = stripBinaryLiteralPrefix(value);
+        if (hex == null || hex.length() % 2 != 0) {
+            return null;
+        }
+
+        byte[] bytes = new byte[hex.length() / 2];
+        try {
+            for (int i = 0; i < bytes.length; i++) {
+                bytes[i] = (byte) Integer.parseInt(hex.substring(i * 2, i * 2 + 2), 16);
+            }
+            return bytes;
+        }
+        catch (NumberFormatException e) {
+            log.debug("Failed to parse binary default value: {}", value);
+            return null;
+        }
+    }
+
+    private String stripBinaryLiteralPrefix(String value) {
+        if ((value.startsWith("BX'") || value.startsWith("X'")) && value.endsWith("'")) {
+            return value.substring(value.indexOf('\'') + 1, value.length() - 1);
+        }
+        return null;
     }
 
     /**
