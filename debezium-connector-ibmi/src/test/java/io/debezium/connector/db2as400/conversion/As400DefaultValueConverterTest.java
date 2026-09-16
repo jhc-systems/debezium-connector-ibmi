@@ -413,6 +413,47 @@ public class As400DefaultValueConverterTest {
     }
 
     @Test
+    public void testConvertBinary() {
+        Column column = Column.editor()
+                .name("binary_col")
+                .type("BINARY")
+                .jdbcType(Types.BINARY)
+                .length(1)
+                .create();
+
+        Object result = converter.convert(column, "BX'01'");
+        assertThatObject(result).isInstanceOf(byte[].class);
+        assertThat((byte[]) result).containsExactly((byte) 0x01);
+    }
+
+    @Test
+    public void testConvertVarbinary() {
+        Column column = Column.editor()
+                .name("varbinary_col")
+                .type("VARBINARY")
+                .jdbcType(Types.VARBINARY)
+                .length(8)
+                .create();
+
+        Object result = converter.convert(column, "BX'01020304'");
+        assertThatObject(result).isInstanceOf(byte[].class);
+        assertThat((byte[]) result).containsExactly((byte) 0x01, (byte) 0x02, (byte) 0x03, (byte) 0x04);
+    }
+
+    @Test
+    public void testConvertInvalidBinary() {
+        Column column = Column.editor()
+                .name("binary_col")
+                .type("BINARY")
+                .jdbcType(Types.BINARY)
+                .length(1)
+                .create();
+
+        Object result = converter.convert(column, "BX'0G'");
+        assertThatObject(result).isNull();
+    }
+
+    @Test
     public void testConvertNull() {
         Column column = Column.editor()
                 .name("test_col")
