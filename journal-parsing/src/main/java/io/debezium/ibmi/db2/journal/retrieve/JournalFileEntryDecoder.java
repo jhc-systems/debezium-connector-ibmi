@@ -56,8 +56,10 @@ public abstract class JournalFileEntryDecoder implements JournalEntryDeocder<Obj
             int length = (int) l;
             isNull = new boolean[length];
             for (int i = 0; i < length; i++) {
-                // BCD bottom 4 bits
-                isNull[i] = (data[offset + nullEntryOffset + 4 + i] & 15) == 1; // 1 = is null, 0 = not null, 9 = default value returned
+            	int isNull1 = (data[offset + nullEntryOffset + 4 + i] & 15) ; // 1 = is null, 0 = not null, 9 = default value returned
+                // BCD bottom 4 bits: 0 = not null, 1 = is null, 9 = default value returned (also treat as null - no real value was captured)
+                int indicator = data[offset + nullEntryOffset + 4 + i] & 15;
+                isNull[i] = indicator == 1 || indicator == 9;
             }
         }
         return isNull;
