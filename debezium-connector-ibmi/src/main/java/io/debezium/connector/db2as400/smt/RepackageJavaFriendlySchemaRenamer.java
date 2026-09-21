@@ -106,7 +106,8 @@ public class RepackageJavaFriendlySchemaRenamer<R extends ConnectRecord<R>> impl
             Struct origStruct = (Struct) keyOrValue;
             Struct newStruct = new Struct(updatedSchema);
             for (Field field : updatedSchema.fields()) {
-                newStruct.put(field, origStruct.get(field));
+                // avoid Struct.get() which silently replaces a null value with the field's default
+                newStruct.put(field, origStruct.getWithoutDefault(field.name()));
             }
             return newStruct;
         }
