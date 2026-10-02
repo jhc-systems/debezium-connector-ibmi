@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory;
 
 import io.debezium.connector.db2as400.As400ConnectorConfig.CharSequenceTrimMode;
 import io.debezium.jdbc.JdbcValueConverters;
+import io.debezium.jdbc.TemporalPrecisionMode;
 import io.debezium.relational.Column;
 
 /**
