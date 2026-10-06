@@ -6,11 +6,6 @@
 
 package io.debezium.connector.db2as400.conversion;
 
-/*
- * Copyright Debezium Authors.
- *
- * Licensed under the Apache Software License version 2.0, available at http://www.apache.org/licenses/LICENSE-2.0
- */
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.sql.Types;
