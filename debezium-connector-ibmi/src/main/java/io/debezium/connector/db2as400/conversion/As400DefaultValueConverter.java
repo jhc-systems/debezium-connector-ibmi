@@ -8,22 +8,26 @@ package io.debezium.connector.db2as400.conversion;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.sql.Date;
+import java.sql.Time;
+import java.sql.Timestamp;
 import java.sql.Types;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.Optional;
 import java.util.Set;
 
+import org.apache.kafka.connect.data.Field;
+import org.apache.kafka.connect.data.Schema;
+import org.apache.kafka.connect.data.SchemaBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.debezium.annotation.Immutable;
-import io.debezium.data.SpecialValueDecimal;
-import io.debezium.jdbc.JdbcValueConverters.DecimalMode;
+import io.debezium.jdbc.JdbcValueConverters;
 import io.debezium.relational.Column;
 import io.debezium.relational.DefaultValueConverter;
 import io.debezium.util.Collect;
@@ -36,7 +40,7 @@ import io.debezium.util.Collect;
 public class As400DefaultValueConverter implements DefaultValueConverter {
 
     private static final Logger log = LoggerFactory.getLogger(As400DefaultValueConverter.class);
-    private final DecimalMode decimalMode;
+    private final JdbcValueConverters valueConverters;
 
     @Immutable
     private static final Set<Integer> TRIM_DATA_TYPES = Collect.unmodifiableSet(Types.TINYINT, Types.INTEGER,
@@ -44,12 +48,8 @@ public class As400DefaultValueConverter implements DefaultValueConverter {
             Types.NUMERIC, Types.DECIMAL, Types.FLOAT, Types.DOUBLE, Types.REAL, Types.BINARY, Types.VARBINARY,
             Types.LONGVARBINARY);
 
-    public As400DefaultValueConverter() {
-        this(DecimalMode.PRECISE);
-    }
-
-    public As400DefaultValueConverter(DecimalMode decimalMode) {
-        this.decimalMode = decimalMode != null ? decimalMode : DecimalMode.PRECISE;
+    public As400DefaultValueConverter(JdbcValueConverters valueConverters) {
+        this.valueConverters = valueConverters;
     }
 
     /**
@@ -64,11 +64,18 @@ public class As400DefaultValueConverter implements DefaultValueConverter {
     @Override
     public Optional<Object> parseDefaultValue(Column column, String defaultValueExpression) {
         try {
-            Object logicalDefaultValue = convert(column, defaultValueExpression);
-            if (logicalDefaultValue == null) {
+            Object parsed = convert(column, defaultValueExpression);
+            if (parsed == null) {
                 return Optional.empty();
             }
-            return Optional.of(logicalDefaultValue);
+            // delegate so the default always matches the schema of the field value
+            SchemaBuilder schemaBuilder = valueConverters.schemaBuilder(column);
+            if (schemaBuilder == null) {
+                return Optional.of(parsed);
+            }
+            Schema schema = schemaBuilder.build();
+            Field field = new Field(column.name(), -1, schema);
+            return Optional.ofNullable(valueConverters.converter(column, field).convert(parsed));
         }
         catch (Exception e) {
             log.error("default conversion failed, please report", e);
@@ -77,8 +84,8 @@ public class As400DefaultValueConverter implements DefaultValueConverter {
     }
 
     /**
-     * Converts a default value from the expected format to a logical object
-     * acceptable by the main JDBC converter.
+     * Parses a default value into the Java type the JDBC driver returns for the
+     * column (e.g. {@link Timestamp}), which the value converters accept as input.
      *
      * @param column column definition
      * @param value  string formatted default value
@@ -103,12 +110,11 @@ public class As400DefaultValueConverter implements DefaultValueConverter {
         switch (column.jdbcType()) {
             case Types.DATE: {
                 if ("CURRENT_DATE".equals(value)) {
-                    return (int) LocalDate.EPOCH.toEpochDay(); // default debezium connector behaviour
+                    return Date.valueOf(LocalDate.EPOCH); // default debezium connector behaviour
                 }
                 DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
                 try {
-                    // io.debezium.time.Date schema is INT32, toEpochDay() returns a long
-                    return (int) LocalDate.parse(stripQuotes(value), formatter).toEpochDay();
+                    return Date.valueOf(LocalDate.parse(stripQuotes(value), formatter));
                 }
                 catch (DateTimeParseException e) {
                     log.debug("Failed to parse date default value: {}", value);
@@ -117,11 +123,11 @@ public class As400DefaultValueConverter implements DefaultValueConverter {
             }
             case Types.TIMESTAMP: {
                 if ("CURRENT_TIMESTAMP".equals(value)) {
-                    return toEpochMicros(LocalDateTime.of(LocalDate.EPOCH, LocalTime.MIDNIGHT));
+                    return Timestamp.valueOf(LocalDateTime.of(LocalDate.EPOCH, LocalTime.MIDNIGHT));
                 }
                 DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd-HH.mm.ss.SSSSSS");
                 try {
-                    return toEpochMicros(LocalDateTime.parse(stripQuotes(value), formatter));
+                    return Timestamp.valueOf(LocalDateTime.parse(stripQuotes(value), formatter));
                 }
                 catch (DateTimeParseException e) {
                     log.debug("Failed to parse timestamp default value: {}", value);
@@ -135,11 +141,11 @@ public class As400DefaultValueConverter implements DefaultValueConverter {
             }
             case Types.TIME:
                 if ("CURRENT_TIME".equals(value)) {
-                    return 0; // io.debezium.time.Time schema is INT32 millis since midnight
+                    return Time.valueOf(LocalTime.MIDNIGHT);
                 }
                 try {
                     DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH.mm.ss");
-                    return (int) (LocalTime.parse(stripQuotes(value), formatter).toSecondOfDay() * 1000L);
+                    return Time.valueOf(LocalTime.parse(stripQuotes(value), formatter));
                 }
                 catch (DateTimeParseException e) {
                     log.debug("Failed to parse time default value: {}", value);
@@ -225,10 +231,6 @@ public class As400DefaultValueConverter implements DefaultValueConverter {
         return value;
     }
 
-    private long toEpochMicros(LocalDateTime value) {
-        return value.toInstant(ZoneOffset.UTC).getEpochSecond() * 1_000_000 + value.getNano() / 1_000;
-    }
-
     /**
      * Converts a string object for an expected JDBC type of {@link Types#DOUBLE}.
      *
@@ -253,7 +255,7 @@ public class As400DefaultValueConverter implements DefaultValueConverter {
         BigDecimal decimal = column.scale().isPresent()
                 ? new BigDecimal(value).setScale(column.scale().get(), RoundingMode.HALF_UP)
                 : new BigDecimal(value);
-        return SpecialValueDecimal.fromLogical(new SpecialValueDecimal(decimal), decimalMode, column.name());
+        return decimal;
     }
 
     /**

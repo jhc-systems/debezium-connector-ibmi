@@ -21,7 +21,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
+import io.debezium.connector.db2as400.As400ConnectorConfig.CharSequenceTrimMode;
+import io.debezium.connector.db2as400.As400ValueConverters;
 import io.debezium.jdbc.JdbcValueConverters.DecimalMode;
+import io.debezium.jdbc.TemporalPrecisionMode;
 import io.debezium.relational.Column;
 
 @Tag("UnitTests")
@@ -31,7 +34,38 @@ public class As400DefaultValueConverterTest {
 
     @BeforeEach
     public void setUp() {
-        converter = new As400DefaultValueConverter();
+        converter = new As400DefaultValueConverter(valueConverters(DecimalMode.PRECISE, TemporalPrecisionMode.ADAPTIVE_TIME_MICROSECONDS));
+    }
+
+    private static As400ValueConverters valueConverters(DecimalMode decimalMode, TemporalPrecisionMode temporalMode) {
+        return new As400ValueConverters(decimalMode, temporalMode, CharSequenceTrimMode.NONE);
+    }
+
+    @Test
+    public void testParseDefaultTimestampMillisPrecision() {
+        Column column = Column.editor().name("ts").type("TIMESTAMP").jdbcType(Types.TIMESTAMP).length(26).scale(3).create();
+
+        Optional<Object> result = converter.parseDefaultValue(column, "'2023-10-15-14.30.45.123000'");
+        long expected = LocalDateTime.of(2023, 10, 15, 14, 30, 45, 123_000_000).toInstant(ZoneOffset.UTC).toEpochMilli();
+        assertThatObject(result.get()).isEqualTo(expected);
+    }
+
+    @Test
+    public void testParseDefaultTimestampConnectMode() {
+        As400DefaultValueConverter connectConverter = new As400DefaultValueConverter(valueConverters(DecimalMode.PRECISE, TemporalPrecisionMode.CONNECT));
+        Column column = Column.editor().name("ts").type("TIMESTAMP").jdbcType(Types.TIMESTAMP).length(26).scale(6).create();
+
+        Optional<Object> result = connectConverter.parseDefaultValue(column, "'2023-10-15-14.30.45.123000'");
+        assertThatObject(result.get()).isInstanceOf(java.util.Date.class);
+    }
+
+    @Test
+    public void testParseDefaultDateConnectMode() {
+        As400DefaultValueConverter connectConverter = new As400DefaultValueConverter(valueConverters(DecimalMode.PRECISE, TemporalPrecisionMode.CONNECT));
+        Column column = Column.editor().name("d").type("DATE").jdbcType(Types.DATE).create();
+
+        Optional<Object> result = connectConverter.parseDefaultValue(column, "'2023-10-15'");
+        assertThatObject(result.get()).isInstanceOf(java.util.Date.class);
     }
 
     @Test
@@ -44,8 +78,7 @@ public class As400DefaultValueConverterTest {
 
         Object result = converter.convert(column, "'2023-10-15'");
 
-        // io.debezium.time.Date schema is INT32 epoch-day
-        assertThatObject(result).isEqualTo((int) LocalDate.of(2023, 10, 15).toEpochDay());
+        assertThatObject(result).isEqualTo(java.sql.Date.valueOf(LocalDate.of(2023, 10, 15)));
     }
 
     @Test
@@ -57,7 +90,7 @@ public class As400DefaultValueConverterTest {
                 .create();
 
         Object result = converter.convert(column, "2023-10-15");
-        assertThatObject(result).isEqualTo((int) LocalDate.of(2023, 10, 15).toEpochDay());
+        assertThatObject(result).isEqualTo(java.sql.Date.valueOf(LocalDate.of(2023, 10, 15)));
     }
 
     @Test
@@ -69,7 +102,7 @@ public class As400DefaultValueConverterTest {
                 .create();
 
         Object result = converter.convert(column, "CURRENT_DATE");
-        assertThatObject(result).isEqualTo((int) LocalDate.EPOCH.toEpochDay());
+        assertThatObject(result).isEqualTo(java.sql.Date.valueOf(LocalDate.EPOCH));
     }
 
     @Test
@@ -94,7 +127,7 @@ public class As400DefaultValueConverterTest {
 
         Object result = converter.convert(column, "'2023-10-15-14.30.45.123456'");
         LocalDateTime expected = LocalDateTime.of(2023, 10, 15, 14, 30, 45, 123456000);
-        assertThatObject(result).isEqualTo(toEpochMicros(expected));
+        assertThatObject(result).isEqualTo(java.sql.Timestamp.valueOf(expected));
     }
 
     @Test
@@ -107,7 +140,7 @@ public class As400DefaultValueConverterTest {
 
         Object result = converter.convert(column, "CURRENT_TIMESTAMP");
 
-        assertThatObject(result).isEqualTo(0L);
+        assertThatObject(result).isEqualTo(java.sql.Timestamp.valueOf(LocalDateTime.of(LocalDate.EPOCH, LocalTime.MIDNIGHT)));
     }
 
     @Test
@@ -131,8 +164,7 @@ public class As400DefaultValueConverterTest {
                 .create();
 
         Object result = converter.convert(column, "'14.30.45'");
-        // io.debezium.time.Time schema is INT32 millis since midnight
-        assertThatObject(result).isEqualTo((int) (LocalTime.of(14, 30, 45).toSecondOfDay() * 1000L));
+        assertThatObject(result).isEqualTo(java.sql.Time.valueOf(LocalTime.of(14, 30, 45)));
     }
 
     @Test
@@ -144,7 +176,7 @@ public class As400DefaultValueConverterTest {
                 .create();
 
         Object result = converter.convert(column, "14.30.45");
-        assertThatObject(result).isEqualTo((int) (LocalTime.of(14, 30, 45).toSecondOfDay() * 1000L));
+        assertThatObject(result).isEqualTo(java.sql.Time.valueOf(LocalTime.of(14, 30, 45)));
     }
 
     @Test
@@ -156,7 +188,7 @@ public class As400DefaultValueConverterTest {
                 .create();
 
         Object result = converter.convert(column, "CURRENT_TIME");
-        assertThatObject(result).isEqualTo(0);
+        assertThatObject(result).isEqualTo(java.sql.Time.valueOf(LocalTime.MIDNIGHT));
     }
 
     @Test
@@ -304,7 +336,8 @@ public class As400DefaultValueConverterTest {
                 .scale(2)
                 .create();
 
-        Object result = new As400DefaultValueConverter(DecimalMode.STRING).convert(column, "0.00");
+        Object result = new As400DefaultValueConverter(valueConverters(DecimalMode.STRING, TemporalPrecisionMode.ADAPTIVE_TIME_MICROSECONDS))
+                .parseDefaultValue(column, "0.00").get();
 
         assertThatObject(result).isEqualTo("0.00");
         SchemaBuilder.string().defaultValue(result);
