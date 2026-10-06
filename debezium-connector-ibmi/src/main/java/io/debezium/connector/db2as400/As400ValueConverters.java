@@ -25,8 +25,8 @@ public class As400ValueConverters extends JdbcValueConverters {
     private static final Logger log = LoggerFactory.getLogger(As400ValueConverters.class);
     private final CharSequenceTrimMode trimMode;
 
-    public As400ValueConverters(DecimalMode decimalMode, CharSequenceTrimMode trimMode) {
-        super(decimalMode, TemporalPrecisionMode.ADAPTIVE, ZoneOffset.UTC, null, null, null);
+    public As400ValueConverters(DecimalMode decimalMode, TemporalPrecisionMode temporalPrecisionMode, CharSequenceTrimMode trimMode) {
+        super(decimalMode, temporalPrecisionMode, ZoneOffset.UTC, null, null, null);
         this.trimMode = trimMode;
     }
 
