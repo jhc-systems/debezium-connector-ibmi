@@ -41,6 +41,14 @@ public class As400DefaultValueConverterTest {
         return new As400ValueConverters(decimalMode, temporalMode, CharSequenceTrimMode.NONE);
     }
 
+    @Test // see https://github.com/debezium/dbz/issues/2153
+    public void testTimePrecisionDefaultsToMinusOneWhenScaleIsMissing() {
+        TestableAs400ValueConverters valueConverters = new TestableAs400ValueConverters();
+        Column column = Column.editor().name("ts").type("TIMESTAMP").jdbcType(Types.TIMESTAMP).length(26).create();
+
+        assertThat(valueConverters.timePrecision(column)).isEqualTo(-1);
+    }
+
     @Test
     public void testParseDefaultTimestampMillisPrecision() {
         Column column = Column.editor().name("ts").type("TIMESTAMP").jdbcType(Types.TIMESTAMP).length(26).scale(3).create();
@@ -574,5 +582,15 @@ public class As400DefaultValueConverterTest {
 
         Object result = converter.convert(column, "some value");
         assertThatObject(result).isNull();
+    }
+
+    private static class TestableAs400ValueConverters extends As400ValueConverters {
+        private TestableAs400ValueConverters() {
+            super(DecimalMode.PRECISE, TemporalPrecisionMode.ADAPTIVE_TIME_MICROSECONDS, CharSequenceTrimMode.NONE);
+        }
+
+        private int timePrecision(Column column) {
+            return getTimePrecision(column);
+        }
     }
 }

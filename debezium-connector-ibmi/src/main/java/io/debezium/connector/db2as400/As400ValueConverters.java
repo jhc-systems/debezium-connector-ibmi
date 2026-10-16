@@ -38,7 +38,7 @@ public class As400ValueConverters extends JdbcValueConverters {
      */
     @Override
     protected int getTimePrecision(Column column) {
-        return column.scale().orElse(column.length());
+        return column.scale().orElse(-1);
     }
 
     @Override
