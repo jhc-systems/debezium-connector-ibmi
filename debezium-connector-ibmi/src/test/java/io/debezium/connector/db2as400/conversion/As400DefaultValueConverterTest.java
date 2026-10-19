@@ -425,6 +425,30 @@ public class As400DefaultValueConverterTest {
     }
 
     @Test
+    public void testConvertCharSingleQuote() {
+        Column column = Column.editor()
+                .name("char_col")
+                .type("CHAR")
+                .jdbcType(Types.CHAR)
+                .create();
+
+        assertThatObject(converter.convert(column, "''''")).isEqualTo("'");
+        assertThatObject(converter.convert(column, "'")).isEqualTo("'");
+    }
+
+    @Test
+    public void testConvertVarcharEscapedQuote() {
+        Column column = Column.editor()
+                .name("varchar_col")
+                .type("VARCHAR")
+                .jdbcType(Types.VARCHAR)
+                .create();
+
+        Object result = converter.convert(column, "'o''brian'");
+        assertThatObject(result).isEqualTo("o'brian");
+    }
+
+    @Test
     public void testConvertBitSingleBit() {
         Column column = Column.editor()
                 .name("bit_col")

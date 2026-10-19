@@ -225,8 +225,8 @@ public class As400DefaultValueConverter implements DefaultValueConverter {
     }
 
     private String stripQuotes(String value) {
-        if (value.startsWith("'") && value.endsWith("'")) {
-            return value.substring(1, value.length() - 1);
+        if (value.startsWith("'") && value.endsWith("'") && value.length() > 1) {
+            return value.substring(1, value.length() - 1).replace("''", "'");
         }
         return value;
     }
